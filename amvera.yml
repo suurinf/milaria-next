@@ -1,0 +1,13 @@
+meta:
+  environment: node
+  toolchain:
+    name: npm
+    version: 20
+
+build:
+  scriptName: build
+
+run:
+  scriptName: start
+  containerPort: 3000
+  persistenceMount: /data
