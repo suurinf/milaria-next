@@ -9,7 +9,16 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5c
 const PORT = process.env.PORT || 3000;
 const HTML_PATH = path.join(__dirname, 'index.html');
 
-// Fetch Supabase table server-side (no DPI issues)
+// In-memory request log for /debug endpoint
+const requestLog = [];
+function log(type, msg, extra) {
+  const entry = { t: new Date().toISOString(), type, msg, extra };
+  requestLog.unshift(entry);
+  if (requestLog.length > 100) requestLog.pop();
+  console.log(`[${entry.t}] ${type}: ${msg}`, extra || '');
+}
+
+// Fetch Supabase table server-side
 function supabaseFetch(endpoint) {
   return new Promise((resolve) => {
     const urlStr = `${SUPABASE_URL}/rest/v1/${endpoint}`;
@@ -23,18 +32,20 @@ function supabaseFetch(endpoint) {
       res.on('data', c => d += c);
       res.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve([]); } });
     });
-    req.on('error', () => resolve([]));
+    req.on('error', (e) => { log('FETCH_ERROR', endpoint, e.message); resolve([]); });
     req.setTimeout(8000, () => { req.destroy(); resolve([]); });
   });
 }
 
-// Proxy Supabase REST call — passes user auth token through
-// This routes ALL Supabase writes via the server, bypassing Russian ISP DPI
+// Proxy to Supabase — passes user auth token through, fixes DPI
 function proxyToSupabase(req, res, supaPath) {
   let body = '';
   req.on('data', c => body += c);
   req.on('end', () => {
-    const targetUrl = new URL(`${SUPABASE_URL}/rest/v1${supaPath}`);
+    // FIXED: supaPath already contains full path like /rest/v1/table_name
+    const targetUrl = new URL(`${SUPABASE_URL}${supaPath}`);
+    log('PROXY', `${req.method} ${supaPath}`, body ? `body: ${body.length} bytes` : '');
+
     const opts = {
       hostname: targetUrl.hostname,
       path: targetUrl.pathname + targetUrl.search,
@@ -47,43 +58,54 @@ function proxyToSupabase(req, res, supaPath) {
         'Accept': req.headers['accept'] || 'application/json',
       }
     };
+
     const pr = https.request(opts, (ps) => {
-      const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, apikey, content-type, prefer, accept',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-        'Content-Type': ps.headers['content-type'] || 'application/json',
-      };
-      if (ps.headers['content-range']) headers['Content-Range'] = ps.headers['content-range'];
-      res.writeHead(ps.statusCode, headers);
-      ps.pipe(res);
+      let respBody = '';
+      ps.on('data', c => respBody += c);
+      ps.on('end', () => {
+        log('PROXY_RESP', `${ps.statusCode} ${supaPath}`, respBody.slice(0, 200));
+        res.writeHead(ps.statusCode, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, apikey, content-type, prefer, accept',
+          'Content-Type': ps.headers['content-type'] || 'application/json',
+          ...(ps.headers['content-range'] ? { 'Content-Range': ps.headers['content-range'] } : {}),
+        });
+        res.end(respBody);
+      });
     });
-    pr.on('error', (e) => { res.writeHead(502); res.end(JSON.stringify({ error: e.message })); });
+    pr.on('error', (e) => {
+      log('PROXY_ERROR', supaPath, e.message);
+      res.writeHead(502);
+      res.end(JSON.stringify({ error: e.message }));
+    });
     if (body) pr.write(body);
     pr.end();
   });
 }
 
 const MIME = {
-  '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
-  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff',
-  '.ttf': 'font/ttf', '.webp': 'image/webp',
+  '.html':'text/html','.css':'text/css','.js':'application/javascript',
+  '.json':'application/json','.png':'image/png','.jpg':'image/jpeg',
+  '.jpeg':'image/jpeg','.gif':'image/gif','.svg':'image/svg+xml',
+  '.ico':'image/x-icon','.woff2':'font/woff2','.woff':'font/woff',
+  '.ttf':'font/ttf','.webp':'image/webp',
 };
 
-// Patch script injected before </head>
-// Routes ALL Supabase REST calls through our proxy → bypasses DPI
+// Proxy patch: redirects Supabase REST calls through /supa/
 const PROXY_PATCH = `<script>
 (function(){
   var SUPA='${SUPABASE_URL}';
   var orig=window.fetch.bind(window);
   window.fetch=function(url,opts){
     if(typeof url==='string'&&url.indexOf(SUPA+'/rest/')===0){
-      url=url.replace(SUPA+'/rest/','/supa/rest/');
+      var proxied=url.replace(SUPA,'/supa');
+      console.log('[proxy] '+url.split('/rest/v1/')[1]?.split('?')[0]+' → server');
+      return orig(proxied,opts);
     }
     return orig(url,opts);
   };
+  window.__PROXY_ACTIVE=true;
+  console.log('[milaria] Server proxy active — all Supabase REST calls routed via server');
 })();
 </script>`;
 
@@ -102,14 +124,30 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Supabase proxy route: /supa/rest/v1/... → Supabase
+  // Debug endpoint: shows last 50 proxy requests
+  if (pathname === '/debug') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`<!DOCTYPE html><html><head><title>Debug</title>
+<style>body{font-family:monospace;background:#111;color:#eee;padding:20px}
+.entry{padding:6px 0;border-bottom:1px solid #333}
+.PROXY{color:#7cf}.PROXY_RESP{color:#7f7}.PROXY_ERROR{color:#f77}.FETCH_ERROR{color:#f77}
+</style></head><body>
+<h2>Milaria Server Log (last ${requestLog.length} entries)</h2>
+<a href="/debug" style="color:#7cf">Обновить</a>
+<div style="margin-top:16px">
+${requestLog.map(e => `<div class="entry ${e.type}"><b>${e.t.slice(11,19)}</b> [${e.type}] ${e.msg} ${e.extra ? `<small style="color:#aaa">${e.extra}</small>` : ''}</div>`).join('')}
+</div></body></html>`);
+    return;
+  }
+
+  // Supabase proxy: /supa/rest/v1/... → Supabase
   if (pathname.startsWith('/supa/')) {
     const supaPath = pathname.replace('/supa', '') + (parsed.search || '');
     proxyToSupabase(req, res, supaPath);
     return;
   }
 
-  // Static files (assets/hero-art.jpg, etc.)
+  // Static files
   if (pathname !== '/') {
     const filePath = path.join(__dirname, pathname);
     const ext = path.extname(filePath);
@@ -122,8 +160,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Main page: inject fresh data from Supabase + proxy patch
+  // Main page: inject data + proxy patch
   try {
+    log('SSR', 'Fetching all tables...');
     const [queue, portfolioCategories, portfolioImages, prices, calcOptions, debts, links, settingsArr] =
       await Promise.all([
         supabaseFetch('queue_items?select=*&order=sort_order.asc'),
@@ -138,24 +177,23 @@ const server = http.createServer(async (req, res) => {
 
     const settings = {};
     if (Array.isArray(settingsArr)) settingsArr.forEach(r => { if (r.key) settings[r.key] = r.value; });
+    log('SSR', 'Done', `q:${queue.length} pf:${portfolioImages.length} s:${Object.keys(settings).length}`);
 
     const snapshot = `<script>
-window.__INITIAL_DATA__ = ${JSON.stringify({ queue, portfolioCategories, portfolioImages, prices, calcOptions, debts, links })};
-window.__INITIAL_SETTINGS__ = ${JSON.stringify(settings)};
+window.__INITIAL_DATA__=${JSON.stringify({queue,portfolioCategories,portfolioImages,prices,calcOptions,debts,links})};
+window.__INITIAL_SETTINGS__=${JSON.stringify(settings)};
 </script>`;
 
     let html = fs.readFileSync(HTML_PATH, 'utf-8');
-    // Inject proxy patch first (before any scripts), then data snapshot
     html = html.replace('<head>', '<head>' + PROXY_PATCH);
     html = html.replace('</head>', snapshot + '\n</head>');
-
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
   } catch (err) {
-    console.error('SSR error:', err.message);
+    log('SSR_ERROR', err.message);
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(fs.readFileSync(HTML_PATH));
   }
 });
 
-server.listen(PORT, () => console.log(`✓ Milaria server on port ${PORT}`));
+server.listen(PORT, () => log('START', `Milaria server on port ${PORT}`));
