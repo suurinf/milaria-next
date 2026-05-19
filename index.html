@@ -3267,9 +3267,9 @@ html {
   border-radius: 3px;
 }
 @media (max-width: 768px) {
-  .pf-coverflow-outer { padding: 32px 44px 20px; }
-  .pf-coverflow { height: 380px; }
-  .pf-cover-card { width: 240px; height: 330px; }
+  .pf-coverflow-outer { padding: 36px 50px 24px !important; }
+  .pf-coverflow { height: 420px !important; }
+  .pf-cover-card { width: 260px !important; height: 360px !important; }
   .pf-cover-card:nth-child(n) { --scale: 0.75; }
   .pf-cover-title { font-size: 18px; }
   .pf-coverflow-nav { padding: 0 8px; }
@@ -5714,35 +5714,28 @@ function RecentTile({ tileData, lang, onClick, admin, onEdit }) {
   const label = lang === 'en' ? (tileData.label_en || tileData.label) : tileData.label;
 
   return (
-    <div style={{ position: 'relative' }}>
-      {admin && (
-        <button className="admin-btn"
-          style={{ position: 'absolute', top: -10, left: -10, zIndex: 30, opacity: 1, boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
-          onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onEdit(); }}>✎</button>
+    <div className="recent-tile" data-color={tileData.color}
+      style={{ '--hue': tileData.hue }}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      onClick={onClick}>
+      <div className="recent-tile-imgs">
+        <div className="show" style={bg} />
+      </div>
+      {count > 1 && (
+        <>
+          <button className="rtile-arr rtile-arr-l" onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + count) % count); }}>‹</button>
+          <button className="rtile-arr rtile-arr-r" onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % count); }}>›</button>
+          <div className="recent-tile-counter">
+            {slots.map((_, i) => <span key={i} className={i === idx ? 'on' : ''} />)}
+          </div>
+        </>
       )}
-      <div className="recent-tile" data-color={tileData.color}
-        style={{ '--hue': tileData.hue }}
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
-        onClick={onClick}>
-        <div className="recent-tile-imgs">
-          <div className="show" style={bg} />
-        </div>
-        {count > 1 && (
-          <>
-            <button className="rtile-arr rtile-arr-l" onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + count) % count); }}>‹</button>
-            <button className="rtile-arr rtile-arr-r" onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % count); }}>›</button>
-            <div className="recent-tile-counter">
-              {slots.map((_, i) => <span key={i} className={i === idx ? 'on' : ''} />)}
-            </div>
-          </>
-        )}
-        <div className="recent-tile-vlabel">{label}</div>
-        <div className="recent-tile-arrow">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline>
-          </svg>
-        </div>
+      <div className="recent-tile-vlabel">{label}</div>
+      <div className="recent-tile-arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline>
+        </svg>
       </div>
     </div>
   );
@@ -5814,11 +5807,12 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
 
 function RecentWorks({ t, lang, onGoTo, admin }) {
   const [tilesData, saveTilesData] = useSetting('recent_tiles', DEFAULT_TILES);
-  const tiles = Array.isArray(tilesData) ? tilesData : DEFAULT_TILES;
-  const [editIdx, setEditIdx] = homeState(null);
+  const tiles = Array.isArray(tilesData) && tilesData.length === 4 ? tilesData : DEFAULT_TILES;
+  const [editorOpen, setEditorOpen] = homeState(false);
+  const [activeTab, setActiveTab] = homeState(0);
 
   function saveTile(i, updated) {
-    const next = tiles.map((t, idx) => idx === i ? { ...t, ...updated } : t);
+    const next = tiles.map((tl, idx) => idx === i ? { ...tl, ...updated } : tl);
     saveTilesData(next);
   }
 
@@ -5826,25 +5820,95 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
     <div className="recent-strip">
       <div className="home-section-head">
         <h2 className="home-section-title"><em>{t.home.recent}</em></h2>
-        <span className="home-section-meta">
-          {lang === 'ru' ? 'наведи — листай · кликни — открой' : 'hover to cycle · click to open'}
-        </span>
+        {admin && (
+          <button className="btn btn-ghost" style={{ fontSize: 12, padding: '6px 14px' }}
+            onClick={() => setEditorOpen(true)}>
+            ✎ {lang === 'ru' ? 'Редактировать плашки' : 'Edit tiles'}
+          </button>
+        )}
       </div>
       <div className="recent-tiles">
         {tiles.map((tile, i) => (
-          <RecentTile key={i} tileData={tile} lang={lang}
-            onClick={() => onGoTo('portfolio')}
-            admin={admin}
-            onEdit={() => setEditIdx(i)} />
+          <RecentTile key={i} tileData={tile} lang={lang} onClick={() => onGoTo('portfolio')} />
         ))}
       </div>
-      {editIdx !== null && (
-        <RecentTileEditor
-          tile={tiles[editIdx]} lang={lang}
-          onSave={updated => saveTile(editIdx, updated)}
-          onClose={() => setEditIdx(null)} />
+      {admin && editorOpen && (
+        <Modal onClose={() => setEditorOpen(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
+              {lang === 'ru' ? 'Плашки последних работ' : 'Recent works tiles'}
+            </h3>
+            {/* Tabs for 4 tiles */}
+            <div style={{ display: 'flex', gap: 6 }}>
+              {tiles.map((tile, i) => (
+                <button key={i} onClick={() => setActiveTab(i)}
+                  className={activeTab === i ? 'btn btn-primary' : 'btn'}
+                  style={{ flex: 1, fontSize: 11, padding: '8px 4px', justifyContent: 'center' }}>
+                  {tile.label || `#${i + 1}`}
+                </button>
+              ))}
+            </div>
+            {/* Active tile editor */}
+            <TileFields tile={tiles[activeTab]} lang={lang}
+              onChange={updated => saveTile(activeTab, updated)} />
+            <button className="btn btn-primary" style={{ justifyContent: 'center' }}
+              onClick={() => setEditorOpen(false)}>
+              {lang === 'ru' ? 'Готово' : 'Done'}
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
+  );
+}
+
+function TileFields({ tile, lang, onChange }) {
+  const [urlInput, setUrlInput] = homeState('');
+  const slots = Array.isArray(tile.slots) ? tile.slots : [];
+
+  function addUrl() {
+    if (!urlInput.trim()) return;
+    onChange({ ...tile, slots: [...slots, urlInput.trim()] });
+    setUrlInput('');
+  }
+  function removeSlot(i) { onChange({ ...tile, slots: slots.filter((_, idx) => idx !== i) }); }
+
+  return (
+    <>
+      <label className="login-field">
+        <span>Название (RU)</span>
+        <input value={tile.label || ''} onChange={e => onChange({ ...tile, label: e.target.value })} />
+      </label>
+      <label className="login-field">
+        <span>Label (EN)</span>
+        <input value={tile.label_en || ''} onChange={e => onChange({ ...tile, label_en: e.target.value })} />
+      </label>
+      <div>
+        <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
+          {lang === 'ru' ? `Картинки (${slots.length}) — листаются стрелочками` : `Images (${slots.length})`}
+        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8, maxHeight: 200, overflowY: 'auto' }}>
+          {slots.map((s, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <img src={s} style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 4 }} alt="" onError={e => e.target.style.display='none'} />
+              <span style={{ flex: 1, fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s}</span>
+              <button className="admin-btn danger" style={{ width: 24, height: 24, fontSize: 11, flexShrink: 0 }} onClick={() => removeSlot(i)}>×</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addUrl()}
+            placeholder={lang === 'ru' ? 'URL картинки...' : 'Image URL...'}
+            style={{ flex: 1, padding: '8px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 12 }} />
+          <button className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px' }} onClick={addUrl}>+</button>
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <ImageUploader label={lang === 'ru' ? '📷 Загрузить файл' : '📷 Upload file'}
+            onUpload={url => onChange({ ...tile, slots: [...slots, url] })} />
+        </div>
+      </div>
+    </>
   );
 }
 
