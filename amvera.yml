@@ -5,9 +5,8 @@ meta:
     version: 20
 
 build:
-  scriptName: build
+  additionalCommands: npm run build
 
 run:
-  scriptName: start
+  command: npm run start
   containerPort: 3000
-  persistenceMount: /data
