@@ -7330,10 +7330,11 @@ function CalculatorSection({ t, lang, admin }) {
     return { globalTotal: gt, globalLines: gl };
   }, [calcData, state, lang]);
 
-  // Apply percentage modifiers: each adds 50% to BASE total (additive)
+  // Apply percentage modifiers: each multiplies the RUNNING total (sequential)
   const baseTotal = globalTotal;
-  const modifier = 1 + (rushOrder ? 0.5 : 0) + (convWork ? 0.5 : 0);
-  const total = Math.round(baseTotal * modifier);
+  let total = baseTotal;
+  if (rushOrder) total = Math.round(total * 1.5);
+  if (convWork) total = Math.round(total * 1.5);
 
   const totalFmt = lang === 'en'
     ? `$${Math.round(total / FX_RATE).toLocaleString('en-US')}`
@@ -7439,8 +7440,26 @@ function CalculatorSection({ t, lang, admin }) {
               <div className="calc2-modifier-breakdown">
                 <span>{lang === 'ru' ? 'База:' : 'Base:'}</span>
                 <span>{lang === 'en' ? `$${Math.round(baseTotal/FX_RATE).toLocaleString()}` : `${baseTotal.toLocaleString('ru-RU')} ₽`}</span>
-                <span>{lang === 'ru' ? `Наценка ×${modifier.toFixed(1)}:` : `Modifier ×${modifier.toFixed(1)}:`}</span>
-                <span>+ {lang === 'en' ? `$${Math.round((total-baseTotal)/FX_RATE).toLocaleString()}` : `${(total-baseTotal).toLocaleString('ru-RU')} ₽`}</span>
+                {rushOrder && (
+                  <>
+                    <span>{lang === 'ru' ? 'Срочность +50%:' : 'Rush +50%:'}</span>
+                    <span>{lang === 'en' ? `$${Math.round(baseTotal*0.5/FX_RATE).toLocaleString()}` : `${Math.round(baseTotal*0.5).toLocaleString('ru-RU')} ₽`}</span>
+                  </>
+                )}
+                {convWork && (
+                  <>
+                    <span>{lang === 'ru' ? 'Конфиденц. +50%:' : 'Confidential +50%:'}</span>
+                    <span>{lang === 'en'
+                      ? `$${Math.round((rushOrder ? baseTotal*1.5 : baseTotal)*0.5/FX_RATE).toLocaleString()}`
+                      : `${Math.round((rushOrder ? baseTotal*1.5 : baseTotal)*0.5).toLocaleString('ru-RU')} ₽`}</span>
+                  </>
+                )}
+                <span style={{ borderTop: '1px solid rgba(232,169,59,0.3)', paddingTop: 4, marginTop: 4, fontWeight: 'bold' }}>
+                  {lang === 'ru' ? 'Итого:' : 'Total:'}
+                </span>
+                <span style={{ borderTop: '1px solid rgba(232,169,59,0.3)', paddingTop: 4, marginTop: 4, fontWeight: 'bold', color: 'var(--accent)' }}>
+                  {lang === 'en' ? `$${Math.round(total/FX_RATE).toLocaleString()}` : `${total.toLocaleString('ru-RU')} ₽`}
+                </span>
               </div>
             )}
           </div>
