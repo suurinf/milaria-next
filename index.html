@@ -7218,7 +7218,10 @@ function CalculatorSection({ t, lang, admin }) {
     ? `≈ ${total.toLocaleString('ru-RU')} ₽`
     : `≈ $${Math.round(total / FX_RATE).toLocaleString('en-US')}`;
 
-  const variantEntries = Object.entries(cat.variants);
+  // Sort variants in defined display order: plus before basic, art before rig
+  const VARIANT_ORDER = { plus: 0, basic: 1, art: 0, rig: 1, default: 0 };
+  const variantEntries = Object.entries(cat.variants)
+    .sort((a, b) => (VARIANT_ORDER[a[0]] ?? 99) - (VARIANT_ORDER[b[0]] ?? 99));
   const showSubtabs = variantEntries.length > 1 && activeTab !== 'vtuber' && activeTab !== 'chibi';
 
   return (
