@@ -3138,11 +3138,11 @@ html {
 /* ═════ Coverflow Portfolio ═════ */
 .pf-coverflow-outer {
   position: relative;
-  padding: 40px 0 20px;
+  padding: 80px 0 40px;
 }
 .pf-coverflow {
   position: relative;
-  height: 420px;
+  height: 600px;
   perspective: 1200px;
   display: flex;
   align-items: center;
@@ -3151,8 +3151,8 @@ html {
 }
 .pf-cover-card {
   position: absolute;
-  width: 280px;
-  height: 380px;
+  width: 420px;
+  height: 540px;
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
@@ -3303,7 +3303,7 @@ html {
 /* ═════ Portfolio side arrows ═════ */
 .pf-coverflow-outer {
   position: relative;
-  padding: 40px 60px 20px;
+  padding: 80px 100px 40px;
 }
 .pf-side-arrow {
   position: absolute;
@@ -5753,7 +5753,7 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
   function removeSlot(i) { setDraft(d => ({ ...d, slots: d.slots.filter((_, idx) => idx !== i) })); }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal open={true} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
           {lang === 'ru' ? 'Редактировать плашку' : 'Edit tile'}
@@ -5833,7 +5833,7 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
         ))}
       </div>
       {admin && editorOpen && (
-        <Modal onClose={() => setEditorOpen(false)}>
+        <Modal open={true} onClose={() => setEditorOpen(false)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
               {lang === 'ru' ? 'Плашки последних работ' : 'Recent works tiles'}
