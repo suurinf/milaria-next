@@ -7083,6 +7083,11 @@ function CalculatorSection({ t, lang, admin }) {
       ['vtuber', 'chibi', 'png', 'illust', 'rig'].forEach(c => {
         if (!tree[c]) tree[c] = DEFAULT_CALC[c];
       });
+      // Force PNG variant order: PNG+ before PNG
+      if (tree.png && tree.png.variants && tree.png.variants.basic && tree.png.variants.plus) {
+        const { plus, basic, ...rest } = tree.png.variants;
+        tree.png.variants = { plus, basic, ...rest };
+      }
       return tree;
     }
     return DEFAULT_CALC;
@@ -7350,9 +7355,13 @@ function CalculatorSection({ t, lang, admin }) {
 
 // ─── Contact modal ───
 function ContactModal({ open, onClose, lang, admin }) {
-  // Load links from Supabase so they're always live
+  // ALL hooks must be before any conditional return
   const linksRes = useResource('links', DEFAULT_LINKS);
+  const [editing, setEditing] = React.useState(false);
+  const [editDraft, setEditDraft] = React.useState(null);
+
   if (!open) return null;
+
   // Filter for socials where you can write a DM + email
   const dmKinds = ['social', 'chat', 'mail'];
   const contactable = linksRes.items.filter(l => dmKinds.includes(l.kind));
@@ -7367,9 +7376,6 @@ function ContactModal({ open, onClose, lang, admin }) {
   function copy(text) {
     try { navigator.clipboard.writeText(text); } catch (e) {}
   }
-
-  const [editing, setEditing] = React.useState(false);
-  const [editDraft, setEditDraft] = React.useState(null);
 
   function startEdit(l) {
     setEditDraft({ ...l });
