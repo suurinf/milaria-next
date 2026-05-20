@@ -3897,16 +3897,6 @@ const DEFAULT_CALC = {
   png: {
     labelKey: 'png',
     variants: {
-      basic: {
-        ru: 'PNG', en: 'PNG',
-        base: [
-          { id: "p-b-base", ru: "PNG модель (1 поза)", en: "PNG model (1 pose)", rub: 5000 },
-        ],
-        addon: [
-          { id: "p-b-emotions", ru: "Эмоции",  en: "Emotions",  rub: 1000, qty: true },
-          { id: "p-b-items",    ru: "Итемы",   en: "Items",     rub: 800,  qty: true },
-        ],
-      },
       plus: {
         ru: 'PNG+', en: 'PNG+',
         base: [
@@ -3920,27 +3910,18 @@ const DEFAULT_CALC = {
           { id: "p-p-bg",       ru: "Фон",            en: "Background",      rub: 5000 },
         ],
       },
-    },
-  },
-  illust: {
-    labelKey: 'illust',
-    variants: {
-      default: {
-        ru: 'Иллюстрация', en: 'Illustration',
+      basic: {
+        ru: 'PNG', en: 'PNG',
         base: [
-          { id: "ill-portrait",  ru: "Портрет",     en: "Portrait",   rub: 3000 },
-          { id: "ill-half",      ru: "Half body",   en: "Half body",  rub: 6000 },
-          { id: "ill-full",      ru: "Full body",   en: "Full body",  rub: 8000 },
+          { id: "p-b-base", ru: "PNG модель (1 поза)", en: "PNG model (1 pose)", rub: 5000 },
         ],
         addon: [
-          { id: "ill-bg",        ru: "Сложный фон",  en: "Complex bg",  rub: 4000 },
-          { id: "ill-extra-char", ru: "Доп. персонаж", en: "Extra character", rub: 4000, qty: true },
-          { id: "ill-fx",        ru: "Эффекты",       en: "FX",          rub: 2000 },
-          { id: "ill-nsfw",      ru: "NSFW",          en: "NSFW",        rub: 5000 },
+          { id: "p-b-emotions", ru: "Эмоции",  en: "Emotions",  rub: 1000, qty: true },
+          { id: "p-b-items",    ru: "Итемы",   en: "Items",     rub: 800,  qty: true },
         ],
       },
     },
-  },
+  }
   rig: {
     labelKey: 'rig',
     variants: {
@@ -7318,7 +7299,7 @@ function CalculatorSection({ t, lang, admin }) {
               className={`calc2-modifier-btn ${convWork ? 'active' : ''}`}
               onClick={() => setConvWork(r => !r)}>
               <span className="calc2-mod-icon">{convWork ? '🎪' : '○'}</span>
-              <span className="calc2-mod-label">{lang === 'ru' ? 'Конвенц. работа' : 'Convention work'}</span>
+              <span className="calc2-mod-label">{lang === 'ru' ? 'Конфиденциальная работа' : 'Confidential work'}</span>
               <span className="calc2-mod-pct">+50%</span>
             </button>
             {(rushOrder || convWork) && baseTotal > 0 && (
@@ -7362,13 +7343,13 @@ function CalculatorSection({ t, lang, admin }) {
         </aside>
       </div>
 
-      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} lang={lang} />
+      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} lang={lang} admin={admin} />
     </section>
   );
 }
 
 // ─── Contact modal ───
-function ContactModal({ open, onClose, lang }) {
+function ContactModal({ open, onClose, lang, admin }) {
   // Load links from Supabase so they're always live
   const linksRes = useResource('links', DEFAULT_LINKS);
   if (!open) return null;
@@ -7387,11 +7368,35 @@ function ContactModal({ open, onClose, lang }) {
     try { navigator.clipboard.writeText(text); } catch (e) {}
   }
 
+  const [editing, setEditing] = React.useState(false);
+  const [editDraft, setEditDraft] = React.useState(null);
+
+  function startEdit(l) {
+    setEditDraft({ ...l });
+    setEditing(true);
+  }
+  function saveEdit() {
+    if (!editDraft) return;
+    if (editDraft._isNew) {
+      linksRes.add({ label: editDraft.label, handle: editDraft.handle, url: editDraft.url, kind: editDraft.kind || 'social', sort_order: 99 });
+    } else {
+      linksRes.update(editDraft.id, { label: editDraft.label, handle: editDraft.handle, url: editDraft.url, kind: editDraft.kind });
+    }
+    setEditing(false);
+    setEditDraft(null);
+  }
+
   return (
     <Modal open={open} onClose={onClose}>
       <div style={{ paddingRight: 40 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8 }}>
-          ✦ {lang === 'ru' ? 'связаться' : 'contact'}
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>✦ {lang === 'ru' ? 'связаться' : 'contact'}</span>
+          {admin && (
+            <button className="admin-btn" style={{ fontSize: 11 }}
+              onClick={() => setEditing(e => !e)}>
+              {editing ? '✓ Готово' : '✎ Редактировать'}
+            </button>
+          )}
         </div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 38, margin: '0 0 12px', fontWeight: 500 }}>
           {lang === 'ru' ? 'Куда написать?' : 'Where to message?'}
@@ -7399,9 +7404,53 @@ function ContactModal({ open, onClose, lang }) {
         <p style={{ color: 'var(--text-muted)', margin: '0 0 28px', fontSize: 14, maxWidth: 540 }}>
           {lang === 'ru'
             ? 'Напиши мне в любую из соцсетей или на почту — обсудим детали заказа.'
-            : 'Reach out via any social or email — we\'ll discuss the details.'
+            : "Reach out via any social or email — we'll discuss the details."
           }
         </p>
+
+        {/* Admin editor */}
+        {admin && editing && (
+          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {linksRes.items.map(l => (
+              <div key={l.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ flex: 1, fontSize: 13 }}>{l.label}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', flex: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.handle || l.url}</span>
+                <button className="admin-btn" style={{ fontSize: 10, padding: '4px 8px' }} onClick={() => startEdit(l)}>✎</button>
+                <button className="admin-btn danger" style={{ fontSize: 10, padding: '4px 8px' }} onClick={() => linksRes.remove(l.id)}>×</button>
+              </div>
+            ))}
+            <button className="btn" style={{ fontSize: 12, padding: '8px 14px', justifyContent: 'center' }}
+              onClick={() => startEdit({ _isNew: true, label: '', handle: '', url: '', kind: 'social' })}>
+              + {lang === 'ru' ? 'Добавить' : 'Add'}
+            </button>
+          </div>
+        )}
+
+        {/* Edit form */}
+        {admin && editDraft && (
+          <div style={{ marginBottom: 20, padding: 16, borderRadius: 12, border: '1px solid var(--accent)', background: 'rgba(232,169,59,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)' }}>
+              {editDraft._isNew ? (lang === 'ru' ? 'Новый контакт' : 'New contact') : (lang === 'ru' ? 'Редактировать' : 'Edit')}
+            </div>
+            {[
+              { key: 'label', placeholder: 'Telegram, Twitter...' },
+              { key: 'handle', placeholder: '@username' },
+              { key: 'url', placeholder: 'https://...' },
+            ].map(f => (
+              <input key={f.key} value={editDraft[f.key] || ''} placeholder={f.placeholder}
+                onChange={e => setEditDraft(d => ({ ...d, [f.key]: e.target.value }))}
+                style={{ padding: '8px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 12, width: '100%' }} />
+            ))}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }} onClick={saveEdit}>
+                {lang === 'ru' ? 'Сохранить' : 'Save'}
+              </button>
+              <button className="btn" style={{ fontSize: 12, padding: '8px 14px' }} onClick={() => setEditDraft(null)}>
+                {lang === 'ru' ? 'Отмена' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="contact-grid">
           {finalLinks.map((l) => (
