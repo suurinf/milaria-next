@@ -6289,7 +6289,7 @@ function SecretRow({ idx, t, admin, onDelete, itemId }) {
 
 // ───── completed row (list) ─────
 function DoneRow({ item, idx, t, admin, onDelete }) {
-  if (item.tag === 'secret') return <SecretRow idx={idx} t={t} />;
+  if (item.tag === 'secret') return <SecretRow idx={idx} t={t} admin={admin} onDelete={onDelete} itemId={item.id} />;
   return (
     <div className="q-row done">
       <div className="q-row-fill"></div>
@@ -6477,6 +6477,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
             admin={admin}
             onUpdate={updateInProgress}
             onDelete={deleteInProgress}
+            onEdit={editQueueItem}
             barStyle={barStyle}
           />
         ))}
