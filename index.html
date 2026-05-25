@@ -3174,6 +3174,9 @@ html {
   object-fit: cover;
   transition: transform 0.4s ease;
 }
+.pf-cover-img img.pf-cover-photo {
+  object-fit: contain;
+}
 .pf-cover-card.active:hover .pf-cover-img img { transform: scale(1.04); }
 .pf-cover-info {
   position: absolute;
@@ -3835,8 +3838,10 @@ select {
 
 /* ═════ Coverflow image: full visible + blurred sides ═════ */
 .pf-cover-img {
-  position: relative;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
+  background: rgba(255,255,255,0.04);
 }
 .pf-cover-blur {
   position: absolute;
@@ -3848,6 +3853,30 @@ select {
   z-index: 0;
 }
 .pf-cover-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+/* ═════ Gallery grid: full image + blur fill ═════ */
+.pf-gal-imgwrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.pf-gal-blur {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(24px) brightness(0.5);
+  transform: scale(1.3);
+  z-index: 0;
+}
+.pf-gal-photo {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -7307,7 +7336,10 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                   onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
                 >
-                  <img src={thumb} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" loading="lazy" />
+                  <div className="pf-gal-imgwrap">
+                    <div className="pf-gal-blur" style={{ backgroundImage: `url("${thumb}")` }} />
+                    <img src={thumb} className="pf-gal-photo" alt="" loading="lazy" />
+                  </div>
                   {isYT && (
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.8)' }}>
