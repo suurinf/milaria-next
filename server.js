@@ -27,7 +27,7 @@ function supaFetch(table) {
       const req = https.get({
         hostname: u.hostname, path: u.pathname + u.search,
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-        timeout: 6000,
+        timeout: 20000,
       }, (res) => {
         let d = '';
         res.on('data', c => d += c);
@@ -123,7 +123,16 @@ function buildHTML() {
   const settingsStr = JSON.stringify(cache.settings || {});
   const snap = `<script>window.__INITIAL_DATA=${dataStr};window.__INITIAL_DATA__=${dataStr};window.__INITIAL_SETTINGS=${settingsStr};window.__INITIAL_SETTINGS__=${settingsStr};</script>`;
   html = html.replace('<head>', '<head>' + PATCH);
-  html = html.replace('</head>', snap + '</head>');
+  // Server-side favicon injection — works in ALL browsers (Edge, incognito) on first load
+  const favicon = cache.settings && cache.settings.site_favicon;
+  if (favicon && typeof favicon === 'string') {
+    const faviconTag = `<link rel="icon" href="${favicon.replace(/"/g, '&quot;')}">`;
+    // Remove any existing icon link, then add ours
+    html = html.replace(/<link[^>]*rel=["'][^"']*icon[^"']*["'][^>]*>/gi, '');
+    html = html.replace('</head>', faviconTag + snap + '</head>');
+  } else {
+    html = html.replace('</head>', snap + '</head>');
+  }
   return html;
 }
 
