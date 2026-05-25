@@ -119,7 +119,11 @@ const PATCH = `<script>(function(){var S='${SUPABASE_URL}',f=window.fetch.bind(w
 
 function buildHTML() {
   let html = fs.readFileSync(HTML_PATH, 'utf-8');
-  const dataStr = JSON.stringify(cache.data || {});
+  // Exclude heavy base64 portfolio_images from inline snapshot (keeps HTML small & fast).
+  // Carousel uses cover_data stored on categories; full images load lazily client-side.
+  const lightData = Object.assign({}, cache.data || {});
+  delete lightData.portfolioImages;
+  const dataStr = JSON.stringify(lightData);
   const settingsStr = JSON.stringify(cache.settings || {});
   const snap = `<script>window.__INITIAL_DATA=${dataStr};window.__INITIAL_DATA__=${dataStr};window.__INITIAL_SETTINGS=${settingsStr};window.__INITIAL_SETTINGS__=${settingsStr};</script>`;
   html = html.replace('<head>', '<head>' + PATCH);

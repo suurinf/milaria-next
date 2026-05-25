@@ -4513,8 +4513,9 @@ function useResource(table, defaults = [], opts = {}) {
   const [error, setError] = React.useState(null);
   const [version, setVersion] = React.useState(0);
 
-  // Auto-cache to localStorage on every state change
+  // Auto-cache to localStorage on every state change (skip heavy tables)
   React.useEffect(() => {
+    if (opts.noCache) return;
     try { localStorage.setItem('milaria:cache:' + table, JSON.stringify(items)); } catch(e) {}
   }, [items, table]);
 
@@ -4532,7 +4533,9 @@ function useResource(table, defaults = [], opts = {}) {
         if (data) {
           // Always trust fresh server data (even empty) so deleted items disappear
           setItems(data);
-          try { localStorage.setItem('milaria:cache:' + table, JSON.stringify(data)); } catch(e) {}
+          if (!opts.noCache) {
+            try { localStorage.setItem('milaria:cache:' + table, JSON.stringify(data)); } catch(e) {}
+          }
         }
         setLoaded(true);
       });
@@ -7545,7 +7548,7 @@ function PortfolioSection({ t, admin, lang }) {
     ...DEFAULT_PORTFOLIO.illustrations.map((m, i) => ({ id: 'def-i-'+i, key: m.key, kind: 'illustration', count: m.count, hue: m.hue, sort_order: i + 100 })),
   ], []);
   const pfRes = useResource('portfolio_categories', pfDefaults);
-  const imagesRes = useResource('portfolio_images', []);
+  const imagesRes = useResource('portfolio_images', [], { noCache: true });
   const allImages = Array.isArray(imagesRes.items) ? imagesRes.items : [];
 
   const [openCategory, setOpenCategory] = pfState(null);
@@ -7573,16 +7576,38 @@ function PortfolioSection({ t, admin, lang }) {
     illustrations: items.filter(c => c.kind === 'illustration'),
   }), [items]);
 
+  // Cover: prefer stored cover_data on category (instant, light), fall back to images
   function getCoverSrc(catId) {
+    const cat = items.find(c => c.id === catId);
+    if (cat && cat.cover_data) return cat.cover_data;
     const cover = allImages.find(img => img.category_id === catId && img.is_cover);
     if (cover) return cover.image_data;
     const first = allImages.find(img => img.category_id === catId);
     return first?.image_data || null;
   }
 
+  // Count: when images loaded use real count; otherwise stored pic_count
   function getCatCount(catId) {
-    return allImages.filter(img => img.category_id === catId).length;
+    if (imagesRes.loaded) {
+      return allImages.filter(img => img.category_id === catId).length;
+    }
+    const cat = items.find(c => c.id === catId);
+    return (cat && typeof cat.pic_count === 'number') ? cat.pic_count : 0;
   }
+
+  // Keep category.cover_data + pic_count in sync after image changes / on load
+  pfEffect(() => {
+    if (!imagesRes.loaded || !admin) return;
+    items.forEach(cat => {
+      const imgs = allImages.filter(i => i.category_id === cat.id);
+      const cover = imgs.find(i => i.is_cover) || imgs.sort((a,b) => (a.sort_order||0)-(b.sort_order||0))[0];
+      const newCover = cover ? cover.image_data : null;
+      const newCount = imgs.length;
+      if (cat.cover_data !== newCover || cat.pic_count !== newCount) {
+        pfRes.update(cat.id, { cover_data: newCover, pic_count: newCount });
+      }
+    });
+  }, [allImages, imagesRes.loaded]);
 
   const renderCard = (item) => ({
     item,
