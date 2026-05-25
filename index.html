@@ -7350,44 +7350,46 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                       </div>
                     </div>
                   )}
-                  {admin && <span className="drag-handle" style={{ top: 8, left: 8, transform: 'none' }} title="Перетащить">⠿</span>}
+                  {admin && <span className="drag-handle" style={{ top: 8, left: 8, transform: 'none', zIndex: 12 }} title="Перетащить">⠿</span>}
 
                   {/* Cover badge */}
                   {isCover && (
                     <span style={{
-                      position: 'absolute', top: 10, left: 10,
+                      position: 'absolute', bottom: 10, left: 10, zIndex: 11,
                       fontSize: 10, padding: '3px 10px', borderRadius: 8,
-                      background: 'var(--accent)', color: '#fff',
+                      background: 'var(--accent)', color: '#1a1410',
                       fontFamily: 'var(--font-mono)', letterSpacing: '0.08em',
                       textTransform: 'uppercase', fontWeight: 600,
                     }}>обложка</span>
                   )}
 
-                  {/* Admin overlay */}
+                  {/* Admin controls — always visible */}
                   {admin && (
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.85))',
-                      opacity: 0, transition: 'opacity .2s',
-                      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-                      padding: 14, gap: 8,
-                    }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                      onMouseLeave={e => e.currentTarget.style.opacity = 0}
-                    >
-                      <button onClick={e => { e.stopPropagation(); setCover(img.id); }} style={{
-                        background: isCover ? 'var(--accent)' : 'rgba(255,255,255,0.12)',
-                        border: '1px solid rgba(255,255,255,0.15)', color: '#fff',
-                        padding: '7px 16px', borderRadius: 20, fontSize: 12,
-                        fontFamily: 'var(--font-mono)', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 5,
-                      }}>★ {isCover ? 'Обложка' : 'В обложку'}</button>
-
-                      <button onClick={e => { e.stopPropagation(); deleteImage(img.id); }} style={{
-                        background: 'rgba(220,50,50,0.3)', border: '1px solid rgba(220,50,50,0.3)',
-                        color: '#ff8888', padding: '7px 14px', borderRadius: 20,
-                        fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-mono)',
-                      }}>✕ Удалить</button>
+                    <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 15, display: 'flex', gap: 6 }}
+                      onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={e => { e.stopPropagation(); setCover(img.id); }}
+                        title={isCover ? 'Это обложка' : 'Сделать обложкой'}
+                        style={{
+                          width: 30, height: 30, borderRadius: '50%',
+                          background: isCover ? 'var(--accent)' : 'rgba(0,0,0,0.6)',
+                          backdropFilter: 'blur(6px)',
+                          border: '1px solid rgba(255,255,255,0.25)',
+                          color: isCover ? '#1a1410' : '#fff', cursor: 'pointer',
+                          fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                        }}>★</button>
+                      <button
+                        onClick={e => { e.stopPropagation(); if (confirm('Удалить из карточки?')) deleteImage(img.id); }}
+                        title="Удалить"
+                        style={{
+                          width: 30, height: 30, borderRadius: '50%',
+                          background: 'rgba(180,30,30,0.75)', backdropFilter: 'blur(6px)',
+                          border: '1px solid rgba(255,120,120,0.4)',
+                          color: '#fff', cursor: 'pointer',
+                          fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                        }}>×</button>
                     </div>
                   )}
                 </div>
