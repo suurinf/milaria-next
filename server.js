@@ -119,7 +119,9 @@ const PATCH = `<script>(function(){var S='${SUPABASE_URL}',f=window.fetch.bind(w
 
 function buildHTML() {
   let html = fs.readFileSync(HTML_PATH, 'utf-8');
-  const snap = `<script>window.__INITIAL_DATA__=${JSON.stringify(cache.data||{})};window.__INITIAL_SETTINGS__=${JSON.stringify(cache.settings||{})};</script>`;
+  const dataStr = JSON.stringify(cache.data || {});
+  const settingsStr = JSON.stringify(cache.settings || {});
+  const snap = `<script>window.__INITIAL_DATA=${dataStr};window.__INITIAL_DATA__=${dataStr};window.__INITIAL_SETTINGS=${settingsStr};window.__INITIAL_SETTINGS__=${settingsStr};</script>`;
   html = html.replace('<head>', '<head>' + PATCH);
   html = html.replace('</head>', snap + '</head>');
   return html;
