@@ -4731,6 +4731,66 @@ function useSetting(key, defaultValue) {
   return [value, save, loaded];
 }
 
+// ── Supabase Storage upload (proper: file + CDN, not base64) ──
+const STORAGE_BUCKET = 'portfolio';
+
+// Resize a File/Blob to a JPEG blob at given max width
+function resizeToBlob(file, maxW, quality) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(b => resolve(b), 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(null);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+function storagePublicUrl(path) {
+  const { data } = _sbc.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  // Rewrite to proxied path so it loads through our server (DPI-safe)
+  return data.publicUrl.replace(SUPABASE_URL, '/supa');
+}
+
+// Returns { url, thumb } of proxied public URLs, or null on failure
+async function uploadToStorage(file) {
+  try {
+    const full = await resizeToBlob(file, 1600, 0.85);   // full view
+    const thumb = await resizeToBlob(file, 500, 0.78);    // grid thumbnail
+    if (!full) { alert('Не удалось обработать картинку'); return null; }
+    const base = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const fullPath = `full/${base}.jpg`;
+    const thumbPath = `thumb/${base}.jpg`;
+
+    const up1 = await _sbc.storage.from(STORAGE_BUCKET).upload(fullPath, full, { contentType: 'image/jpeg', upsert: false });
+    if (up1.error) {
+      console.error('[storage] full upload failed', up1.error);
+      alert('Не удалось загрузить в хранилище.\nПроверь что создан публичный bucket "portfolio" в Supabase Storage.');
+      return null;
+    }
+    let thumbUrl = null;
+    if (thumb) {
+      const up2 = await _sbc.storage.from(STORAGE_BUCKET).upload(thumbPath, thumb, { contentType: 'image/jpeg', upsert: false });
+      if (!up2.error) thumbUrl = storagePublicUrl(thumbPath);
+    }
+    const url = storagePublicUrl(fullPath);
+    return { url, thumb: thumbUrl || url };
+  } catch (e) {
+    console.error('[storage] error', e);
+    return null;
+  }
+}
+
 async function uploadImage(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -4834,7 +4894,7 @@ async function bulkInsert(table, rows) {
   } catch (e) { return { table, error: e?.message || 'threw' }; }
 }
 
-Object.assign(window, { _sbc, useAuth, useResource, calcOptionsToTree, seedDefaults, uploadImage });
+Object.assign(window, { _sbc, useAuth, useResource, calcOptionsToTree, seedDefaults, uploadImage, uploadToStorage });
 
   </script>
 
@@ -7172,6 +7232,25 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
     else alert('Не удалось добавить. Проверь URL.');
   }
 
+  async function migrateToStorage() {
+    const base64imgs = catImages.filter(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:'));
+    if (!base64imgs.length) { alert('Нет старых картинок для переноса'); return; }
+    if (!confirm(`Перенести ${base64imgs.length} картинок в быстрое хранилище? Это займёт несколько секунд.`)) return;
+    setUploading(true);
+    let done = 0, failed = 0;
+    for (const img of base64imgs) {
+      try {
+        const blob = await (await fetch(img.image_data)).blob();
+        const file = new File([blob], 'img.jpg', { type: blob.type || 'image/jpeg' });
+        const up = await window.uploadToStorage(file);
+        if (up) { await imagesRes.update(img.id, { image_data: up.url, thumb_data: up.thumb }); done++; }
+        else failed++;
+      } catch (e) { failed++; }
+    }
+    setUploading(false);
+    alert(`Готово! Перенесено: ${done}${failed ? ', ошибок: ' + failed : ''}`);
+  }
+
   async function handleUpload(e) {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -7186,16 +7265,17 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
     const empty = catImages.length === 0;
     for (let idx = 0; idx < files.length; idx++) {
       const file = files[idx];
-      const dataUrl = await window.uploadImage(file);
-      if (!dataUrl) continue;
+      const up = await window.uploadToStorage(file);
+      if (!up) break;
       const result = await imagesRes.add({
         category_id: category.id,
-        image_data: dataUrl,
+        image_data: up.url,
+        thumb_data: up.thumb,
         is_cover: empty && idx === 0,
         sort_order: base - 1 - idx,
       });
       if (!result) {
-        alert('Не удалось загрузить файл (провайдер режет большие запросы).\n\nРешение: загрузи картинку на imgur.com или postimages.org → скопируй URL → вставь в поле URL слева.');
+        alert('Картинка загружена в хранилище, но не удалось записать в базу.');
         break;
       }
     }
@@ -7302,6 +7382,17 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                 <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
                 {uploading ? '⏳' : '📷'} {lang === 'ru' ? 'Файл' : 'File'}
               </button>
+              {catImages.some(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:')) && (
+                <button onClick={migrateToStorage} disabled={uploading} title="Перенести старые картинки в быстрое хранилище" style={{
+                  background: 'rgba(232,169,59,0.15)',
+                  border: '1px solid rgba(232,169,59,0.3)', color: 'var(--accent)',
+                  padding: '10px 16px', borderRadius: 22, fontSize: 12,
+                  fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
+                  letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
+                }}>
+                  {uploading ? '⏳' : '⚡ Ускорить'}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -7327,7 +7418,7 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
             {catImages.map((img, i) => {
               const isCover = img.is_cover;
               const isYT = isYouTube(img.image_data);
-              const thumb = isYT ? ytThumb(img.image_data) : img.image_data;
+              const thumb = isYT ? ytThumb(img.image_data) : (img.thumb_data || img.image_data);
               const dh = admin ? dragImgs.getHandlers(img) : {};
               return (
                 <div key={img.id} className={dh.className || ''} style={{
