@@ -7855,6 +7855,30 @@ function CalculatorSection({ t, lang, admin }) {
   }
 
   const tabKeys = Object.keys(calcData);
+
+  async function restoreCalcSections() {
+    if (!confirm('Восстановить стандартные разделы калькулятора? Существующие опции не пострадают — добавятся только недостающие разделы.')) return;
+    const existingCats = new Set((calcRes.items || []).map(i => i.category));
+    const rows = [];
+    Object.entries(DEFAULT_CALC).forEach(([cat, catObj]) => {
+      if (existingCats.has(cat)) return; // keep categories that already have data
+      Object.entries(catObj.variants).forEach(([variant, varObj]) => {
+        ['base', 'addon'].forEach((group) => {
+          (varObj[group] || []).forEach((opt, i) => {
+            rows.push({
+              id: opt.id, category: cat, variant, group_type: group,
+              label_ru: opt.ru, label_en: opt.en, rub: opt.rub, has_qty: !!opt.qty,
+              sort_order: i,
+            });
+          });
+        });
+      });
+    });
+    if (!rows.length) { alert('Все стандартные разделы уже на месте.'); return; }
+    for (const row of rows) { await calcRes.add(row); }
+    alert(`Готово! Восстановлено опций: ${rows.length}`);
+  }
+
   // Snap activeTab to a valid one if current was deleted
   React.useEffect(() => {
     if (tabKeys.length && !calcData[activeTab]) setActiveTab(tabKeys[0]);
@@ -7986,6 +8010,13 @@ function CalculatorSection({ t, lang, admin }) {
             onClick={() => setActiveTab(key)}
           >{t.calculator.cats[key] || key}</button>
         ))}
+        {admin && tabKeys.length < 5 && (
+          <button className="calc2-tab" onClick={restoreCalcSections}
+            style={{ borderStyle: 'dashed', opacity: 0.8 }}
+            title="Добавить недостающие стандартные разделы">
+            ↻ {lang === 'ru' ? 'Восстановить разделы' : 'Restore sections'}
+          </button>
+        )}
       </div>
 
       {tabKeys.length === 0 && (
