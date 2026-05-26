@@ -42,11 +42,12 @@ function supaFetch(table) {
 async function refreshCache() {
   try {
     log('CACHE', 'Refreshing from Supabase...');
-    const [queue, portfolioCategories, portfolioImages, prices,
+    // NOTE: portfolio_images NOT fetched here — it's heavy base64/URLs and the client
+    // loads it directly. Covers live on portfolio_categories.cover_data (light).
+    const [queue, portfolioCategories, prices,
            calcOptions, debts, links, settingsArr] = await Promise.all([
       supaFetch('queue_items'),
       supaFetch('portfolio_categories'),
-      supaFetch('portfolio_images'),
       supaFetch('prices'),
       supaFetch('calc_options'),
       supaFetch('debts'),
@@ -56,11 +57,11 @@ async function refreshCache() {
     const settings = {};
     if (Array.isArray(settingsArr)) settingsArr.forEach(r => { if (r.key) settings[r.key] = r.value; });
     cache = {
-      data: { queue, portfolioCategories, portfolioImages, prices, calcOptions, debts, links },
+      data: { queue, portfolioCategories, prices, calcOptions, debts, links },
       settings,
       updatedAt: new Date().toISOString(),
     };
-    log('CACHE', `OK: q=${queue.length} img=${portfolioImages.length} settings=${Object.keys(settings).length}`);
+    log('CACHE', `OK: q=${queue.length} cats=${portfolioCategories.length} settings=${Object.keys(settings).length}`);
   } catch (e) {
     log('CACHE_ERR', e.message);
   }
@@ -109,13 +110,55 @@ function proxySupabase(req, res, supaPath) {
   });
 }
 
+// Binary-safe proxy for Supabase Storage (file uploads + image reads)
+function proxyStorage(req, res, supaPath) {
+  const chunks = [];
+  req.on('data', c => chunks.push(c));
+  req.on('end', () => {
+    const body = Buffer.concat(chunks);
+    try {
+      const target = new URL(SUPABASE_URL + supaPath);
+      log('STORAGE', `${req.method} ${supaPath.split('?')[0]}`);
+      const headers = {
+        apikey: SUPABASE_KEY,
+        Authorization: req.headers['authorization'] || `Bearer ${SUPABASE_KEY}`,
+      };
+      if (req.headers['content-type']) headers['Content-Type'] = req.headers['content-type'];
+      if (body.length) headers['Content-Length'] = body.length;
+      const pr = https.request({
+        hostname: target.hostname, path: target.pathname + target.search,
+        method: req.method, headers,
+      }, (ps) => {
+        const out = [];
+        ps.on('data', c => out.push(c));
+        ps.on('end', () => {
+          const respBuf = Buffer.concat(out);
+          log('STORAGE', `→ ${ps.statusCode} ${supaPath.split('?')[0]}`);
+          if (['POST','PUT','DELETE'].includes(req.method)) setTimeout(refreshCache, 500);
+          const isImg = req.method === 'GET' && ps.statusCode === 200;
+          res.writeHead(ps.statusCode, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'authorization,apikey,content-type,x-upsert,cache-control',
+            'Content-Type': ps.headers['content-type'] || 'application/octet-stream',
+            ...(isImg ? { 'Cache-Control': 'public, max-age=31536000, immutable' } : {}),
+          });
+          res.end(respBuf);
+        });
+      });
+      pr.on('error', e => { log('STORAGE_ERR', e.message); res.writeHead(502); res.end(''); });
+      if (body.length) pr.write(body);
+      pr.end();
+    } catch (e) { log('STORAGE_ERR', e.message); res.writeHead(500); res.end(''); }
+  });
+}
+
 const MIME = {
   '.html':'text/html','.css':'text/css','.js':'application/javascript',
   '.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif',
   '.svg':'image/svg+xml','.ico':'image/x-icon','.woff2':'font/woff2','.woff':'font/woff',
 };
 
-const PATCH = `<script>(function(){var S='${SUPABASE_URL}',f=window.fetch.bind(window);window.fetch=function(u,o){return typeof u==='string'&&u.indexOf(S+'/rest/')===0?f(u.replace(S,'/supa'),o):f(u,o);};})();</script>`;
+const PATCH = `<script>(function(){var S='${SUPABASE_URL}',f=window.fetch.bind(window);window.fetch=function(u,o){if(typeof u==='string'&&(u.indexOf(S+'/rest/')===0||u.indexOf(S+'/storage/')===0))return f(u.replace(S,'/supa'),o);return f(u,o);};})();</script>`;
 
 function buildHTML() {
   let html = fs.readFileSync(HTML_PATH, 'utf-8');
@@ -173,6 +216,9 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
   if (p.startsWith('/supa/rest/')) {
     return proxySupabase(req, res, p.replace('/supa', '') + (u.search || ''));
   }
+  if (p.startsWith('/supa/storage/')) {
+    return proxyStorage(req, res, p.replace('/supa', '') + (u.search || ''));
+  }
 
   // Static files
   if (p !== '/') {
@@ -196,7 +242,7 @@ server.listen(PORT, '0.0.0.0', () => {
   // Fetch data in background — don't block startup
   refreshCache();
   // Refresh cache every 5 minutes
-  setInterval(refreshCache, 5 * 60 * 1000);
+  setInterval(refreshCache, 15 * 60 * 1000);
 });
 
 server.on('error', e => { console.error('SERVER ERROR:', e); process.exit(1); });
