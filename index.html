@@ -7156,6 +7156,10 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
 
   async function addUrl() {
     if (!urlInput.trim()) return;
+    if (String(category.id).startsWith('def-')) {
+      alert('Категория ещё не загрузилась из базы. Подожди пару секунд и попробуй снова.');
+      return;
+    }
     setUploading(true);
     const result = await imagesRes.add({
       category_id: category.id,
@@ -7600,9 +7604,11 @@ function PortfolioSection({ t, admin, lang }) {
   // Keep category.cover_data + pic_count in sync after image changes / on load
   pfEffect(() => {
     if (!imagesRes.loaded || !admin) return;
+    const isRealId = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
     items.forEach(cat => {
+      if (!isRealId(cat.id)) return; // skip default placeholders (def-m-0 etc.)
       const imgs = allImages.filter(i => i.category_id === cat.id);
-      const cover = imgs.find(i => i.is_cover) || imgs.sort((a,b) => (a.sort_order||0)-(b.sort_order||0))[0];
+      const cover = imgs.find(i => i.is_cover) || imgs.slice().sort((a,b) => (a.sort_order||0)-(b.sort_order||0))[0];
       const newCover = cover ? cover.image_data : null;
       const newCount = imgs.length;
       if (cat.cover_data !== newCover || cat.pic_count !== newCount) {
