@@ -4698,7 +4698,7 @@ function calcOptionsToTree(rows) {
       tree[r.category].variants[r.variant] = { ru: variantLabel(r.variant, "ru"), en: variantLabel(r.variant, "en"), base: [], addon: [] };
     }
     const opt = {
-      id: r.id, ru: r.label_ru, en: r.label_en, rub: r.rub, qty: r.has_qty,
+      id: r.id, ru: r.label_ru, en: r.label_en, rub: r.rub, usd: r.usd, qty: r.has_qty,
     };
     tree[r.category].variants[r.variant][r.group_type].push(opt);
   });
@@ -7838,8 +7838,8 @@ function CalcChip({ row, lang, state, onToggle, onQty }) {
       <span className="calc2-chip-label">{label}</span>
       <span className="calc2-chip-price">
         {on
-          ? (lang === 'en' ? `$${Math.round((row.rub * qty) / FX_RATE)}` : `${(row.rub * qty).toLocaleString('ru-RU')} ₽`)
-          : (lang === 'en' ? `from $${Math.round(row.rub / FX_RATE)}` : `от ${row.rub.toLocaleString('ru-RU')} ₽`)
+          ? (lang === 'en' ? `$${((row.usd || 0) * qty).toLocaleString('en-US')}` : `${(row.rub * qty).toLocaleString('ru-RU')} ₽`)
+          : (lang === 'en' ? `from $${(row.usd || 0).toLocaleString('en-US')}` : `от ${row.rub.toLocaleString('ru-RU')} ₽`)
         }
       </span>
       {showQty && (
@@ -7965,7 +7965,8 @@ function CalculatorSection({ t, lang, admin }) {
   const calcOptionFields = calcMemo(() => [
     { key: 'label_ru', label: 'Название (RU)', type: 'text', required: true, default: '' },
     { key: 'label_en', label: 'Label (EN)', type: 'text', default: '' },
-    { key: 'rub', label: lang === 'ru' ? 'Цена (₽)' : 'Price (₽)', type: 'number', min: 0, default: 0 },
+    { key: 'rub', label: 'Цена ₽ (рус. версия)', type: 'number', min: 0, default: 0 },
+    { key: 'usd', label: 'Цена $ (англ. версия)', type: 'number', min: 0, default: 0 },
     { key: 'has_qty', label: lang === 'ru' ? 'Есть количество?' : 'Has quantity?', type: 'select', default: 'false', options: [
       { value: 'false', label: lang === 'ru' ? 'Нет' : 'No' },
       { value: 'true', label: lang === 'ru' ? 'Да' : 'Yes' },
@@ -7990,6 +7991,7 @@ function CalculatorSection({ t, lang, admin }) {
       ...draft,
       has_qty: draft.has_qty === 'true' || draft.has_qty === true,
       rub: parseInt(draft.rub) || 0,
+      usd: parseInt(draft.usd) || 0,
     };
     const savedTab = activeTab;
     const savedVariant = { ...activeVariant };
@@ -8008,6 +8010,10 @@ function CalculatorSection({ t, lang, admin }) {
     }, 50);
   }
 
+  // Price for the active language (no auto-conversion; RU=₽, EN=$)
+  const PRICE = (row) => lang === 'en' ? (row.usd || 0) : (row.rub || 0);
+  const fmtMoney = (n) => lang === 'en' ? `$${Math.round(n).toLocaleString('en-US')}` : `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+
   // Current variant total
   const { total: variantTotal, lines } = calcMemo(() => {
     const all = [...variant.base, ...(variant.addon || [])];
@@ -8016,7 +8022,7 @@ function CalculatorSection({ t, lang, admin }) {
     all.forEach((row) => {
       const s = state[row.id];
       if (s?.on) {
-        const sum = row.rub * (s.qty || 1);
+        const sum = PRICE(row) * (s.qty || 1);
         total += sum;
         lines.push({ id: row.id, label: lang === 'ru' ? row.ru : row.en, qty: s.qty || 1, sum, row });
       }
@@ -8033,7 +8039,7 @@ function CalculatorSection({ t, lang, admin }) {
         [...v.base, ...(v.addon || [])].forEach(row => {
           const s = state[row.id];
           if (s?.on) {
-            const sum = row.rub * (s.qty || 1);
+            const sum = PRICE(row) * (s.qty || 1);
             gt += sum;
             gl.push({ id: row.id, label: lang === 'ru' ? row.ru : row.en, qty: s.qty || 1, sum });
           }
@@ -8049,13 +8055,7 @@ function CalculatorSection({ t, lang, admin }) {
   if (rushOrder) total = Math.round(total * 1.5);
   if (convWork) total = Math.round(total * 1.5);
 
-  const totalFmt = lang === 'en'
-    ? `$${Math.round(total / FX_RATE).toLocaleString('en-US')}`
-    : `${total.toLocaleString('ru-RU')} ₽`;
-
-  const totalAlt = lang === 'en'
-    ? `≈ ${total.toLocaleString('ru-RU')} ₽`
-    : `≈ $${Math.round(total / FX_RATE).toLocaleString('en-US')}`;
+  const totalFmt = fmtMoney(total);
 
   // Sort variants in defined display order: plus before basic, art before rig
   const VARIANT_ORDER = { basic: 0, plus: 1, art: 0, rig: 1, default: 0 };
@@ -8164,7 +8164,7 @@ function CalculatorSection({ t, lang, admin }) {
         <aside className="calc2-summary">
           <div className="calc2-summary-eyebrow">{t.calculator.result}</div>
           <div className="calc2-summary-val">{totalFmt}</div>
-          <div className="calc2-summary-alt">{total > 0 ? totalAlt : (lang === 'ru' ? 'ничего не выбрано' : 'nothing selected')}</div>
+          <div className="calc2-summary-alt">{total > 0 ? '' : (lang === 'ru' ? 'ничего не выбрано' : 'nothing selected')}</div>
 
           {/* Modifier toggles */}
           <div className="calc2-modifiers">
@@ -8185,26 +8185,24 @@ function CalculatorSection({ t, lang, admin }) {
             {(rushOrder || convWork) && baseTotal > 0 && (
               <div className="calc2-modifier-breakdown">
                 <span>{lang === 'ru' ? 'База:' : 'Base:'}</span>
-                <span>{lang === 'en' ? `$${Math.round(baseTotal/FX_RATE).toLocaleString()}` : `${baseTotal.toLocaleString('ru-RU')} ₽`}</span>
+                <span>{fmtMoney(baseTotal)}</span>
                 {rushOrder && (
                   <>
                     <span>{lang === 'ru' ? 'Срочность +50%:' : 'Rush +50%:'}</span>
-                    <span>{lang === 'en' ? `$${Math.round(baseTotal*0.5/FX_RATE).toLocaleString()}` : `${Math.round(baseTotal*0.5).toLocaleString('ru-RU')} ₽`}</span>
+                    <span>{fmtMoney(baseTotal*0.5)}</span>
                   </>
                 )}
                 {convWork && (
                   <>
                     <span>{lang === 'ru' ? 'Конфиденц. +50%:' : 'Confidential +50%:'}</span>
-                    <span>{lang === 'en'
-                      ? `$${Math.round((rushOrder ? baseTotal*1.5 : baseTotal)*0.5/FX_RATE).toLocaleString()}`
-                      : `${Math.round((rushOrder ? baseTotal*1.5 : baseTotal)*0.5).toLocaleString('ru-RU')} ₽`}</span>
+                    <span>{fmtMoney((rushOrder ? baseTotal*1.5 : baseTotal)*0.5)}</span>
                   </>
                 )}
                 <span style={{ borderTop: '1px solid rgba(232,169,59,0.3)', paddingTop: 4, marginTop: 4, fontWeight: 'bold' }}>
                   {lang === 'ru' ? 'Итого:' : 'Total:'}
                 </span>
                 <span style={{ borderTop: '1px solid rgba(232,169,59,0.3)', paddingTop: 4, marginTop: 4, fontWeight: 'bold', color: 'var(--accent)' }}>
-                  {lang === 'en' ? `$${Math.round(total/FX_RATE).toLocaleString()}` : `${total.toLocaleString('ru-RU')} ₽`}
+                  {fmtMoney(total)}
                 </span>
               </div>
             )}
@@ -8408,12 +8406,13 @@ function priceTag(key) {
 function PricesSection({ t, lang, admin }) {
   const priceDefaults = React.useMemo(() => DEFAULT_PRICES.map((p, i) => ({ ...p, label: p.key, sort_order: i })), []);
   const pricesRes = useResource('prices', priceDefaults);
-  const prices = pricesRes.items.map(p => ({ ...p, key: p.label || p.key }));
+  const prices = pricesRes.items.map(p => ({ ...p, key: p.label || p.key, key_en: p.label_en || p.key_en || '' }));
   const dragPrices = useDragReorder(pricesRes.items, pricesRes);
 
   function updatePrice(id, patch) {
     const dbPatch = { ...patch };
     if ('key' in dbPatch) { dbPatch.label = dbPatch.key; delete dbPatch.key; }
+    if ('key_en' in dbPatch) { dbPatch.label_en = dbPatch.key_en; delete dbPatch.key_en; }
     pricesRes.update(id, dbPatch);
   }
   function deletePrice(id) {
@@ -8463,16 +8462,33 @@ function PricesSection({ t, lang, admin }) {
               {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
               <span className="price-card-tag">{tag}</span>
               <span className="price-card-name">
-                <Editable value={p.key} onSave={(v) => updatePrice(p.id, { key: v })} admin={admin} />
+                {admin ? (
+                  <Editable
+                    value={lang === 'en' ? (p.key_en || '') : (p.key || '')}
+                    onSave={(v) => updatePrice(p.id, lang === 'en' ? { key_en: v } : { key: v })}
+                    admin={admin}
+                  />
+                ) : (lang === 'en' ? (p.key_en || p.key) : p.key)}
               </span>
               <span className="price-card-val">
                 <span className="from">{t.prices.from}</span>
                 {admin ? (
                   <>
-                    <EditableNumber value={p.rub} onSave={(v) => updatePrice(p.id, { rub: v })} admin={admin} />
-                    <span style={{ marginLeft: 4 }}>₽</span>
+                    {lang === 'en' ? (
+                      <>
+                        <span style={{ marginRight: 2 }}>$</span>
+                        <EditableNumber value={p.usd || 0} onSave={(v) => updatePrice(p.id, { usd: v })} admin={admin} />
+                      </>
+                    ) : (
+                      <>
+                        <EditableNumber value={p.rub} onSave={(v) => updatePrice(p.id, { rub: v })} admin={admin} />
+                        <span style={{ marginLeft: 4 }}>₽</span>
+                      </>
+                    )}
                   </>
-                ) : fmtMoney(p.rub, lang)}
+                ) : (lang === 'en'
+                  ? `$${(p.usd || 0).toLocaleString('en-US')}`
+                  : `${(p.rub || 0).toLocaleString('ru-RU')} ₽`)}
               </span>
               {admin && (
                 <button className="admin-btn danger" style={{ position: 'absolute', top: 8, left: 8 }} onClick={() => deletePrice(p.id)}>×</button>
