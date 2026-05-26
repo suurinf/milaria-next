@@ -7814,24 +7814,23 @@ function CalcChip({ row, lang, state, onToggle, onQty }) {
 }
 
 function CalculatorSection({ t, lang, admin }) {
-  // Load options from Supabase; fall back to DEFAULT_CALC structure if unavailable
+  // Load options from Supabase; fall back to DEFAULT_CALC only BEFORE first load
   const calcRes = useResource('calc_options', [], { orderBy: 'sort_order' });
   const calcData = React.useMemo(() => {
     if (calcRes.items && calcRes.items.length > 0) {
       const tree = calcOptionsToTree(calcRes.items);
-      // Make sure all 4 categories exist even if some are empty
-      ['vtuber', 'chibi', 'png', 'illust', 'rig'].forEach(c => {
-        if (!tree[c]) tree[c] = DEFAULT_CALC[c];
-      });
-      // Force PNG variant order: PNG+ before PNG
+      // Force PNG variant order: PNG before PNG+
       if (tree.png && tree.png.variants && tree.png.variants.basic && tree.png.variants.plus) {
         const { basic, plus, ...rest } = tree.png.variants;
         tree.png.variants = { basic, plus, ...rest };
       }
       return tree;
     }
-    return DEFAULT_CALC;
-  }, [calcRes.items]);
+    // Before first load — show defaults so page isn't blank.
+    // After load with empty data — respect it (user deleted everything).
+    if (!calcRes.loaded) return DEFAULT_CALC;
+    return {};
+  }, [calcRes.items, calcRes.loaded]);
   const [activeTab, setActiveTab] = calcState('vtuber');
   const [activeVariant, setActiveVariant] = calcState({ vtuber: 'art', chibi: 'art', png: 'basic', illust: 'default' });
   const [contactOpen, setContactOpen] = calcState(false);
@@ -7855,15 +7854,21 @@ function CalculatorSection({ t, lang, admin }) {
     setState({ ...state, [id]: { ...(state[id] || { on: true }), qty } });
   }
 
-  const cat = calcData[activeTab];
-  const variantKey = activeVariant[activeTab] || Object.keys(cat.variants)[0];
+  const tabKeys = Object.keys(calcData);
+  // Snap activeTab to a valid one if current was deleted
+  React.useEffect(() => {
+    if (tabKeys.length && !calcData[activeTab]) setActiveTab(tabKeys[0]);
+  }, [calcData]);
+
+  const cat = calcData[activeTab] || calcData[tabKeys[0]] || { variants: {} };
+  const variantKey = activeVariant[activeTab] || Object.keys(cat.variants)[0] || 'default';
   // For vtuber/chibi: flatten all variants into one
-  const variant = (activeTab === 'vtuber' || activeTab === 'chibi')
+  const variant = ((activeTab === 'vtuber' || activeTab === 'chibi')
     ? Object.values(cat.variants).reduce((acc, v) => ({
         base: [...(acc.base||[]), ...(v.base||[])],
         addon: [...(acc.addon||[]), ...(v.addon||[])],
       }), { base: [], addon: [] })
-    : cat.variants[variantKey];
+    : cat.variants[variantKey]) || { base: [], addon: [] };
 
   const calcOptionFields = calcMemo(() => [
     { key: 'label_ru', label: 'Название (RU)', type: 'text', required: true, default: '' },
@@ -7982,6 +7987,19 @@ function CalculatorSection({ t, lang, admin }) {
           >{t.calculator.cats[key] || key}</button>
         ))}
       </div>
+
+      {tabKeys.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', fontSize: 14 }}>
+          {lang === 'ru' ? 'Опции калькулятора пусты.' : 'Calculator options are empty.'}
+          {admin && (
+            <div style={{ marginTop: 16 }}>
+              <button className="add-btn" onClick={() => setCalcEdit({ item: { category: 'vtuber', variant: 'art', group_type: 'base' }, isNew: true })}>
+                {lang === 'ru' ? '+ Добавить первую опцию' : '+ Add first option'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {showSubtabs && (
         <div className="calc2-subtabs">
