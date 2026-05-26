@@ -4724,12 +4724,13 @@ function variantLabel(key, lang) {
 // ── useSetting: single key-value config (syncs via Realtime to all users) ──
 function useSetting(key, defaultValue) {
   const [value, setValue] = React.useState(() => {
-    // Build-time snapshot
-    if (window.__INITIAL_SETTINGS?.[key] !== undefined) return window.__INITIAL_SETTINGS[key];
+    // localStorage first — it holds the freshest value THIS browser saw/saved
+    // (avoids flicker when the server snapshot lags behind a just-made change)
     try {
       const cached = localStorage.getItem('milaria:setting:' + key);
-      if (cached) return JSON.parse(cached);
+      if (cached !== null) return JSON.parse(cached);
     } catch(e) {}
+    if (window.__INITIAL_SETTINGS?.[key] !== undefined) return window.__INITIAL_SETTINGS[key];
     return defaultValue;
   });
   const [loaded, setLoaded] = React.useState(false);
@@ -4746,7 +4747,13 @@ function useSetting(key, defaultValue) {
     _sbc.from('settings').select('value').eq('key', key).maybeSingle()
       .then(({ data, error }) => {
         if (!mounted) return;
-        if (data && data.value) setValue(data.value);
+        // Only update if the server value actually differs (prevents needless re-render/flicker)
+        if (data && data.value !== undefined && data.value !== null) {
+          setValue(prev => {
+            try { if (JSON.stringify(prev) === JSON.stringify(data.value)) return prev; } catch(e) {}
+            return data.value;
+          });
+        }
         setLoaded(true);
       }).catch(() => setLoaded(true));
 
