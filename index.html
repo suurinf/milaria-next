@@ -7856,27 +7856,19 @@ function CalculatorSection({ t, lang, admin }) {
 
   const tabKeys = Object.keys(calcData);
 
-  async function restoreCalcSections() {
-    if (!confirm('Восстановить стандартные разделы калькулятора? Существующие опции не пострадают — добавятся только недостающие разделы.')) return;
-    const existingCats = new Set((calcRes.items || []).map(i => i.category));
-    const rows = [];
-    Object.entries(DEFAULT_CALC).forEach(([cat, catObj]) => {
-      if (existingCats.has(cat)) return; // keep categories that already have data
-      Object.entries(catObj.variants).forEach(([variant, varObj]) => {
-        ['base', 'addon'].forEach((group) => {
-          (varObj[group] || []).forEach((opt, i) => {
-            rows.push({
-              id: opt.id, category: cat, variant, group_type: group,
-              label_ru: opt.ru, label_en: opt.en, rub: opt.rub, has_qty: !!opt.qty,
-              sort_order: i,
-            });
-          });
-        });
-      });
+  async function addSection() {
+    const name = prompt(lang === 'ru' ? 'Название нового раздела:' : 'New section name:');
+    if (!name || !name.trim()) return;
+    const key = name.trim();
+    if (calcData[key]) { alert('Такой раздел уже есть'); return; }
+    // Create the section with a starter option so it appears as a tab
+    const id = 'sec-' + Date.now().toString(36);
+    await calcRes.add({
+      id, category: key, variant: 'default', group_type: 'base',
+      label_ru: lang === 'ru' ? 'Новая опция' : 'New option',
+      label_en: 'New option', rub: 0, has_qty: false, sort_order: 0,
     });
-    if (!rows.length) { alert('Все стандартные разделы уже на месте.'); return; }
-    for (const row of rows) { await calcRes.add(row); }
-    alert(`Готово! Восстановлено опций: ${rows.length}`);
+    setTimeout(() => setActiveTab(key), 300);
   }
 
   // Snap activeTab to a valid one if current was deleted
@@ -7903,18 +7895,19 @@ function CalculatorSection({ t, lang, admin }) {
       { value: 'true', label: lang === 'ru' ? 'Да' : 'Yes' },
     ]},
     { key: 'group_type', label: lang === 'ru' ? 'Группа' : 'Group', type: 'select', default: 'base', options: [
-      { value: 'base', label: 'Base' },
-      { value: 'addon', label: 'Addon' },
+      { value: 'base', label: lang === 'ru' ? 'Базовая' : 'Base' },
+      { value: 'addon', label: lang === 'ru' ? 'Доп. опция' : 'Addon' },
     ]},
-    { key: 'category', label: lang === 'ru' ? 'Категория' : 'Category', type: 'select', default: activeTab, options: [
-      { value: 'vtuber', label: 'VTuber' },
-      { value: 'chibi', label: 'Chibi' },
-      { value: 'png', label: 'PNG' },
-      { value: 'illust', label: lang === 'ru' ? 'Иллюстрация' : 'Illustration' },
-      { value: 'rig', label: lang === 'ru' ? 'Ригг/Анимация' : 'Rig/Animation' },
+    { key: 'category', label: lang === 'ru' ? 'Раздел' : 'Section', type: 'select', default: activeTab,
+      options: tabKeys.map(k => ({ value: k, label: t.calculator.cats[k] || k })) },
+    { key: 'variant', label: lang === 'ru' ? 'Подраздел' : 'Subsection', type: 'select', default: variantKey, options: [
+      { value: 'default', label: lang === 'ru' ? 'Основной' : 'Main' },
+      { value: 'basic', label: 'PNG' },
+      { value: 'plus', label: 'PNG+' },
+      { value: 'art', label: lang === 'ru' ? 'Только арт' : 'Art only' },
+      { value: 'rig', label: lang === 'ru' ? 'Арт + риг' : 'Art + rig' },
     ]},
-    { key: 'variant', label: lang === 'ru' ? 'Вариант' : 'Variant', type: 'text', default: variantKey },
-  ], [lang, activeTab, variantKey]);
+  ], [lang, activeTab, variantKey, tabKeys.join(',')]);
 
   function handleSaveCalcOption(draft) {
     const payload = {
@@ -8010,11 +8003,11 @@ function CalculatorSection({ t, lang, admin }) {
             onClick={() => setActiveTab(key)}
           >{t.calculator.cats[key] || key}</button>
         ))}
-        {admin && tabKeys.length < 5 && (
-          <button className="calc2-tab" onClick={restoreCalcSections}
+        {admin && (
+          <button className="calc2-tab" onClick={addSection}
             style={{ borderStyle: 'dashed', opacity: 0.8 }}
-            title="Добавить недостающие стандартные разделы">
-            ↻ {lang === 'ru' ? 'Восстановить разделы' : 'Restore sections'}
+            title="Добавить новый раздел">
+            + {lang === 'ru' ? 'Раздел' : 'Section'}
           </button>
         )}
       </div>
