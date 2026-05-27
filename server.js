@@ -220,6 +220,13 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
     return proxyStorage(req, res, p.replace('/supa', '') + (u.search || ''));
   }
 
+  // SPA routes — serve the same HTML for app paths (URL routing inside React)
+  const SPA_PATHS = ['/', '/queue', '/portfolio', '/calculator', '/prices', '/debts', '/tos'];
+  if (SPA_PATHS.includes(p) || SPA_PATHS.includes(p.replace(/\/+$/, ''))) {
+    res.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8' });
+    return res.end(buildHTML());
+  }
+
   // Static files
   if (p !== '/') {
     const fp = path.join(__dirname, p);

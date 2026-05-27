@@ -8730,9 +8730,9 @@ function DebtsSection({ t, admin, lang }) {
       { value: 'done', label: t.debts.status.done },
     ]},
     { key: 'progress', label: t.debts.title === 'Долги' ? 'Прогресс (%)' : 'Progress (%)', type: 'number', min: 0, max: 100, default: 0 },
-    { key: 'section', label: t.debts.title === 'Долги' ? 'Раздел' : 'Section', type: 'select', default: 'drawing', options: [
-      { value: 'drawing', label: t.debts.title === 'Долги' ? 'Долги по рисованию' : 'Drawing debts' },
-      { value: 'games', label: t.debts.title === 'Долги' ? 'Долги по играм' : 'Game debts' },
+    { key: 'section', label: lang === 'ru' ? 'Раздел' : 'Section', type: 'select', default: 'drawing', options: [
+      { value: 'drawing', label: lang === 'ru' ? 'Долги по рисованию' : 'Drawing debts' },
+      { value: 'games', label: lang === 'ru' ? 'Долги по играм' : 'Game debts' },
       { value: 'vip', label: 'VIP' },
     ]},
   ], [t]);
@@ -8761,8 +8761,8 @@ function DebtsSection({ t, admin, lang }) {
   }
 
   const DEBT_SECTIONS = [
-    { key: 'drawing', label: t.debts.title === 'Долги' ? 'Долги по рисованию' : 'Drawing debts' },
-    { key: 'games', label: t.debts.title === 'Долги' ? 'Долги по играм' : 'Game debts' },
+    { key: 'drawing', label: lang === 'ru' ? 'Долги по рисованию' : 'Drawing debts' },
+    { key: 'games', label: lang === 'ru' ? 'Долги по играм' : 'Game debts' },
     { key: 'vip', label: 'VIP' },
   ];
   const byOrder = (a, b) => (a.sort_order || 0) - (b.sort_order || 0);
@@ -9184,14 +9184,41 @@ function SiteFavicon({ admin }) {
 
 function App() {
   const [lang, setLang] = appState(() => loadLS('lang', 'ru'));
-  const [tab, setTab] = appState(() => loadLS('tab', 'home'));
+  // ── URL routing ──
+  const PATH_TO_TAB = { '/': 'home', '/queue': 'queue', '/portfolio': 'portfolio',
+    '/calculator': 'calculator', '/prices': 'prices', '/debts': 'debts', '/tos': 'tos' };
+  const TAB_TO_PATH = { home: '/', queue: '/queue', portfolio: '/portfolio',
+    calculator: '/calculator', prices: '/prices', debts: '/debts', tos: '/tos' };
+  function pathToTab(p) {
+    const clean = (p || '/').replace(/\/+$/, '') || '/';
+    return PATH_TO_TAB[clean] || 'home';
+  }
+
+  const [tab, setTabRaw] = appState(() => {
+    if (typeof window !== 'undefined' && window.location) return pathToTab(window.location.pathname);
+    return loadLS('tab', 'home');
+  });
+
+  function setTab(newTab) {
+    setTabRaw(newTab);
+    const path = TAB_TO_PATH[newTab] || '/';
+    if (typeof window !== 'undefined' && window.location.pathname !== path) {
+      try { window.history.pushState({ tab: newTab }, '', path); } catch(e) {}
+    }
+  }
+
+  // Sync state when user uses browser back/forward
+  appEffect(() => {
+    const handler = () => setTabRaw(pathToTab(window.location.pathname));
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const auth = useAuth();
   const [loginOpen, setLoginOpen] = appState(false);
   const admin = auth.isAdmin;
 
   appEffect(() => saveLS('lang', lang), [lang]);
-  appEffect(() => saveLS('tab', tab), [tab]);
 
   appEffect(() => {
     const root = document.documentElement;
