@@ -6393,9 +6393,17 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <label className="login-field">
-                <span>{lang === 'ru' ? 'Месяц (текст)' : 'Month'}</span>
+                <span>Месяц — рус. (напр. Май)</span>
                 <input type="text" value={bannerCfg.banner_month || ''} onChange={e => {
                   const upd = {...bannerCfg, banner_month: e.target.value};
+                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                }} />
+              </label>
+
+              <label className="login-field">
+                <span>Month — eng. (e.g. May)</span>
+                <input type="text" value={bannerCfg.banner_month_en || ''} placeholder="May" onChange={e => {
+                  const upd = {...bannerCfg, banner_month_en: e.target.value};
                   saveBannerCfg(upd); saveLS('milaria:banner', upd);
                 }} />
               </label>
