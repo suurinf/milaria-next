@@ -9156,7 +9156,7 @@ function TosSection({ t, lang }) {
                   ))}
                 </div>
                 <div className="tos-compact-col tos-compact-bad">
-                  <div className="tos-compact-head">{lang === 'ru' ? '✕ Не рисую' : '✕ I don\\'t draw'}</div>
+                  <div className="tos-compact-head">{lang === 'ru' ? '✕ Не рисую' : "✕ I don't draw"}</div>
                   {sec.items.filter(it => it.tone === 'bad').map((it, j) => (
                     <span key={j} className="tos-chip tos-chip-bad">{it[lang] || it.ru}</span>
                   ))}
