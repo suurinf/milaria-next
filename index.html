@@ -6879,13 +6879,11 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
         ))}
       </div>
       {admin && editorOpen && (
-        <Modal open={true} onClose={() => setEditorOpen(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
-              {lang === 'ru' ? 'Плашки последних работ' : 'Recent works tiles'}
-            </h3>
-            {/* Tabs for 4 tiles */}
-            <div style={{ display: 'flex', gap: 6 }}>
+        <div>
+          {/* Tabs for 4 tiles */}
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9980, background: 'rgba(0,0,0,0.5)' }} onClick={() => setEditorOpen(false)} />
+          <div style={{ position: 'fixed', inset: '40px auto', zIndex: 9990, width: 'min(90vw, 520px)', margin: '0 auto', left: '50%', transform: 'translateX(-50%)' }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
               {tiles.map((tile, i) => (
                 <button key={i} onClick={() => setActiveTab(i)}
                   className={activeTab === i ? 'btn btn-primary' : 'btn'}
@@ -6894,82 +6892,16 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
                 </button>
               ))}
             </div>
-            {/* Active tile editor */}
-            <TileFields tile={tiles[activeTab]} lang={lang}
-              onChange={updated => saveTile(activeTab, updated)} />
-            <button className="btn btn-primary" style={{ justifyContent: 'center' }}
-              onClick={() => setEditorOpen(false)}>
-              {lang === 'ru' ? 'Готово' : 'Done'}
-            </button>
+            <RecentTileEditor
+              tile={tiles[activeTab]}
+              lang={lang}
+              onSave={updated => saveTile(activeTab, updated)}
+              onClose={() => setEditorOpen(false)}
+            />
           </div>
-        </Modal>
+        </div>
       )}
     </div>
-  );
-}
-
-function TileFields({ tile, lang, onChange }) {
-  const [urlInput, setUrlInput] = homeState('');
-  const slots = Array.isArray(tile.slots) ? tile.slots : [];
-
-  function addUrl() {
-    if (!urlInput.trim()) return;
-    onChange({ ...tile, slots: [...slots, urlInput.trim()] });
-    setUrlInput('');
-  }
-  function removeSlot(i) { onChange({ ...tile, slots: slots.filter((_, idx) => idx !== i) }); }
-
-  return (
-    <>
-      <label className="login-field">
-        <span>Название (RU)</span>
-        <input value={tile.label || ''} onChange={e => onChange({ ...tile, label: e.target.value })} />
-      </label>
-      <label className="login-field">
-        <span>Label (EN)</span>
-        <input value={tile.label_en || ''} onChange={e => onChange({ ...tile, label_en: e.target.value })} />
-      </label>
-      <div>
-        <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
-          {lang === 'ru' ? `Картинки (${slots.length}) — листаются стрелочками` : `Images (${slots.length})`}
-        </span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8, maxHeight: 280, overflowY: 'auto' }}>
-          {slots.map((s, i) => {
-            const focal = tile.focal && tile.focal[i] ? tile.focal[i] : '50% 50%';
-            function setFocal(pos) { const f = [...(tile.focal || slots.map(() => '50% 50%'))]; f[i] = pos; onChange({ ...tile, focal: f }); }
-            return (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <img src={s} style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 4 }} alt="" onError={e => e.target.style.display='none'} />
-                  <span style={{ flex: 1, fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s}</span>
-                  <button className="admin-btn danger" style={{ width: 24, height: 24, fontSize: 11, flexShrink: 0 }} onClick={() => removeSlot(i)}>×</button>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>Фокус:</span>
-                  <select value={focal} onChange={e => setFocal(e.target.value)}
-                    style={{ flex: 1, fontSize: 11, padding: '3px 6px', background: 'rgba(40,34,28,0.98)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text)', borderRadius: 6 }}>
-                    {[['50% 50%','По центру'],['50% 0%','Сверху'],['50% 100%','Снизу'],['0% 50%','Слева'],['100% 50%','Справа'],['0% 0%','Лев. верх'],['100% 0%','Прав. верх'],['0% 100%','Лев. низ'],['100% 100%','Прав. низ']].map(([v,l]) => (
-                      <option key={v} value={v} style={{ background: '#23201b', color: '#f0e9df' }}>{l}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addUrl()}
-            placeholder={lang === 'ru' ? 'URL картинки...' : 'Image URL...'}
-            style={{ flex: 1, padding: '8px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 12 }} />
-          <button className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px' }} onClick={addUrl}>+</button>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <ImageUploader label={lang === 'ru' ? '📷 Загрузить файл' : '📷 Upload file'}
-            onUpload={url => onChange({ ...tile, slots: [...slots, url] })} />
-        </div>
-      </div>
-    </>
   );
 }
 
