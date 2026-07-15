@@ -4957,6 +4957,15 @@ function useSetting(key, defaultValue) {
 // ── Supabase Storage upload (proper: file + CDN, not base64) ──
 const STORAGE_BUCKET = 'portfolio';
 
+// What kind of media is this file? GIF/video must NOT go through canvas.
+function fileKind(file) {
+  const type = (file.type || '').toLowerCase();
+  const ext = ((file.name || '').toLowerCase().match(/\.(\w+)$/) || [])[1] || '';
+  if (type === 'image/gif' || ext === 'gif') return 'gif';
+  if (type.indexOf('video/') === 0 || ['mp4','webm','mov','m4v'].indexOf(ext) !== -1) return 'video';
+  return 'image';
+}
+
 // Resize a File/Blob to a JPEG blob at given max width
 function resizeToBlob(file, maxW, quality) {
   return new Promise((resolve) => {
@@ -4988,6 +4997,31 @@ function storagePublicUrl(path) {
 // Returns { url, thumb } of proxied public URLs, or null on failure
 async function uploadToStorage(file) {
   try {
+    const kind = fileKind(file);
+
+    // GIF / video: upload the ORIGINAL bytes.
+    // Canvas would flatten a GIF to its first frame and cannot read video at all.
+    if (kind === 'gif' || kind === 'video') {
+      if (file.size > 45 * 1024 * 1024) {
+        alert('Файл слишком большой (' + Math.round(file.size / 1048576) + ' МБ). Максимум ~45 МБ.');
+        return null;
+      }
+      const ext = kind === 'gif'
+        ? 'gif'
+        : (((file.name || '').toLowerCase().match(/\.(\w+)$/) || [])[1] || 'mp4');
+      const base = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const path = `full/${base}.${ext}`;
+      const contentType = kind === 'gif' ? 'image/gif' : (file.type || 'video/mp4');
+      const up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, file, { contentType, upsert: false });
+      if (up.error) {
+        console.error('[storage] upload failed', up.error);
+        alert('Не удалось загрузить в хранилище.\nПроверь что создан публичный bucket "portfolio" в Supabase Storage.');
+        return null;
+      }
+      const url = storagePublicUrl(path);
+      return { url, thumb: url }; // animated GIF stays animated everywhere
+    }
+
     const full = await resizeToBlob(file, 1600, 0.85);   // full view
     const thumb = await resizeToBlob(file, 500, 0.78);    // grid thumbnail
     if (!full) { alert('Не удалось обработать картинку'); return null; }
@@ -7632,8 +7666,10 @@ function Lightbox({ src, onClose, onPrev, onNext, current, total }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const isYT = typeof src === 'string' && (src.includes('youtube.com') || src.includes('youtu.be'));
-  const ytId = isYT ? (src.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]+)/) || [])[1] : null;
+  const media = pfResolveCover(src);
+  const isYT = media.type === 'youtube';
+  const isVid = media.type === 'video';
+  const ytId = isYT ? (String(src).match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]+)/) || [])[1] : null;
 
   return ReactDOM.createPortal(
     <div onClick={onClose} style={{
@@ -7651,6 +7687,12 @@ function Lightbox({ src, onClose, onPrev, onNext, current, total }) {
           allowFullScreen
           style={{ maxWidth: '92vw', maxHeight: '85vh', aspectRatio: '16/9', borderRadius: 8, cursor: 'default', boxShadow: '0 20px 80px rgba(0,0,0,0.6)' }}
         />
+      ) : isVid ? (
+        <video src={src} onClick={e => e.stopPropagation()} controls autoPlay loop playsInline style={{
+          maxWidth: '92vw', maxHeight: '90vh', objectFit: 'contain',
+          borderRadius: 8, cursor: 'default',
+          boxShadow: '0 20px 80px rgba(0,0,0,0.6)',
+        }} />
       ) : (
         <img src={src} onClick={e => e.stopPropagation()} style={{
           maxWidth: '92vw', maxHeight: '90vh', objectFit: 'contain',
@@ -7877,7 +7919,7 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                 fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
                 letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
               }}>
-                <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
+                <input ref={fileRef} type="file" accept="image/*,.gif,video/mp4,video/webm" multiple style={{ display: 'none' }} onChange={handleUpload} />
                 {uploading ? '⏳' : '📷'} {lang === 'ru' ? 'Файл' : 'File'}
               </button>
               {catImages.some(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:')) && (
@@ -7915,8 +7957,11 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
           }}>
             {catImages.map((img, i) => {
               const isCover = img.is_cover;
-              const isYT = isYouTube(img.image_data);
-              const thumb = isYT ? ytThumb(img.image_data) : (img.thumb_data || img.image_data);
+              const media = pfResolveCover(img.image_data);
+              const isYT = media.type === 'youtube';
+              const isVid = media.type === 'video';
+              // thumb_data is the light 500px copy; for GIFs it equals the original so it stays animated
+              const thumb = isYT ? media.thumb : (img.thumb_data || img.image_data);
               const dh = admin ? dragImgs.getHandlers(img) : {};
               return (
                 <div key={img.id} className={dh.className || ''} style={{
@@ -7933,10 +7978,17 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                   onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
                 >
                   <div className="pf-gal-imgwrap">
-                    <div className="pf-gal-blur" style={{ backgroundImage: `url("${thumb}")` }} />
-                    <img src={thumb} className="pf-gal-photo" alt="" loading="lazy" />
+                    {isVid ? (
+                      <video className="pf-gal-photo" src={img.image_data} muted playsInline preload="metadata"
+                        style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <>
+                        <div className="pf-gal-blur" style={{ backgroundImage: `url("${thumb}")` }} />
+                        <img src={thumb} className="pf-gal-photo" alt="" loading="lazy" />
+                      </>
+                    )}
                   </div>
-                  {isYT && (
+                  {(isYT || isVid) && (
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.8)' }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><polygon points="6 4 20 12 6 20 6 4"/></svg>
