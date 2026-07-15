@@ -4086,6 +4086,32 @@ select {
   height: 100%;
   object-fit: cover;
 }
+
+/* ═════ Portfolio cover: video / YouTube badge ═════ */
+.pf-cover-play {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  color: #fff;
+  font-size: 18px;
+  padding-left: 3px;
+  z-index: 3;
+  pointer-events: none;
+  backdrop-filter: blur(3px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+.pf-cover-card:hover .pf-cover-play {
+  transform: translate(-50%, -50%) scale(1.12);
+  background: rgba(0, 0, 0, 0.7);
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -7534,6 +7560,21 @@ const { useState: pfState, useEffect: pfEffect, useRef: pfRef, useMemo: pfMemo }
 //  Portfolio — folders of artwork with media manager
 // ══════════════════════════════════════════════════════════
 
+// ── Resolve any media URL to something displayable as a cover ──
+// YouTube link -> its thumbnail; video file -> the file (first frame); otherwise the image itself.
+function pfResolveCover(url) {
+  if (!url) return { type: 'none' };
+  const clean = String(url).split('?')[0].toLowerCase();
+  if (String(url).includes('youtube.com') || String(url).includes('youtu.be')) {
+    const id = (String(url).match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]+)/) || [])[1];
+    return id
+      ? { type: 'youtube', thumb: `https://img.youtube.com/vi/${id}/hqdefault.jpg` }
+      : { type: 'none' };
+  }
+  if (/\.(mp4|webm|mov|m4v)$/.test(clean)) return { type: 'video', src: String(url) };
+  return { type: 'image', thumb: String(url) };
+}
+
 // ── Card on the main grid ──
 function PortfolioCard({ item, t, onClick, coverSrc, allImages, count, admin, onEdit, onDelete }) {
   const label = t.portfolio.categories[item.key] || item.key;
@@ -8021,6 +8062,7 @@ function CoverflowRow({ catItems, idx, setIdx, openCategory, setOpenCategory, ad
           const isCenter = normOffset === 0;
           const side = normOffset > 0 ? 1 : -1;
           const coverSrc = getCoverSrc(item.id);
+          const cover = pfResolveCover(coverSrc);
           const count = getCatCount(item.id) || item.count || 0;
 
           let transform, zIndex, opacity, pointerEvents;
@@ -8040,12 +8082,19 @@ function CoverflowRow({ catItems, idx, setIdx, openCategory, setOpenCategory, ad
               style={{ transform, zIndex, opacity, pointerEvents, transition: 'transform 0.45s cubic-bezier(.25,.8,.25,1), opacity 0.45s ease' }}
               onClick={() => { if (isCenter) setOpenCategory(item); else setIdx(i); }}>
               <div className="pf-cover-img">
-                {coverSrc ? (
+                {cover.type === 'image' || cover.type === 'youtube' ? (
                   <>
                     {/* Blurred fill background */}
-                    <div className="pf-cover-blur" style={{ backgroundImage: `url("${coverSrc}")` }} />
+                    <div className="pf-cover-blur" style={{ backgroundImage: `url("${cover.thumb}")` }} />
                     {/* Full image (contain) */}
-                    <img src={coverSrc} alt={item.key} className="pf-cover-photo" loading="lazy" decoding="async" />
+                    <img src={cover.thumb} alt={item.key} className="pf-cover-photo" loading="lazy" decoding="async" />
+                    {cover.type === 'youtube' && <span className="pf-cover-play">▶</span>}
+                  </>
+                ) : cover.type === 'video' ? (
+                  <>
+                    <video className="pf-cover-photo" src={cover.src} muted playsInline preload="metadata"
+                      style={{ objectFit: 'cover' }} />
+                    <span className="pf-cover-play">▶</span>
                   </>
                 ) : (
                   <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, hsl(${item.hue},60%,30%), hsl(${item.hue+30},50%,20%))`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
