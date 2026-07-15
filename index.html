@@ -6551,64 +6551,158 @@ function ytIdFrom(url) {
 }
 
 // ── Focal point picker: click image → sets center point ──
+// ── Focal point picker: drag the frame, preview = exactly what the tile shows ──
 function FocalPicker({ src, focal, onChange }) {
-  const [pos, setPos] = homeState(() => {
-    if (!focal) return { x: 50, y: 50 };
-    const parts = focal.replace(/%/g, '').split(/\s+/);
-    return { x: parseFloat(parts[0]) || 50, y: parseFloat(parts[1]) || 50 };
-  });
-  const [hovPos, setHovPos] = homeState(null);
-
-  function handleClick(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.round(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
-    const y = Math.round(Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100)));
-    setPos({ x, y });
-    onChange(`${x}% ${y}%`);
+  function parseFocal(f) {
+    if (!f) return { x: 50, y: 50 };
+    const p = String(f).replace(/%/g, '').trim().split(/\s+/);
+    const x = parseFloat(p[0]), y = parseFloat(p[1]);
+    return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y };
   }
 
-  // Tile viewport: portrait ~1:1.9
-  const W = 42, H = 80; // viewport as % of image
-  const vpL = Math.max(0, Math.min(100 - W, pos.x - W / 2));
-  const vpT = Math.max(0, Math.min(100 - H, pos.y - H / 2));
+  const [pos, setPos] = homeState(() => parseFocal(focal));
+  const [ratio, setRatio] = homeState(0.487);      // tile w/h — measured from the real tile
+  const [imgRatio, setImgRatio] = homeState(null); // natural w/h of the picture
+
+  const imgWrapRef = homeRef(null);
+  const frameRef = homeRef(null);
+  const previewRef = homeRef(null);
+  const posRef = homeRef(pos);
+  const draggingRef = homeRef(false);
+
+  // Measure the real tile on screen so the preview matches 1:1
+  homeEffect(() => {
+    const tile = document.querySelector('.recent-tile');
+    if (tile) {
+      const r = tile.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) setRatio(r.width / r.height);
+    }
+  }, []);
+
+  // The crop rectangle the tile actually shows, in % of the image (background-size:cover math)
+  function cropBox() {
+    if (!imgRatio) return { w: 45, h: 92 };
+    if (imgRatio > ratio) {
+      // image wider than tile → full height used, width cropped
+      return { w: (ratio / imgRatio) * 100, h: 100 };
+    }
+    // image taller than tile → full width used, height cropped
+    return { w: 100, h: (imgRatio / ratio) * 100 };
+  }
+
+  // Paint frame + preview straight to the DOM (no React re-render → no lag)
+  function paint(x, y) {
+    const box = cropBox();
+    const left = Math.max(0, Math.min(100 - box.w, x - box.w / 2));
+    const top = Math.max(0, Math.min(100 - box.h, y - box.h / 2));
+    if (frameRef.current) {
+      frameRef.current.style.left = left + '%';
+      frameRef.current.style.top = top + '%';
+      frameRef.current.style.width = box.w + '%';
+      frameRef.current.style.height = box.h + '%';
+    }
+    if (previewRef.current) previewRef.current.style.backgroundPosition = x + '% ' + y + '%';
+  }
+
+  homeEffect(() => { paint(pos.x, pos.y); }, [imgRatio, ratio]);
+
+  function pointFromEvent(e) {
+    const el = imgWrapRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return {
+      x: Math.max(0, Math.min(100, (src.clientX - r.left) / r.width * 100)),
+      y: Math.max(0, Math.min(100, (src.clientY - r.top) / r.height * 100)),
+    };
+  }
+
+  function moveTo(e) {
+    const p = pointFromEvent(e);
+    if (!p) return;
+    posRef.current = p;
+    paint(p.x, p.y); // instant, DOM-only
+  }
+
+  function commit() {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    const p = posRef.current;
+    const x = Math.round(p.x), y = Math.round(p.y);
+    setPos({ x, y });        // one re-render at the very end
+    onChange(x + '% ' + y + '%');
+  }
+
+  function onDown(e) {
+    draggingRef.current = true;
+    moveTo(e);
+    e.preventDefault();
+  }
+
+  // Track drag beyond the image bounds too
+  homeEffect(() => {
+    function onMove(e) { if (draggingRef.current) moveTo(e); }
+    function onUp() { commit(); }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+  }, [imgRatio, ratio]);
+
+  const box = cropBox();
+  const initLeft = Math.max(0, Math.min(100 - box.w, pos.x - box.w / 2));
+  const initTop = Math.max(0, Math.min(100 - box.h, pos.y - box.h / 2));
 
   return (
-    <div style={{ marginTop: 6 }}>
-      <div style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: 5 }}>
-        🎯 Кликни на изображении чтобы задать центр кадра
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
+        Перетащи рамку — справа видно как будет в плашке
       </div>
-      <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'crosshair', lineHeight: 0 }}
-        onClick={handleClick}
-        onMouseMove={e => {
-          const r = e.currentTarget.getBoundingClientRect();
-          setHovPos({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
-        }}
-        onMouseLeave={() => setHovPos(null)}>
-        <img src={src} style={{ width: '100%', display: 'block', maxHeight: 220, objectFit: 'contain', background: '#111' }} alt="" />
-        {/* Tile viewport overlay */}
-        <div style={{
-          position: 'absolute', left: `${vpL}%`, top: `${vpT}%`,
-          width: `${W}%`, height: `${H}%`,
-          border: '2px solid var(--accent)',
-          background: 'rgba(232,169,59,0.08)',
-          pointerEvents: 'none', borderRadius: 4,
-          boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
-        }} />
-        {/* Crosshair at focal point */}
-        <div style={{
-          position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-          transform: 'translate(-50%,-50%)', width: 18, height: 18,
-          border: '2.5px solid #fff', borderRadius: '50%',
-          background: 'rgba(232,169,59,0.5)', pointerEvents: 'none',
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.5)',
-        }} />
-        {/* Hover crosshair guide */}
-        {hovPos && (
-          <>
-            <div style={{ position:'absolute', left:`${hovPos.x}%`, top:0, bottom:0, width:1, background:'rgba(255,255,255,0.25)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', top:`${hovPos.y}%`, left:0, right:0, height:1, background:'rgba(255,255,255,0.25)', pointerEvents:'none' }} />
-          </>
-        )}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        {/* Image with draggable crop frame */}
+        <div ref={imgWrapRef}
+          style={{ flex: '1 1 0', position: 'relative', borderRadius: 8, overflow: 'hidden',
+                   cursor: 'grab', lineHeight: 0, userSelect: 'none', touchAction: 'none' }}
+          onMouseDown={onDown} onTouchStart={onDown}>
+          <img src={src} alt=""
+            onLoad={e => {
+              const n = e.target;
+              if (n.naturalWidth && n.naturalHeight) setImgRatio(n.naturalWidth / n.naturalHeight);
+            }}
+            style={{ width: '100%', display: 'block', maxHeight: 190, objectFit: 'contain', background: '#111' }} />
+          {/* Crop frame — dark outside, clear inside */}
+          <div ref={frameRef} style={{
+            position: 'absolute',
+            left: initLeft + '%', top: initTop + '%',
+            width: box.w + '%', height: box.h + '%',
+            border: '2px solid var(--accent)',
+            borderRadius: 4, pointerEvents: 'none',
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)',
+          }} />
+        </div>
+
+        {/* Live preview — identical CSS to the real tile */}
+        <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>в плашке</span>
+          <div ref={previewRef} style={{
+            width: Math.round(190 * ratio), height: 190,
+            borderRadius: 14, border: '1px solid var(--line)',
+            backgroundImage: 'url(' + src + ')',
+            backgroundSize: 'cover',
+            backgroundPosition: pos.x + '% ' + pos.y + '%',
+            backgroundColor: '#111',
+          }} />
+          <button className="admin-btn" style={{ fontSize: 10 }}
+            onClick={() => { posRef.current = { x: 50, y: 50 }; paint(50, 50); setPos({ x: 50, y: 50 }); onChange('50% 50%'); }}>
+            ⟳ по центру
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -6730,6 +6824,24 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
   const [focalSlot, setFocalSlot] = homeState(null); // index of slot being edited
   const fileRef = homeRef(null);
 
+  // Autosave: keep refs fresh so a flush never writes with a stale closure
+  const draftRef = homeRef(draft);   draftRef.current = draft;
+  const onSaveRef = homeRef(onSave); onSaveRef.current = onSave;
+  const firstRef = homeRef(true);
+  const dirtyRef = homeRef(false);
+
+  homeEffect(() => {
+    if (firstRef.current) { firstRef.current = false; return; }
+    dirtyRef.current = true;
+    const t = setTimeout(() => { onSaveRef.current(draftRef.current); dirtyRef.current = false; }, 500);
+    return () => clearTimeout(t);
+  }, [draft]);
+
+  // Flush pending changes when switching tabs / closing
+  homeEffect(() => () => {
+    if (dirtyRef.current) onSaveRef.current(draftRef.current);
+  }, []);
+
   function addUrl() {
     if (!urlInput.trim()) return;
     setDraft(d => ({ ...d, slots: [...d.slots, urlInput.trim()], focal: [...(d.focal || []), '50% 50%'] }));
@@ -6761,11 +6873,7 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
   }
 
   return (
-    <Modal open={true} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '85vh', overflowY: 'auto' }}>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
-          {lang === 'ru' ? 'Редактировать плашку' : 'Edit tile'}
-        </h3>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <label className="login-field">
           <span>Название (RU)</span>
           <input value={draft.label || ''} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
@@ -6843,11 +6951,10 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
         </div>
 
         <button className="btn btn-primary" style={{ marginTop: 6, justifyContent: 'center' }}
-          onClick={() => { onSave(draft); onClose(); }}>
-          {lang === 'ru' ? 'Сохранить' : 'Save'}
+          onClick={() => { onSaveRef.current(draftRef.current); dirtyRef.current = false; onClose(); }}>
+          {lang === 'ru' ? 'Готово' : 'Done'}
         </button>
-      </div>
-    </Modal>
+    </div>
   );
 }
 
@@ -6879,11 +6986,13 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
         ))}
       </div>
       {admin && editorOpen && (
-        <div>
-          {/* Tabs for 4 tiles */}
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9980, background: 'rgba(0,0,0,0.5)' }} onClick={() => setEditorOpen(false)} />
-          <div style={{ position: 'fixed', inset: '40px auto', zIndex: 9990, width: 'min(90vw, 520px)', margin: '0 auto', left: '50%', transform: 'translateX(-50%)' }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <Modal open={true} onClose={() => setEditorOpen(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '86vh', overflowY: 'auto' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
+              {lang === 'ru' ? 'Плашки последних работ' : 'Recent works tiles'}
+            </h3>
+            {/* Разделы — по одной вкладке на плашку */}
+            <div style={{ display: 'flex', gap: 6 }}>
               {tiles.map((tile, i) => (
                 <button key={i} onClick={() => setActiveTab(i)}
                   className={activeTab === i ? 'btn btn-primary' : 'btn'}
@@ -6893,13 +7002,14 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
               ))}
             </div>
             <RecentTileEditor
+              key={activeTab}
               tile={tiles[activeTab]}
               lang={lang}
               onSave={updated => saveTile(activeTab, updated)}
               onClose={() => setEditorOpen(false)}
             />
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
