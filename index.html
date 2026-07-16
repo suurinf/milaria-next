@@ -4407,26 +4407,11 @@ const I18N = {
 
 // Курс примерно 1 USD = 95 RUB. Можно крутить.
 
-const DEFAULT_QUEUE_IN_PROGRESS = [
-  { id: "q1", title: "DANAS [MODEL SHADE] + COLLAB",        progress: 90, tag: "paid" },
-  { id: "q2", title: "PURGATORY [PREVIEW] + YTTRIUM",       progress: 70, tag: "paid" },
-  { id: "q3", title: "LILAC BYAKKO [MODEL UPDATE + NEW SUIT]", progress: 25, tag: "paid" },
-  { id: "q4", title: "AIKA [VTUBER MODEL]",                 progress: 45, tag: "paid" },
-  { id: "q5", title: "FRAYVI [VTUBER MODEL]",               progress: 15, tag: "free" },
-  { id: "q6", title: "MRRRIAYAYAYA [CHIBI MODEL V.1]",      progress: 10, tag: "paid" },
-  { id: "q7", title: "VIENNA [ARTBOOK] + KAGO",             progress: 60, tag: "paid" },
-];
-
-const DEFAULT_QUEUE_COMPLETED = [
-  { id: "c1", title: "AVARIYAFOX [VTUBER CARDx2]",  date: "2026-05-15", tag: "paid" },
-  { id: "c2", title: "MONMOTTI [CHIBI MODEL]",      date: "2026-05-13", tag: "paid" },
-  { id: "c3", title: "TADEMA [CHIBI MODEL V.1]",    date: "2026-05-12", tag: "paid" },
-  { id: "c4", title: "MIOOTI [VTUBER CARD]",        date: "2026-05-09", tag: "paid" },
-  { id: "c5", title: "LUNNA TSUKINO [VTUBER CARDx2]", date: "2026-05-02", tag: "paid" },
-  { id: "c6", title: "СЕКРЕТКА",                    date: "—",          tag: "secret" },
-  { id: "c7", title: "MONMOTTI [VTUBER CARD]",      date: "2026-05-02", tag: "paid" },
-  { id: "c8", title: "KUROCHKA [VTUBER CARD]",      date: "2026-05-02", tag: "paid" },
-];
+// Очередь — только реальные данные из Supabase.
+// Раньше здесь лежали демо-заказы из сайта-референса: при загрузке они
+// успевали отрисоваться до прихода настоящих и мелькали чужими именами.
+const DEFAULT_QUEUE_IN_PROGRESS = [];
+const DEFAULT_QUEUE_COMPLETED = [];
 
 // Портфолио — заглушки, пользователь загрузит свои
 const DEFAULT_PORTFOLIO = {
@@ -4767,14 +4752,36 @@ function _fetchAllSettings() {
   return _allSettingsPromise;
 }
 
+// The server ships a snapshot of the DB inside the HTML, but it names the keys
+// differently from the Supabase tables. Without this map the snapshot silently
+// missed queue_items / portfolio_categories / calc_options, so those fell back
+// to the built-in demo data and flashed it before the real rows arrived.
+const SNAPSHOT_KEYS = {
+  queue_items: 'queue',
+  portfolio_categories: 'portfolioCategories',
+  calc_options: 'calcOptions',
+  prices: 'prices',
+  debts: 'debts',
+  links: 'links',
+};
+function _snapshotFor(table) {
+  const snap = window.__INITIAL_DATA;
+  if (!snap) return null;
+  const direct = snap[table];
+  if (Array.isArray(direct) && direct.length > 0) return direct;
+  const alias = SNAPSHOT_KEYS[table];
+  const viaAlias = alias && snap[alias];
+  if (Array.isArray(viaAlias) && viaAlias.length > 0) return viaAlias;
+  return null;
+}
+
 function useResource(table, defaults = [], opts = {}) {
   const orderBy = opts.orderBy || "sort_order";
-  // Priority: 1) build-time snapshot, 2) localStorage cache, 3) defaults
+  // Priority: 1) server snapshot, 2) localStorage cache, 3) defaults
   const [items, setItems] = React.useState(() => {
-    // Build-time snapshot (set by GitHub Action) — instant for new users
-    if (window.__INITIAL_DATA?.[table]?.length > 0) {
-      return window.__INITIAL_DATA[table];
-    }
+    // Server snapshot embedded in the HTML — real data on the very first paint
+    const snap = _snapshotFor(table);
+    if (snap) return snap;
     try {
       const cached = localStorage.getItem('milaria:cache:' + table);
       if (cached) {
@@ -5141,12 +5148,9 @@ async function uploadImage(file) {
 async function seedDefaults() {
   const report = [];
 
-  // queue_items
-  const queueRows = [
-    ...DEFAULT_QUEUE_IN_PROGRESS.map((q, i) => ({ kind: "in_progress", title: q.title, progress: q.progress, tag: q.tag, sort_order: i })),
-    ...DEFAULT_QUEUE_COMPLETED.map((q, i) => ({ kind: "completed", title: q.title, progress: 100, tag: q.tag, completed_date: q.date === "—" ? null : q.date, sort_order: i })),
-  ];
-  await wipe("queue_items"); report.push(await bulkInsert("queue_items", queueRows));
+  // queue_items — deliberately NOT seeded.
+  // The queue holds real client orders; there is no meaningful demo content for
+  // it, and wiping it here would destroy live data.
 
   // portfolio_categories
   const portfolioRows = [
