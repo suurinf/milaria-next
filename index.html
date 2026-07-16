@@ -4194,6 +4194,26 @@ select {
   .recent-tile { touch-action: pan-y; }
   .pf-cover-track { touch-action: pan-y; }
 }
+
+/* ═════ Page eyebrow on narrow screens ═════
+   The decorative rules were flex: 0 0 60px — fixed width, no shrinking. With the
+   gaps they ate ~156px, leaving too little for the title on a phone, so the line
+   wrapped and dropped the ✦ onto a row of its own. */
+@media (max-width: 560px) {
+  .page-eyebrow {
+    font-size: clamp(24px, 7.5vw, 36px);
+    gap: 10px;
+  }
+  .page-eyebrow::before,
+  .page-eyebrow::after {
+    flex: 0 1 24px;   /* may shrink when space is tight */
+    min-width: 0;
+  }
+}
+@media (max-width: 380px) {
+  .page-eyebrow::before,
+  .page-eyebrow::after { display: none; }  /* title wins over decoration */
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -4230,11 +4250,11 @@ const I18N = {
   ru: {
     nav: {
       home: "Главная",
-      queue: "Очередь",
+      queue: "Очередь заказов",
       portfolio: "Портфолио",
       calculator: "Калькулятор",
       prices: "Прайс",
-      debts: "Долги",
+      debts: "Twitch долги",
       links: "Ссылки",
       tos: "Условия / T.O.S.",
     },
@@ -4311,7 +4331,7 @@ const I18N = {
       from: "от",
     },
     debts: {
-      title: "Долги по стримам",
+      title: "Twitch долги",
       subtitle: "Невыполненные обещания со стримов. Стараюсь закрыть всё.",
       streamFrom: "стрим от",
       reason: "обещание",
@@ -4341,11 +4361,11 @@ const I18N = {
   en: {
     nav: {
       home: "Home",
-      queue: "Queue",
+      queue: "Order queue",
       portfolio: "Portfolio",
       calculator: "Calculator",
       prices: "Prices",
-      debts: "Debts",
+      debts: "Twitch debts",
       links: "Links",
       tos: "Terms / T.O.S.",
     },
@@ -4422,7 +4442,7 @@ const I18N = {
       from: "from",
     },
     debts: {
-      title: "Stream debts",
+      title: "Twitch debts",
       subtitle: "Promises from streams I haven't fulfilled yet. Working on it.",
       streamFrom: "stream from",
       reason: "promise",
@@ -5961,9 +5981,16 @@ function TopNav({ tabs, active, onChange, lang, onLangToggle, admin, onAdminTogg
 
 // ──────────────── заголовок страницы ────────────────
 function PageHead({ eyebrow, title, subtitle, children }) {
+  // The eyebrow arrives as one string ("✦ Портфолио ✦") and lands in a flex
+  // container as a single anonymous item, so a narrow screen breaks it at a
+  // space and strands the ✦ on its own line. Non-breaking spaces glue each star
+  // to the word beside it; the title itself may still wrap between words.
+  const eb = typeof eyebrow === 'string'
+    ? eyebrow.replace(/^(\S)\s+/, '$1\u00A0').replace(/\s+(\S)$/, '\u00A0$1')
+    : eyebrow;
   return (
     <div className="page-head">
-      {eyebrow && <div className="page-eyebrow">{eyebrow}</div>}
+      {eb && <div className="page-eyebrow">{eb}</div>}
       {subtitle && <p className="page-subtitle">{subtitle}</p>}
       {children}
     </div>);
@@ -9226,23 +9253,23 @@ function DebtsSection({ t, admin, lang }) {
   const [debtModal, setDebtModal] = miscState(null); // null | {item, isNew}
 
   const debtFields = React.useMemo(() => [
-    { key: 'title', label: t.debts.title === 'Долги' ? 'Название' : 'Title', type: 'text', required: true, default: '' },
-    { key: 'stream_date', label: t.debts.title === 'Долги' ? 'Дата стрима' : 'Stream date', type: 'date', default: new Date().toISOString().slice(0, 10) },
-    { key: 'reason', label: t.debts.title === 'Долги' ? 'Причина' : 'Reason', type: 'text', default: '' },
-    { key: 'status', label: t.debts.title === 'Долги' ? 'Статус' : 'Status', type: 'select', default: 'open', options: [
+    { key: 'title', label: lang === 'ru' ? 'Название' : 'Title', type: 'text', required: true, default: '' },
+    { key: 'stream_date', label: lang === 'ru' ? 'Дата стрима' : 'Stream date', type: 'date', default: new Date().toISOString().slice(0, 10) },
+    { key: 'reason', label: lang === 'ru' ? 'Причина' : 'Reason', type: 'text', default: '' },
+    { key: 'status', label: lang === 'ru' ? 'Статус' : 'Status', type: 'select', default: 'open', options: [
       { value: 'open', label: t.debts.status.open },
       { value: 'waiting', label: lang === 'ru' ? 'Ожидание' : 'Waiting' },
       { value: 'inProgress', label: t.debts.status.inProgress },
       { value: 'done', label: t.debts.status.done },
     ]},
-    { key: 'progress', label: t.debts.title === 'Долги' ? 'Прогресс (%)' : 'Progress (%)', type: 'number', min: 0, max: 100, default: 0 },
+    { key: 'progress', label: lang === 'ru' ? 'Прогресс (%)' : 'Progress (%)', type: 'number', min: 0, max: 100, default: 0 },
     { key: 'section', label: lang === 'ru' ? 'Раздел' : 'Section', type: 'select', default: 'drawing', options: [
       { value: 'drawing', label: lang === 'ru' ? 'Долги по рисованию' : 'Drawing debts' },
       { value: 'games', label: lang === 'ru' ? 'Долги по играм' : 'Game debts' },
       { value: 'watching', label: lang === 'ru' ? 'Долги по просмотру' : 'Watching debts' },
       { value: 'vip', label: 'VIP' },
     ]},
-  ], [t]);
+  ], [t, lang]);
 
   function addDebt() {
     setDebtModal({ item: null, isNew: true });
@@ -9367,7 +9394,7 @@ function DebtsSection({ t, admin, lang }) {
       )}
 
       {admin && (
-        <button className="add-btn" onClick={addDebt}>+ {t.debts.title === 'Долги' ? 'Добавить долг' : 'Add debt'}</button>
+        <button className="add-btn" onClick={addDebt}>+ {lang === 'ru' ? 'Добавить долг' : 'Add debt'}</button>
       )}
 
       {admin && (
@@ -9377,8 +9404,8 @@ function DebtsSection({ t, admin, lang }) {
           onSave={handleSaveDebt}
           fields={debtFields}
           values={debtModal?.item}
-          title={debtModal?.isNew ? (t.debts.title === 'Долги' ? 'Новый долг' : 'New debt') : (t.debts.title === 'Долги' ? 'Редактировать' : 'Edit')}
-          lang={t.debts.title === 'Долги' ? 'ru' : 'en'}
+          title={debtModal?.isNew ? (lang === 'ru' ? 'Новый долг' : 'New debt') : (lang === 'ru' ? 'Редактировать' : 'Edit')}
+          lang={lang === 'ru' ? 'ru' : 'en'}
         />
       )}
     </section>
@@ -9792,10 +9819,10 @@ function App() {
     const titles = {
       ru: { home: 'VTuber-художник: модели, риг, арт', queue: 'Очередь заказов',
             portfolio: 'Портфолио работ', calculator: 'Калькулятор стоимости',
-            prices: 'Прайс-лист', debts: 'Долги', tos: 'Условия предоставления услуг' },
+            prices: 'Прайс-лист', debts: 'Twitch долги', tos: 'Условия предоставления услуг' },
       en: { home: 'VTuber artist: models, rigging, art', queue: 'Order queue',
             portfolio: 'Portfolio', calculator: 'Price calculator',
-            prices: 'Prices', debts: 'Debts', tos: 'Terms of Service' },
+            prices: 'Prices', debts: 'Twitch debts', tos: 'Terms of Service' },
     };
     const label = (titles[lang] || titles.ru)[tab] || site;
     document.title = tab === 'home' ? `${site} — ${label}` : `${label} | ${site}`;
