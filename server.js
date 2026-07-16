@@ -23,10 +23,16 @@ function log(type, msg) {
   console.log(`[${entry.t}] ${type}: ${msg}`);
 }
 
-function supaFetch(table) {
+// orderBy=null для таблиц без sort_order (например settings: key/value).
+// Раньше сортировка по sort_order добавлялась ко ВСЕМ таблицам, и запрос к
+// settings падал с 400 «column settings.sort_order does not exist». Ошибка
+// молча превращалась в пустоту — отсюда вечное "settings=0" в логе, мёртвый
+// снапшот настроек и незаметно неработающая Метрика.
+function supaFetch(table, orderBy = 'sort_order') {
   return new Promise((resolve) => {
     try {
-      const u = new URL(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=sort_order.asc`);
+      const query = orderBy ? `?select=*&order=${orderBy}.asc` : '?select=*';
+      const u = new URL(`${SUPABASE_URL}/rest/v1/${table}${query}`);
       const req = https.get({
         hostname: u.hostname, path: u.pathname + u.search,
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
@@ -34,11 +40,23 @@ function supaFetch(table) {
       }, (res) => {
         let d = '';
         res.on('data', c => d += c);
-        res.on('end', () => { try { resolve(JSON.parse(d)); } catch { resolve([]); } });
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(d);
+            if (Array.isArray(parsed)) return resolve(parsed);
+            // Не массив — значит PostgREST вернул ошибку. Раньше она уходила
+            // в тишину; теперь видна в /debug и не притворяется пустой таблицей.
+            log('SUPA_ERR', `${table}: ${parsed && (parsed.message || parsed.code) || 'unexpected response'}`);
+            resolve([]);
+          } catch (e) {
+            log('SUPA_ERR', `${table}: невалидный JSON (HTTP ${res.statusCode})`);
+            resolve([]);
+          }
+        });
       });
-      req.on('error', () => resolve([]));
-      req.on('timeout', () => { req.destroy(); resolve([]); });
-    } catch { resolve([]); }
+      req.on('error', (e) => { log('SUPA_ERR', `${table}: ${e.message}`); resolve([]); });
+      req.on('timeout', () => { req.destroy(); log('SUPA_ERR', `${table}: таймаут`); resolve([]); });
+    } catch (e) { log('SUPA_ERR', `${table}: ${e.message}`); resolve([]); }
   });
 }
 
@@ -55,7 +73,7 @@ async function refreshCache() {
       supaFetch('calc_options'),
       supaFetch('debts'),
       supaFetch('links'),
-      supaFetch('settings'),
+      supaFetch('settings', null), // нет колонки sort_order
     ]);
     const settings = {};
     if (Array.isArray(settingsArr)) settingsArr.forEach(r => { if (r.key) settings[r.key] = r.value; });
