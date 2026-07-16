@@ -172,8 +172,60 @@ function safeJson(obj) {
     .replace(/\u2029/g, '\\u2029');
 }
 
+// ── JSX precompile ──────────────────────────────────────────────────────
+// The page ships JSX and lets @babel/standalone (~2.9 MB) compile it in the
+// browser on every single load, before the first pixel. Doing it once here at
+// startup removes that download AND the compile pass.
+//
+// Deliberately fail-safe: if @babel/core is missing or anything throws, we
+// return the untouched HTML and the browser keeps compiling as before. The
+// worst case is exactly today's behaviour, never a broken page.
+const BABEL_CDN_RE = /<script src="https:\/\/unpkg\.com\/@babel\/standalone[^>]*><\/script>/g;
+const BABEL_BLOCK_RE = /<script[^>]*type="text\/babel"[^>]*>([\s\S]*?)<\/script>/g;
+
+function precompileJSX(html) {
+  let babel, presetReact;
+  try {
+    babel = require('@babel/core');
+    presetReact = require('@babel/preset-react');
+  } catch (e) {
+    log('JSX', 'babel not installed — browser will compile (slow path)');
+    return html;
+  }
+  try {
+    let compiled = 0;
+    const out = html.replace(BABEL_BLOCK_RE, (_m, code) => {
+      const res = babel.transformSync(code, {
+        // Only the JSX transform. Modern browsers run the rest natively, so we
+        // avoid bloating output with ES5 polyfills.
+        presets: [[presetReact, { runtime: 'classic' }]],
+        babelrc: false, configFile: false, sourceMaps: false, compact: false,
+      });
+      if (!res || typeof res.code !== 'string') throw new Error('empty transform result');
+      compiled++;
+      return '<script>' + res.code + '</script>';
+    });
+    if (compiled === 0) { log('JSX', 'no babel blocks found — left as is'); return html; }
+    // Only drop the CDN once every block compiled successfully.
+    const final = out.replace(BABEL_CDN_RE, '');
+    log('JSX', `precompiled ${compiled} blocks — babel-standalone dropped`);
+    return final;
+  } catch (e) {
+    log('JSX_ERR', 'precompile failed, falling back to browser: ' + e.message);
+    return html;
+  }
+}
+
+// index.html was read from disk on every request (537 KB each time). Read and
+// precompile once, reuse afterwards.
+let _baseHtml = null;
+function getBaseHTML() {
+  if (_baseHtml === null) _baseHtml = precompileJSX(fs.readFileSync(HTML_PATH, 'utf-8'));
+  return _baseHtml;
+}
+
 function buildHTML() {
-  let html = fs.readFileSync(HTML_PATH, 'utf-8');
+  let html = getBaseHTML();
   // Exclude heavy base64 portfolio_images from inline snapshot (keeps HTML small & fast).
   // Carousel uses cover_data stored on categories; full images load lazily client-side.
   const lightData = Object.assign({}, cache.data || {});

@@ -4148,6 +4148,36 @@ select {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ═════ Skeleton loaders ═════
+   Shown while data is still on its way, so the UI never claims "empty"
+   when it simply doesn't know yet. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(245, 232, 212, 0.04);
+  border: 1px solid var(--line);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(245, 232, 212, 0.07),
+    transparent
+  );
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-sweep {
+  100% { transform: translateX(100%); }
+}
+/* Respect reduce-motion: keep the placeholder, drop the sweep */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -5036,7 +5066,24 @@ function fileKind(file) {
   return 'image';
 }
 
-// Resize a File/Blob to a JPEG blob at given max width
+// Can this browser ENCODE webp? Checked once and reused.
+// toBlob() silently falls back to png for unsupported types instead of failing,
+// so a data-url probe is the only reliable way to ask.
+let _webpOK = null;
+function canEncodeWebp() {
+  if (_webpOK !== null) return _webpOK;
+  try {
+    const c = document.createElement('canvas');
+    c.width = c.height = 1;
+    _webpOK = c.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  } catch (e) { _webpOK = false; }
+  return _webpOK;
+}
+
+// Resize a File/Blob and encode it. WebP where supported (same quality at
+// roughly half the bytes), JPEG otherwise. Portfolio images are the product
+// here, so this is the one place worth not cutting corners.
+// Resolves { blob, mime, ext } — or null if the picture could not be read.
 function resizeToBlob(file, maxW, quality) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -5048,7 +5095,12 @@ function resizeToBlob(file, maxW, quality) {
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        canvas.toBlob(b => resolve(b), 'image/jpeg', quality);
+        const webp = canEncodeWebp();
+        const mime = webp ? 'image/webp' : 'image/jpeg';
+        canvas.toBlob(
+          b => resolve(b ? { blob: b, mime, ext: webp ? 'webp' : 'jpg' } : null),
+          mime, quality
+        );
       };
       img.onerror = () => resolve(null);
       img.src = e.target.result;
@@ -5096,10 +5148,10 @@ async function uploadToStorage(file) {
     const thumb = await resizeToBlob(file, 500, 0.78);    // grid thumbnail
     if (!full) { alert('Не удалось обработать картинку'); return null; }
     const base = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const fullPath = `full/${base}.jpg`;
-    const thumbPath = `thumb/${base}.jpg`;
+    const fullPath = `full/${base}.${full.ext}`;
+    const thumbPath = thumb ? `thumb/${base}.${thumb.ext}` : null;
 
-    const up1 = await _sbc.storage.from(STORAGE_BUCKET).upload(fullPath, full, { contentType: 'image/jpeg', upsert: false });
+    const up1 = await _sbc.storage.from(STORAGE_BUCKET).upload(fullPath, full.blob, { contentType: full.mime, upsert: false });
     if (up1.error) {
       console.error('[storage] full upload failed', up1.error);
       alert('Не удалось загрузить в хранилище.\nПроверь что создан публичный bucket "portfolio" в Supabase Storage.');
@@ -5107,7 +5159,7 @@ async function uploadToStorage(file) {
     }
     let thumbUrl = null;
     if (thumb) {
-      const up2 = await _sbc.storage.from(STORAGE_BUCKET).upload(thumbPath, thumb, { contentType: 'image/jpeg', upsert: false });
+      const up2 = await _sbc.storage.from(STORAGE_BUCKET).upload(thumbPath, thumb.blob, { contentType: thumb.mime, upsert: false });
       if (!up2.error) thumbUrl = storagePublicUrl(thumbPath);
     }
     const url = storagePublicUrl(fullPath);
@@ -7548,6 +7600,26 @@ function pfResolveCover(url) {
   return { type: 'image', thumb: String(url) };
 }
 
+// ── Loading placeholder ──
+// portfolio_images are deliberately kept out of the server snapshot (too heavy),
+// so they always arrive over the network. Until then the grid used to render the
+// "Скоро здесь появятся работы" empty-state — telling visitors the gallery was
+// empty when it was merely still loading.
+function GallerySkeleton({ count = 8 }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+      gap: 16,
+    }} aria-hidden="true">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="skeleton skeleton-tile"
+          style={{ aspectRatio: '1 / 1', borderRadius: 'var(--radius-card, 14px)', animationDelay: `${i * 60}ms` }} />
+      ))}
+    </div>
+  );
+}
+
 // ── Fullscreen lightbox for a single image ──
 function Lightbox({ src, onClose, onPrev, onNext, current, total }) {
   pfEffect(() => {
@@ -7834,7 +7906,9 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
 
       {/* ── Image grid ── */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px 60px' }}>
-        {catImages.length === 0 ? (
+        {!imagesRes.loaded && catImages.length === 0 ? (
+          <GallerySkeleton />
+        ) : catImages.length === 0 ? (
           <div style={{
             textAlign: 'center', padding: '80px 20px',
             color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)', fontSize: 15,
@@ -7878,7 +7952,16 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                     ) : (
                       <>
                         <div className="pf-gal-blur" style={{ backgroundImage: `url("${thumb}")` }} />
-                        <img src={thumb} className="pf-gal-photo" alt="" loading="lazy" />
+                        <img
+                          src={thumb}
+                          /* Two real files exist (500px thumb + 1600px full) — let the
+                             browser pick. Skipped when both point at the same file,
+                             which is the case for GIFs. */
+                          srcSet={(!isYT && img.thumb_data && img.image_data && img.thumb_data !== img.image_data)
+                            ? `${img.thumb_data} 500w, ${img.image_data} 1600w`
+                            : undefined}
+                          sizes="(max-width: 600px) 45vw, (max-width: 1100px) 30vw, 260px"
+                          className="pf-gal-photo" alt="" loading="lazy" decoding="async" />
                       </>
                     )}
                   </div>
