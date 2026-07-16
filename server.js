@@ -271,6 +271,22 @@ function buildHTML() {
   // NOTE: replacements are passed as functions on purpose — a plain string would let
   // "$&", "$'" or "$`" inside the data expand into page fragments and corrupt the HTML.
   html = html.replace('<head>', () => '<head>' + PATCH);
+  // Яндекс.Метрика — только если в настройках задан номер счётчика.
+  // Вставляем на сервере, а не из React: счётчик должен сработать до отрисовки
+  // приложения, иначе часть визитов (и все быстрые уходы) не попадёт в статистику.
+  // Ничего не задано — ни одного лишнего байта не уедет.
+  const ymId = String((cache.settings && cache.settings.metrika_id) || '').replace(/\D/g, '');
+  if (ymId) {
+    const ym = `<script>(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};`
+      + `m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}`
+      + `k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})`
+      + `(window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');`
+      + `ym(${ymId},'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});`
+      + `window.__YM_ID=${ymId};</script>`
+      + `<noscript><div><img src="https://mc.yandex.ru/watch/${ymId}" style="position:absolute;left:-9999px" alt="" /></div></noscript>`;
+    html = html.replace('</head>', () => ym + '</head>');
+  }
+
   // Server-side favicon injection — works in ALL browsers (Edge, incognito) on first load
   const favicon = cache.settings && cache.settings.site_favicon;
   if (favicon && typeof favicon === 'string') {

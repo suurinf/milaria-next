@@ -9827,6 +9827,14 @@ function App() {
     const label = (titles[lang] || titles.ru)[tab] || site;
     document.title = tab === 'home' ? `${site} — ${label}` : `${label} | ${site}`;
     document.documentElement.lang = lang;
+
+    // SPA не перезагружает страницу, поэтому просмотры разделов надо отправлять
+    // руками — иначе в статистике будет виден только вход на сайт.
+    if (window.ym && window.__YM_ID) {
+      try {
+        window.ym(window.__YM_ID, 'hit', window.location.pathname, { title: document.title });
+      } catch (e) {}
+    }
   }, [tab, lang]);
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const auth = useAuth();
@@ -9876,6 +9884,63 @@ function App() {
   ];
 
   const isHome = tab === 'home';
+
+  // Ручной бэкап — на случай "сейчас полезу в SQL, страшно".
+  // Автоматический идёт раз в сутки через GitHub Action, это дополнение к нему.
+  const [backupBusy, setBackupBusy] = appState(false);
+  async function downloadBackup() {
+    if (backupBusy) return;
+    setBackupBusy(true);
+    const TABLES = ['queue_items', 'portfolio_categories', 'portfolio_images',
+                    'prices', 'calc_options', 'debts', 'links', 'settings'];
+    try {
+      const dump = { takenAt: new Date().toISOString(), tables: {} };
+      const failed = [];
+      for (const t of TABLES) {
+        const { data, error } = await window.__supabase.from(t).select('*');
+        if (error) { failed.push(t); continue; }
+        dump.tables[t] = data || [];
+      }
+      if (Object.keys(dump.tables).length === 0) {
+        alert('Не удалось выгрузить ни одной таблицы. Проверь связь с Supabase.');
+        return;
+      }
+      const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `milaria-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      const rows = Object.values(dump.tables).reduce((s, r) => s + r.length, 0);
+      alert(failed.length
+        ? `Выгружено ${rows} строк. Не удалось: ${failed.join(', ')}`
+        : `Готово: ${rows} строк из ${TABLES.length} таблиц.`);
+    } catch (e) {
+      alert('Бэкап не удался: ' + (e && e.message));
+    } finally {
+      setBackupBusy(false);
+    }
+  }
+
+  // Номер счётчика Метрики. Сам счётчик вставляет сервер (до отрисовки),
+  // здесь только поле, куда его вписать.
+  const [metrikaId, saveMetrikaId] = useSetting('metrika_id', '');
+  function setupMetrika() {
+    const cur = String(metrikaId || '');
+    const v = prompt(
+      'Номер счётчика Яндекс.Метрики (только цифры).\n' +
+      'Взять тут: metrika.yandex.ru → счётчик → Настройка → Номер.\n' +
+      'Оставь поле пустым, чтобы отключить аналитику.',
+      cur
+    );
+    if (v === null) return;
+    const clean = v.replace(/\D/g, '');
+    saveMetrikaId(clean);
+    alert(clean
+      ? `Счётчик ${clean} сохранён.\nПоявится на сайте в течение ~15 минут (сервер обновляет кэш) или сразу после пересборки.`
+      : 'Аналитика отключена.');
+  }
 
   async function runSeed() {
     if (!confirm(lang === 'ru'
@@ -9934,6 +9999,14 @@ function App() {
             </span>
             <span className="admin-bar-actions">
               <SiteFavicon admin={admin} />
+              <button className="admin-btn" onClick={downloadBackup} disabled={backupBusy}
+                title="Скачать все данные из Supabase одним JSON">
+                {backupBusy ? '⏳…' : '💾 Бэкап'}
+              </button>
+              <button className="admin-btn" onClick={setupMetrika}
+                title="Номер счётчика Яндекс.Метрики">
+                {metrikaId ? '📊 ' + metrikaId : '📊 Аналитика'}
+              </button>
               <button className="admin-btn" onClick={() => {
                 if (confirm('Очистить локальный кеш и перезагрузить страницу? Это засинхронит с сервером.')) {
                   try {
