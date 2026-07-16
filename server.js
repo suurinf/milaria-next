@@ -8,9 +8,11 @@ const SUPABASE_URL = 'https://vgwdudjgvkmlnnfgonbk.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnd2R1ZGpndmttbG5uZmdvbmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjI2NDksImV4cCI6MjA5NDUzODY0OX0.I_ciFmhRcv2RdXZFaedlMki8c96zTvXkUyJxSVACbr4';
 const PORT = parseInt(process.env.PORT) || 3000;
 const HTML_PATH = path.join(__dirname, 'index.html');
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://milaria-next-suurin.amvera.io';
 
 // In-memory cache — served immediately, refreshed in background
 let cache = { data: null, settings: {}, updatedAt: null };
+let _ogCache = null; // lazily extracted OG image bytes
 const logs = [];
 
 function log(type, msg) {
@@ -160,25 +162,38 @@ const MIME = {
 
 const PATCH = `<script>(function(){var S='${SUPABASE_URL}',f=window.fetch.bind(window);window.fetch=function(u,o){if(typeof u==='string'&&(u.indexOf(S+'/rest/')===0||u.indexOf(S+'/storage/')===0))return f(u.replace(S,'/supa'),o);return f(u,o);};})();</script>`;
 
+// JSON for inlining inside <script>. JSON.stringify does NOT escape "</script>",
+// so any DB text containing it would close the tag early and inject raw HTML (XSS).
+// Escaping "<" makes that impossible while staying valid JSON/JS.
+function safeJson(obj) {
+  return JSON.stringify(obj === undefined ? null : obj)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 function buildHTML() {
   let html = fs.readFileSync(HTML_PATH, 'utf-8');
   // Exclude heavy base64 portfolio_images from inline snapshot (keeps HTML small & fast).
   // Carousel uses cover_data stored on categories; full images load lazily client-side.
   const lightData = Object.assign({}, cache.data || {});
   delete lightData.portfolioImages;
-  const dataStr = JSON.stringify(lightData);
-  const settingsStr = JSON.stringify(cache.settings || {});
+  const dataStr = safeJson(lightData);
+  const settingsStr = safeJson(cache.settings || {});
   const snap = `<script>window.__INITIAL_DATA=${dataStr};window.__INITIAL_DATA__=${dataStr};window.__INITIAL_SETTINGS=${settingsStr};window.__INITIAL_SETTINGS__=${settingsStr};</script>`;
-  html = html.replace('<head>', '<head>' + PATCH);
+  // NOTE: replacements are passed as functions on purpose — a plain string would let
+  // "$&", "$'" or "$`" inside the data expand into page fragments and corrupt the HTML.
+  html = html.replace('<head>', () => '<head>' + PATCH);
   // Server-side favicon injection — works in ALL browsers (Edge, incognito) on first load
   const favicon = cache.settings && cache.settings.site_favicon;
   if (favicon && typeof favicon === 'string') {
-    const faviconTag = `<link rel="icon" href="${favicon.replace(/"/g, '&quot;')}">`;
+    const safeHref = favicon.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const faviconTag = `<link rel="icon" href="${safeHref}">`;
     // Remove any existing icon link, then add ours
     html = html.replace(/<link[^>]*rel=["'][^"']*icon[^"']*["'][^>]*>/gi, '');
-    html = html.replace('</head>', faviconTag + snap + '</head>');
+    html = html.replace('</head>', () => faviconTag + snap + '</head>');
   } else {
-    html = html.replace('</head>', snap + '</head>');
+    html = html.replace('</head>', () => snap + '</head>');
   }
   return html;
 }
@@ -222,6 +237,54 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
 
   // SPA routes — serve the same HTML for app paths (URL routing inside React)
   const SPA_PATHS = ['/', '/queue', '/portfolio', '/calculator', '/prices', '/debts', '/tos'];
+
+  // og-image.jpg — social preview. Extracted from the hero picture already
+  // embedded in index.html, so no extra asset needs to live in the repo.
+  if (p === '/og-image.jpg') {
+    try {
+      if (!_ogCache) {
+        const html = fs.readFileSync(HTML_PATH, 'utf-8');
+        const m = html.match(/data:image\/jpe?g;base64,([A-Za-z0-9+/=]{500,})/);
+        _ogCache = m ? Buffer.from(m[1], 'base64') : null;
+      }
+      if (_ogCache) {
+        res.writeHead(200, {
+          'Content-Type': 'image/jpeg',
+          'Content-Length': _ogCache.length,
+          'Cache-Control': 'public, max-age=86400',
+        });
+        return res.end(_ogCache);
+      }
+    } catch (e) { log('OG_ERR', e.message); }
+    res.writeHead(404); return res.end('Not found');
+  }
+
+  // robots.txt — let crawlers in, point them at the sitemap
+  if (p === '/robots.txt') {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end(
+      'User-agent: *\n' +
+      'Allow: /\n' +
+      'Disallow: /supa/\n' +
+      'Disallow: /debug\n\n' +
+      `Sitemap: ${SITE_ORIGIN}/sitemap.xml\n`
+    );
+  }
+
+  // sitemap.xml — one entry per real route
+  if (p === '/sitemap.xml') {
+    const today = new Date().toISOString().slice(0, 10);
+    const urls = SPA_PATHS.map(route => {
+      const loc = SITE_ORIGIN + (route === '/' ? '/' : route);
+      const priority = route === '/' ? '1.0' : '0.8';
+      return `  <url><loc>${loc}</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>${priority}</priority></url>`;
+    }).join('\n');
+    res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
+    return res.end(
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls + '\n</urlset>\n'
+    );
+  }
   if (SPA_PATHS.includes(p) || SPA_PATHS.includes(p.replace(/\/+$/, ''))) {
     res.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8' });
     return res.end(buildHTML());

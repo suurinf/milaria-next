@@ -3,10 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>milaria — портфолио / очередь / прайс</title>
+  <title>Milaria — VTuber-художник: модели, риг, арт | портфолио и заказы</title>
+  <meta name="description" content="Milaria — художник VTuber-моделей: отрисовка и риггинг Live2D, чиби, PNGtuber, иллюстрации. Портфолио, калькулятор стоимости, очередь заказов и условия работы." />
+  <meta name="theme-color" content="#0c0a08" />
+  <link rel="canonical" href="https://milaria-next-suurin.amvera.io/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Milaria" />
+  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:title" content="Milaria — VTuber-художник: модели, риг, арт" />
+  <meta property="og:description" content="Отрисовка и риггинг Live2D-моделей, чиби, PNGtuber, иллюстрации. Портфолио, калькулятор стоимости и очередь заказов." />
+  <meta property="og:url" content="https://milaria-next-suurin.amvera.io/" />
+  <meta property="og:image" content="https://milaria-next-suurin.amvera.io/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Milaria — VTuber-художник: модели, риг, арт" />
+  <meta name="twitter:description" content="Отрисовка и риггинг Live2D-моделей, чиби, PNGtuber, иллюстрации. Портфолио и калькулятор стоимости." />
+  <meta name="twitter:image" content="https://milaria-next-suurin.amvera.io/og-image.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Allison&family=Sacramento&family=Caveat:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=Manrope:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=Unbounded:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Allison&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
   
 <style>
 /* milaria — styles
@@ -4112,6 +4126,28 @@ select {
   transform: translate(-50%, -50%) scale(1.12);
   background: rgba(0, 0, 0, 0.7);
 }
+
+/* ═════ Accessibility: respect "reduce motion" OS setting ═════
+   The site leans on 3D coverflow, floating orbs and fades — that can trigger
+   nausea/vertigo for people with vestibular disorders. Content stays intact,
+   only the movement stops. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .pf-cover-card { transition: none !important; }
+}
+
+/* ═════ Accessibility: visible keyboard focus ═════
+   Without this, keyboard users cannot see where they are. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -4128,8 +4164,8 @@ window.addEventListener('unhandledrejection', function (e) {
 });
 </script>
 
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -4370,7 +4406,6 @@ const I18N = {
 };
 
 // Курс примерно 1 USD = 95 RUB. Можно крутить.
-const FX_RATE = 95;
 
 const DEFAULT_QUEUE_IN_PROGRESS = [
   { id: "q1", title: "DANAS [MODEL SHADE] + COLLAB",        progress: 90, tag: "paid" },
@@ -4583,14 +4618,6 @@ const DEFAULT_LINKS = [
 ];
 
 // helpers
-function fmtMoney(rub, lang) {
-  if (lang === "en") {
-    const usd = Math.round(rub / FX_RATE);
-    return `$${usd.toLocaleString("en-US")}`;
-  }
-  return `${rub.toLocaleString("ru-RU")} ₽`;
-}
-
 function loadLS(key, fallback) {
   try {
     const raw = localStorage.getItem("milaria:" + key);
@@ -4610,11 +4637,11 @@ function clearLS() {
 }
 
 Object.assign(window, {
-  I18N, FX_RATE,
+  I18N,
   DEFAULT_QUEUE_IN_PROGRESS, DEFAULT_QUEUE_COMPLETED,
   DEFAULT_PORTFOLIO, DEFAULT_PRICES, DEFAULT_CALC,
   DEFAULT_DEBTS, DEFAULT_LINKS,
-  fmtMoney, loadLS, saveLS, clearLS,
+  loadLS, saveLS, clearLS,
 });
 
   </script>
@@ -4708,6 +4735,38 @@ function useAuth() {
 //  Если supabase не отвечает или таблица пуста, items = defaults
 //  (так сайт работает даже при оффлайне).
 // ════════════════════════════════════════════════════════════
+// ── Request de-duplication ───────────────────────────────────────────────
+// All sections render at once (hidden, not unmounted), so without this the same
+// table/settings get fetched once per component — wasted requests and egress.
+const _tableInflight = new Map();
+function _fetchTableOnce(table, orderBy, version) {
+  const key = `${table}|${orderBy}|${version}`;
+  if (_tableInflight.has(key)) return _tableInflight.get(key);
+  const p = _sbc.from(table).select("*").order(orderBy, { ascending: true })
+    .then(r => r)
+    .catch(e => ({ data: null, error: e }));
+  _tableInflight.set(key, p);
+  // Let the next mount re-fetch; this only collapses the initial burst.
+  p.finally(() => setTimeout(() => _tableInflight.delete(key), 1000));
+  return p;
+}
+
+// One request for the whole settings table instead of one per key.
+let _allSettingsPromise = null;
+function _fetchAllSettings() {
+  if (_allSettingsPromise) return _allSettingsPromise;
+  _allSettingsPromise = _sbc.from('settings').select('key,value')
+    .then(({ data, error }) => {
+      if (error) return {};
+      const map = {};
+      (data || []).forEach(r => { if (r && r.key) map[r.key] = r.value; });
+      return map;
+    })
+    .catch(() => ({}));
+  setTimeout(() => { _allSettingsPromise = null; }, 1000);
+  return _allSettingsPromise;
+}
+
 function useResource(table, defaults = [], opts = {}) {
   const orderBy = opts.orderBy || "sort_order";
   // Priority: 1) build-time snapshot, 2) localStorage cache, 3) defaults
@@ -4737,7 +4796,9 @@ function useResource(table, defaults = [], opts = {}) {
 
   React.useEffect(() => {
     let mounted = true;
-    _sbc.from(table).select("*").order(orderBy, { ascending: true })
+    // Several sections mount at once and ask for the same table (links x3, etc.).
+    // Share one in-flight request instead of firing a duplicate per component.
+    _fetchTableOnce(table, orderBy, version)
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) {
@@ -4918,9 +4979,11 @@ function useSetting(key, defaultValue) {
     if (!_sbc) { setLoaded(true); return; }
     let mounted = true;
 
-    _sbc.from('settings').select('value').eq('key', key).maybeSingle()
-      .then(({ data, error }) => {
+    // Batched: one request covers every key on the page (was 1 request per key)
+    _fetchAllSettings()
+      .then((all) => {
         if (!mounted) return;
+        const data = (all && all[key] !== undefined) ? { value: all[key] } : null;
         // Only update if the server value actually differs (prevents needless re-render/flicker)
         if (data && data.value !== undefined && data.value !== null) {
           setValue(prev => {
@@ -5991,134 +6054,6 @@ function LoginModal({ open, onClose, auth, lang }) {
 }
 
 
-
-
-// ──────────────── cover crop/position editor ────────────────
-function CoverCropEditor({ src, position, onSave, onClose }) {
-  // position = { x: 50, y: 50 } — focal point in %
-  const [pos, setPos] = useState(position || { x: 50, y: 50 });
-  const [dragging, setDragging] = useState(false);
-  const containerRef = useRef(null);
-
-  function updatePos(e) {
-    const rect = containerRef.current.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
-    setPos({ x: Math.round(x), y: Math.round(y) });
-  }
-
-  function handleDown(e) { setDragging(true); updatePos(e); }
-  function handleMove(e) { if (dragging) updatePos(e); }
-  function handleUp() { setDragging(false); }
-
-  return (
-    <Modal open={true} onClose={onClose}>
-      <div style={{ maxWidth: 500, minWidth: 300 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)', marginBottom: 8 }}>✦ обложка</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 28, margin: '0 0 12px', fontWeight: 500 }}>
-          Фокус обложки
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 16 }}>
-          Кликни или перетащи точку — она определяет центр обложки на карточке.
-        </p>
-
-        <div ref={containerRef} style={{
-          position: 'relative', width: '100%', aspectRatio: '16/10', borderRadius: 12,
-          overflow: 'hidden', cursor: 'crosshair', border: '1px solid rgba(255,255,255,0.1)',
-          userSelect: 'none', touchAction: 'none',
-        }}
-          onMouseDown={handleDown} onMouseMove={handleMove} onMouseUp={handleUp} onMouseLeave={handleUp}
-          onTouchStart={handleDown} onTouchMove={handleMove} onTouchEnd={handleUp}
-        >
-          <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${pos.x}% ${pos.y}%`, pointerEvents: 'none' }} alt="" />
-
-          <div style={{
-            position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-            transform: 'translate(-50%,-50%)', width: 20, height: 20,
-            borderRadius: '50%', border: '2px solid #fff',
-            background: 'var(--accent)', boxShadow: '0 0 10px rgba(0,0,0,.5)',
-            pointerEvents: 'none',
-          }} />
-
-          <div style={{
-            position: 'absolute', left: `${pos.x}%`, top: 0, width: 1, height: '100%',
-            background: 'rgba(255,255,255,0.2)', pointerEvents: 'none',
-          }} />
-          <div style={{
-            position: 'absolute', top: `${pos.y}%`, left: 0, width: '100%', height: 1,
-            background: 'rgba(255,255,255,0.2)', pointerEvents: 'none',
-          }} />
-        </div>
-
-        <div style={{ marginTop: 12, display: 'flex', gap: 16, alignItems: 'center' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)' }}>
-            x: {pos.x}% · y: {pos.y}%
-          </span>
-          <div style={{ flex: 1 }} />
-          <button className="btn" onClick={onClose} style={{ fontSize: 13 }}>Отмена</button>
-          <button className="btn btn-primary" onClick={() => { onSave(pos); onClose(); }} style={{ fontSize: 13 }}>
-            Сохранить
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-// ──────────────── media gallery (view, delete, set cover) ────────────────
-function MediaGallery({ images, onDelete, onSetCover, coverIdx }) {
-  if (!images || images.length === 0) return (
-    <div style={{ padding: '16px 0', fontSize: 13, color: 'var(--text-dim)', fontStyle: 'italic' }}>
-      Нет загруженных картинок
-    </div>
-  );
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-      {images.map((src, i) => {
-        const ytId = (src.includes && (src.includes('youtube.com') || src.includes('youtu.be')))
-          ? src.match(/(?:v=|youtu\.be\/|embed\/)(?:[\w-]+)/)?.[0]?.split(/[=/]/).pop() : null;
-        const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/default.jpg` : src;
-        const isCover = coverIdx != null && i === coverIdx;
-        return (
-          <div key={i} style={{
-            position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden',
-            border: isCover ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.08)',
-          }}>
-            <img src={thumb} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'linear-gradient(transparent 50%, rgba(0,0,0,.7))',
-              display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 4, padding: 4,
-              opacity: 0, transition: 'opacity .15s',
-            }} onMouseEnter={e => e.currentTarget.style.opacity = 1}
-               onMouseLeave={e => e.currentTarget.style.opacity = 0}>
-              {onSetCover && (
-                <button className="admin-btn" style={{ width: 22, height: 22, fontSize: 11,
-                  background: isCover ? 'var(--accent)' : 'rgba(0,0,0,.5)', color: '#fff' }}
-                  onClick={() => onSetCover(i, true)} title="Обложка + кадрирование">★</button>
-              )}
-              {onDelete && (
-                <button className="admin-btn danger" style={{ width: 22, height: 22, fontSize: 11,
-                  background: 'rgba(0,0,0,.5)', color: '#ff6b6b' }}
-                  onClick={() => onDelete(i)} title="Удалить">×</button>
-              )}
-            </div>
-            {isCover && (
-              <span style={{
-                position: 'absolute', top: 4, left: 4, fontSize: 9, padding: '1px 5px',
-                background: 'var(--accent)', color: '#fff', borderRadius: 4,
-                fontFamily: 'var(--font-mono)', letterSpacing: '0.05em',
-              }}>cover</span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ──────────────── image uploader ────────────────
 function ImageUploader({ onUpload, label, multiple }) {
   const [busy, setBusy] = useState(false);
@@ -6285,7 +6220,7 @@ function EditItemModal({ open, onClose, onSave, fields, values, title, lang }) {
 
 Object.assign(window, {
   RatLogo, BackgroundLayer, TopNav, PageHead,
-  Editable, EditableNumber, Modal, FootOrnament, LoginModal, EditItemModal, ImageUploader, MediaGallery, CoverCropEditor, useDragReorder,
+  Editable, EditableNumber, Modal, FootOrnament, LoginModal, EditItemModal, ImageUploader, useDragReorder,
 });
   </script>
 
@@ -7607,51 +7542,6 @@ function pfResolveCover(url) {
   }
   if (/\.(mp4|webm|mov|m4v)$/.test(clean)) return { type: 'video', src: String(url) };
   return { type: 'image', thumb: String(url) };
-}
-
-// ── Card on the main grid ──
-function PortfolioCard({ item, t, onClick, coverSrc, allImages, count, admin, onEdit, onDelete }) {
-  const label = t.portfolio.categories[item.key] || item.key;
-  const glyph = label.charAt(0).toUpperCase();
-  const typeLabel = item.kind === 'model' ? (t.portfolio.models || 'Model') : (t.portfolio.illustrations || 'Art');
-  const catImages = (allImages || []).filter(i => i.category_id === item.id);
-  const [hovered, setHovered] = pfState(false);
-  const [hIdx, setHIdx] = pfState(0);
-  const hRef = pfRef(null);
-
-  pfEffect(() => {
-    if (hovered && catImages.length > 1) {
-      hRef.current = setInterval(() => setHIdx(i => (i + 1) % catImages.length), 1500);
-    } else {
-      clearInterval(hRef.current);
-      setHIdx(0);
-    }
-    return () => clearInterval(hRef.current);
-  }, [hovered, catImages.length]);
-
-  const displaySrc = (hovered && catImages.length > 0) ? catImages[hIdx]?.image_data : coverSrc;
-
-  return (
-    <div className="pf-card" style={{ '--hue': item.hue }} onClick={onClick}
-      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-      <div className="pf-card-img">
-        {displaySrc
-          ? <img src={displaySrc} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <span className="pf-card-glyph">{glyph}</span>}
-      </div>
-      <span className="pf-card-type">{typeLabel}</span>
-      <div className="pf-card-info">
-        <h3 className="pf-card-title">{label}</h3>
-        <span className="pf-card-count">{count} {count === 1 ? 'piece' : 'pieces'}</span>
-      </div>
-      {admin && (
-        <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 5, zIndex: 3 }}>
-          <button className="admin-btn" onClick={e => { e.stopPropagation(); onEdit(item); }}>✎</button>
-          <button className="admin-btn danger" onClick={e => { e.stopPropagation(); onDelete(item.id); }}>×</button>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── Fullscreen lightbox for a single image ──
@@ -9711,6 +9601,22 @@ function App() {
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
   }, []);
+
+  // Per-route <title> + <html lang> — real routes deserve real titles (SEO + browser tabs)
+  appEffect(() => {
+    const site = 'Milaria';
+    const titles = {
+      ru: { home: 'VTuber-художник: модели, риг, арт', queue: 'Очередь заказов',
+            portfolio: 'Портфолио работ', calculator: 'Калькулятор стоимости',
+            prices: 'Прайс-лист', debts: 'Долги', tos: 'Условия предоставления услуг' },
+      en: { home: 'VTuber artist: models, rigging, art', queue: 'Order queue',
+            portfolio: 'Portfolio', calculator: 'Price calculator',
+            prices: 'Prices', debts: 'Debts', tos: 'Terms of Service' },
+    };
+    const label = (titles[lang] || titles.ru)[tab] || site;
+    document.title = tab === 'home' ? `${site} — ${label}` : `${label} | ${site}`;
+    document.documentElement.lang = lang;
+  }, [tab, lang]);
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const auth = useAuth();
   const [loginOpen, setLoginOpen] = appState(false);
@@ -9742,7 +9648,12 @@ function App() {
     { id: 'tos',        label: i18n.nav.tos },
   ];
 
-  // Render ALL sections, hide non-active ones — preserves state across tab switches
+  // Mount a section on first visit, then keep it mounted (hidden) so its state
+  // survives tab switches. Mounting all 7 upfront made every section fetch its
+  // data and run its timers on page load — even the ones nobody opened.
+  const mountedTabs = React.useRef(new Set());
+  mountedTabs.current.add(tab);
+
   const sections = [
     { id: 'home',       el: <HomeSection t={i18n} lang={lang} admin={admin} onGoTo={setTab} /> },
     { id: 'queue',      el: <QueueSection t={i18n} lang={lang} admin={admin} layout={t.layout} barStyle={t.barStyle} /> },
@@ -9831,13 +9742,13 @@ function App() {
 
         {isHome ?
           <main>
-            {sections.map(s => (
+            {sections.filter(s => mountedTabs.current.has(s.id)).map(s => (
               <div key={s.id} style={{ display: tab === s.id ? 'block' : 'none' }}>{s.el}</div>
             ))}
             <FootOrnament />
           </main> :
           <main className="shell">
-            {sections.map(s => (
+            {sections.filter(s => mountedTabs.current.has(s.id)).map(s => (
               <div key={s.id} style={{ display: tab === s.id ? 'block' : 'none' }}>{s.el}</div>
             ))}
             <FootOrnament />
@@ -9895,7 +9806,63 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+// ── Error boundary ──────────────────────────────────────────────────────
+// Without this ANY render error blanks the whole site. Content here is
+// admin-editable, so one malformed value must not take the page down.
+class AppErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { console.error('[app crashed]', error, info); }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24, background: '#0c0a08', color: '#f0e9df', textAlign: 'center',
+        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      }}>
+        <div style={{ maxWidth: 460 }}>
+          <div style={{ fontSize: 42, marginBottom: 12 }}>✦</div>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic',
+                       fontSize: 28, margin: '0 0 10px' }}>Что-то сломалось</h1>
+          <p style={{ color: 'rgba(240,233,223,0.65)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px' }}>
+            Страница не смогла отрисоваться. Обычно помогает перезагрузка —
+            если нет, сбрось локальные данные кнопкой ниже.
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => window.location.reload()} style={{
+              padding: '10px 20px', borderRadius: 22, cursor: 'pointer',
+              background: '#e8a93b', color: '#1a1410', border: 0, fontWeight: 600 }}>
+              Перезагрузить
+            </button>
+            <button onClick={() => {
+              try {
+                Object.keys(localStorage).forEach(k => { if (k.startsWith('milaria:')) localStorage.removeItem(k); });
+              } catch (e) {}
+              window.location.href = '/';
+            }} style={{
+              padding: '10px 20px', borderRadius: 22, cursor: 'pointer',
+              background: 'transparent', color: '#f0e9df',
+              border: '1px solid rgba(255,255,255,0.2)' }}>
+              Сбросить и на главную
+            </button>
+          </div>
+          <details style={{ marginTop: 22, textAlign: 'left' }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, color: 'rgba(240,233,223,0.4)' }}>Подробности</summary>
+            <pre style={{ fontSize: 11, color: 'rgba(240,233,223,0.5)', whiteSpace: 'pre-wrap',
+                          marginTop: 8, maxHeight: 160, overflow: 'auto' }}>
+              {String(this.state.error && (this.state.error.stack || this.state.error.message))}
+            </pre>
+          </details>
+        </div>
+      </div>
+    );
+  }
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <AppErrorBoundary><App /></AppErrorBoundary>
+);
 
   </script>
 </body>
