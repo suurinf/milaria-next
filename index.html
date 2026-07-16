@@ -4178,6 +4178,22 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after { animation: none; }
 }
+
+/* ═════ Touch devices: hover-only affordances must stay reachable ═════
+   Arrows were revealed by .recent-tile:hover — which never fires on a phone,
+   leaving the tiles stuck on the first image with no way to page through. */
+@media (hover: none) {
+  .rtile-arr {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.42);
+    width: 34px;
+    height: 34px;
+  }
+  .recent-tile-counter { opacity: 1; }
+  /* Let vertical page scroll pass through, we only claim horizontal swipes */
+  .recent-tile { touch-action: pan-y; }
+  .pf-cover-track { touch-action: pan-y; }
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -6767,7 +6783,8 @@ function TileMediaLayer({ src, focal, active, hovering }) {
 
   homeEffect(() => {
     if (!vidRef.current) return;
-    if (hovering && active) {
+    // No hover on touch — play whichever slot is currently shown.
+    if (active && (hovering || IS_TOUCH)) {
       vidRef.current.play().catch(() => {});
     } else {
       vidRef.current.pause();
@@ -6808,6 +6825,10 @@ function TileMediaLayer({ src, focal, active, hovering }) {
   );
 }
 
+// Touch devices have no hover, so anything gated behind it is dead there.
+const IS_TOUCH = typeof window !== 'undefined' &&
+  window.matchMedia && window.matchMedia('(hover: none)').matches;
+
 function RecentTile({ tileData, lang, onClick }) {
   const slots = (tileData.slots || []).filter(Boolean);
   const focal = tileData.focal || [];
@@ -6815,15 +6836,41 @@ function RecentTile({ tileData, lang, onClick }) {
   const [idx, setIdx] = homeState(0);
   const [hovering, setHovering] = homeState(false);
   const intRef = homeRef(null);
+  const touchRef = homeRef(null);
+  const swipedRef = homeRef(false);
 
   homeEffect(() => {
-    if (hovering && count > 1) {
+    // Auto-cycling is a hover affordance. On touch the user drives it by
+    // swiping, so don't spin images under their finger.
+    if (hovering && !IS_TOUCH && count > 1) {
       intRef.current = setInterval(() => setIdx(i => (i + 1) % count), 3000);
     } else {
       clearInterval(intRef.current);
     }
     return () => clearInterval(intRef.current);
   }, [hovering, count]);
+
+  const go = (dir) => setIdx(i => (i + dir + count) % count);
+
+  function onTouchStart(e) {
+    const t = e.touches[0];
+    touchRef.current = { x: t.clientX, y: t.clientY };
+    swipedRef.current = false;
+  }
+  function onTouchMove(e) {
+    if (!touchRef.current || count < 2) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchRef.current.x;
+    const dy = t.clientY - touchRef.current.y;
+    // Only claim the gesture once it's clearly horizontal — otherwise the page
+    // must stay scrollable through the tile.
+    if (Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      go(dx < 0 ? 1 : -1);
+      swipedRef.current = true;
+      touchRef.current = null;
+    }
+  }
+  function onTouchEnd() { touchRef.current = null; }
 
   const label = lang === 'en' ? (tileData.label_en || tileData.label) : tileData.label;
 
@@ -6832,7 +6879,10 @@ function RecentTile({ tileData, lang, onClick }) {
       style={{ '--hue': tileData.hue }}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
-      onClick={onClick}>
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onClick={() => { if (swipedRef.current) { swipedRef.current = false; return; } onClick(); }}>
       <div className="recent-tile-imgs">
         {/* Gradient placeholder underneath */}
         <div style={{
@@ -6846,10 +6896,12 @@ function RecentTile({ tileData, lang, onClick }) {
       </div>
       {count > 1 && (
         <>
-          <button className="rtile-arr rtile-arr-l"
-            onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + count) % count); }}>‹</button>
-          <button className="rtile-arr rtile-arr-r"
-            onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % count); }}>›</button>
+          <button className="rtile-arr rtile-arr-l" aria-label="Предыдущая работа"
+            onTouchStart={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); go(-1); }}>‹</button>
+          <button className="rtile-arr rtile-arr-r" aria-label="Следующая работа"
+            onTouchStart={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); go(1); }}>›</button>
           <div className="recent-tile-counter">
             {slots.map((_, i) => <span key={i} className={i === idx ? 'on' : ''} />)}
           </div>
@@ -8060,6 +8112,7 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
 // ── Coverflow (top-level so React keeps it mounted → smooth animation) ──
 function CoverflowRow({ catItems, idx, setIdx, openCategory, setOpenCategory, admin, lang, t, getCoverSrc, getCatCount, setPfEdit, pfRes }) {
   const total = catItems.length;
+  const swipeRef = pfRef(null);
 
   pfEffect(() => {
     if (idx >= total && total > 0) setIdx(0);
@@ -8079,8 +8132,29 @@ function CoverflowRow({ catItems, idx, setIdx, openCategory, setOpenCategory, ad
   const prev = () => setIdx(i => (i - 1 + total) % total);
   const next = () => setIdx(i => (i + 1) % total);
 
+  // Keyboard already had arrows; touch had nothing, so on a phone the carousel
+  // could only be moved by hitting the small side cards.
+  function onTouchStart(e) {
+    const t = e.touches[0];
+    swipeRef.current = { x: t.clientX, y: t.clientY, done: false };
+  }
+  function onTouchMove(e) {
+    const s = swipeRef.current;
+    if (!s || s.done || total < 2) return;
+    const t = e.touches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    // Claim only clearly horizontal movement so the page still scrolls.
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      dx < 0 ? next() : prev();
+      s.done = true;
+    }
+  }
+  function onTouchEnd() { swipeRef.current = null; }
+
   return (
-    <div className="pf-coverflow-outer">
+    <div className="pf-coverflow-outer"
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       <div className="pf-coverflow">
         {catItems.map((item, i) => {
           const offset = ((i - idx) % total + total) % total;
@@ -9674,7 +9748,18 @@ function App() {
     return loadLS('tab', 'home');
   });
 
+  // Sections are only hidden, never unmounted, so the page keeps whatever scroll
+  // offset the previous tab had — you'd tap "Прайс" from halfway down Portfolio
+  // and land in the middle of the price list. Remember a position per tab:
+  // return to a tab you were reading and you're back where you left off; open a
+  // fresh one and you start at the top.
+  const scrollByTab = React.useRef({});
+  const skipRestore = React.useRef(true);
+
   function setTab(newTab) {
+    if (newTab === tab) return;
+    scrollByTab.current[tab] = window.scrollY || 0; // remember where we stood
+    skipRestore.current = false;
     setTabRaw(newTab);
     const path = TAB_TO_PATH[newTab] || '/';
     if (typeof window !== 'undefined' && window.location.pathname !== path) {
@@ -9682,12 +9767,24 @@ function App() {
     }
   }
 
+  // Restore before paint so there is no visible jump.
+  React.useLayoutEffect(() => {
+    // Don't fight the browser's own restoration on first load / refresh.
+    if (skipRestore.current) { skipRestore.current = false; return; }
+    const y = scrollByTab.current[tab];
+    window.scrollTo({ top: typeof y === 'number' ? y : 0, behavior: 'auto' });
+  }, [tab]);
+
   // Sync state when user uses browser back/forward
   appEffect(() => {
-    const handler = () => setTabRaw(pathToTab(window.location.pathname));
+    const handler = () => {
+      scrollByTab.current[tab] = window.scrollY || 0;
+      skipRestore.current = false;
+      setTabRaw(pathToTab(window.location.pathname));
+    };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
-  }, []);
+  }, [tab]);
 
   // Per-route <title> + <html lang> — real routes deserve real titles (SEO + browser tabs)
   appEffect(() => {

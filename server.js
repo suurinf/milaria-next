@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
+const crypto = require('crypto');
 
 const SUPABASE_URL = 'https://vgwdudjgvkmlnnfgonbk.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnd2R1ZGpndmttbG5uZmdvbmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjI2NDksImV4cCI6MjA5NDUzODY0OX0.I_ciFmhRcv2RdXZFaedlMki8c96zTvXkUyJxSVACbr4';
@@ -224,6 +225,40 @@ function getBaseHTML() {
   return _baseHtml;
 }
 
+// The HTML was sent with no cache headers at all. With neither Cache-Control
+// nor ETag nor Last-Modified, browsers fall back to heuristic caching and decide
+// the lifetime themselves — phones especially hold on to it. A fresh deploy then
+// stays invisible on mobile, where there is no "hard reload" to reach for.
+//
+// "no-cache" does NOT mean "don't store": it means store, but always revalidate
+// with the server first. Paired with an ETag, unchanged pages cost a tiny 304
+// and changed pages arrive immediately.
+// A short fingerprint of the deployed index.html. Lets you confirm at a glance
+// whether a new build actually reached the server, instead of guessing.
+function buildFingerprint() {
+  try {
+    const st = fs.statSync(HTML_PATH);
+    const raw = fs.readFileSync(HTML_PATH);
+    const hash = crypto.createHash('sha1').update(raw).digest('hex').slice(0, 8);
+    return `${hash} · ${Math.round(st.size / 1024)} KB · ${st.mtime.toISOString().slice(0, 16).replace('T', ' ')}`;
+  } catch (e) { return 'unavailable'; }
+}
+
+function sendHTML(req, res, html, extraHeaders) {
+  const etag = '"' + crypto.createHash('sha1').update(html).digest('base64').slice(0, 27) + '"';
+  const headers = Object.assign({
+    'Content-Type': 'text/html;charset=utf-8',
+    'Cache-Control': 'no-cache, must-revalidate',
+    'ETag': etag,
+  }, extraHeaders || {});
+  if (req.headers['if-none-match'] === etag) {
+    res.writeHead(304, { 'Cache-Control': headers['Cache-Control'], 'ETag': etag });
+    return res.end();
+  }
+  res.writeHead(200, headers);
+  res.end(html);
+}
+
 function buildHTML() {
   let html = getBaseHTML();
   // Exclude heavy base64 portfolio_images from inline snapshot (keeps HTML small & fast).
@@ -274,6 +309,8 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
 </style></head><body>
 <h2 style="color:#e8a93b">Milaria Debug</h2>
 <p>Cache: ${cache.updatedAt ? 'OK @ ' + cache.updatedAt.slice(11,19) : 'NOT LOADED'} | Port: ${PORT}</p>
+<p style="color:#e8a93b">Сборка: <b>${buildFingerprint()}</b></p>
+<p style="color:#888">JSX: ${_baseHtml && _baseHtml.indexOf('text/babel') === -1 ? 'скомпилирован на сервере ✓' : 'компилируется в браузере (медленно)'}</p>
 <p><a href="/debug" style="color:#7cf">Refresh</a></p>
 <div>${logs.map(l=>`<div class="row ${l.type}">[${l.t}] <b>${l.type}</b> ${l.msg}</div>`).join('')}</div>
 </body></html>`);
@@ -338,8 +375,7 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
     );
   }
   if (SPA_PATHS.includes(p) || SPA_PATHS.includes(p.replace(/\/+$/, ''))) {
-    res.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8' });
-    return res.end(buildHTML());
+    return sendHTML(req, res, buildHTML());
   }
 
   // Static files
@@ -354,8 +390,7 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
   }
 
   // Main page — serve immediately from cache (no waiting!)
-  res.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8' });
-  res.end(buildHTML());
+  sendHTML(req, res, buildHTML());
 });
 
 // Start server FIRST, fetch data after
