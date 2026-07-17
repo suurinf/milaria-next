@@ -5134,7 +5134,16 @@ function resizeToBlob(file, maxW, quality) {
         const webp = canEncodeWebp();
         const mime = webp ? 'image/webp' : 'image/jpeg';
         canvas.toBlob(
-          b => resolve(b ? { blob: b, mime, ext: webp ? 'webp' : 'jpg' } : null),
+          b => resolve(b ? {
+            blob: b, mime, ext: webp ? 'webp' : 'jpg',
+            // Держим холст под рукой: если bucket не примет webp, перекодируем
+            // в jpeg без повторного чтения и масштабирования файла.
+            jpegFallback: webp
+              ? () => new Promise(r => canvas.toBlob(
+                  j => r(j ? { blob: j, mime: 'image/jpeg', ext: 'jpg' } : null),
+                  'image/jpeg', quality))
+              : null,
+          } : null),
           mime, quality
         );
       };
@@ -5153,6 +5162,57 @@ function storagePublicUrl(path) {
 }
 
 // Returns { url, thumb } of proxied public URLs, or null on failure
+// Понятный текст вместо догадки. Раньше на ЛЮБУЮ ошибку показывалось
+// "проверь что создан bucket" — что уводило не туда, если bucket на месте,
+// а причина в правах или формате файла.
+function storageErrorText(err) {
+  const msg = String((err && (err.message || err.error)) || err || '');
+  const low = msg.toLowerCase();
+  if (low.includes('mime') || low.includes('not supported') || low.includes('invalid_mime')) {
+    return 'Хранилище не принимает этот формат файла.\n\n' +
+           'Supabase → Storage → bucket "portfolio" → Settings → Allowed MIME types:\n' +
+           'оставь поле пустым (тогда разрешено всё) или добавь image/webp.\n\n' +
+           'Ответ сервера: ' + msg;
+  }
+  if (low.includes('row-level security') || low.includes('policy') || low.includes('unauthorized') || low.includes('403')) {
+    return 'Нет прав на запись в хранилище.\n\n' +
+           'Похоже, ты вышел из админки — перезайди.\n' +
+           'Если не поможет: Supabase → Storage → Policies, у bucket "portfolio"\n' +
+           'операции INSERT/UPDATE/DELETE должны быть разрешены роли authenticated.\n\n' +
+           'Ответ сервера: ' + msg;
+  }
+  if (low.includes('exceeded') || low.includes('too large') || low.includes('413')) {
+    return 'Файл больше лимита bucket.\n\nОтвет сервера: ' + msg;
+  }
+  if (low.includes('duplicate') || low.includes('already exists')) {
+    return 'Файл с таким именем уже есть. Попробуй ещё раз.\n\nОтвет сервера: ' + msg;
+  }
+  return 'Не удалось загрузить в хранилище.\n\nОтвет сервера: ' + msg;
+}
+
+// Кладём файл в Storage. Если bucket не принимает webp — молча перекодируем
+// в jpeg и пробуем снова, чтобы настройка bucket не блокировала работу.
+async function putToStorage(path, item) {
+  let res = await _sbc.storage.from(STORAGE_BUCKET)
+    .upload(path, item.blob, { contentType: item.mime, upsert: false });
+  if (!res.error) return { path, error: null };
+
+  const msg = String(res.error.message || '').toLowerCase();
+  const mimeRejected = msg.includes('mime') || msg.includes('not supported');
+  if (mimeRejected && item.mime === 'image/webp' && item.jpegFallback) {
+    const jpeg = await item.jpegFallback();
+    if (jpeg) {
+      const altPath = path.replace(/\.webp$/, '.jpg');
+      console.warn('[storage] bucket отверг webp — перекодирую в jpeg');
+      const retry = await _sbc.storage.from(STORAGE_BUCKET)
+        .upload(altPath, jpeg.blob, { contentType: jpeg.mime, upsert: false });
+      if (!retry.error) return { path: altPath, error: null };
+      return { path: altPath, error: retry.error };
+    }
+  }
+  return { path, error: res.error };
+}
+
 async function uploadToStorage(file) {
   try {
     const kind = fileKind(file);
@@ -5187,18 +5247,20 @@ async function uploadToStorage(file) {
     const fullPath = `full/${base}.${full.ext}`;
     const thumbPath = thumb ? `thumb/${base}.${thumb.ext}` : null;
 
-    const up1 = await _sbc.storage.from(STORAGE_BUCKET).upload(fullPath, full.blob, { contentType: full.mime, upsert: false });
+    const up1 = await putToStorage(fullPath, full);
     if (up1.error) {
       console.error('[storage] full upload failed', up1.error);
-      alert('Не удалось загрузить в хранилище.\nПроверь что создан публичный bucket "portfolio" в Supabase Storage.');
+      alert(storageErrorText(up1.error));
       return null;
     }
+    const finalFullPath = up1.path;
     let thumbUrl = null;
     if (thumb) {
-      const up2 = await _sbc.storage.from(STORAGE_BUCKET).upload(thumbPath, thumb.blob, { contentType: thumb.mime, upsert: false });
-      if (!up2.error) thumbUrl = storagePublicUrl(thumbPath);
+      const up2 = await putToStorage(thumbPath, thumb);
+      if (!up2.error) thumbUrl = storagePublicUrl(up2.path);
+      else console.warn('[storage] thumb upload failed', up2.error);
     }
-    const url = storagePublicUrl(fullPath);
+    const url = storagePublicUrl(finalFullPath);
     return { url, thumb: thumbUrl || url };
   } catch (e) {
     console.error('[storage] error', e);

@@ -28,6 +28,9 @@ function log(type, msg) {
 // settings падал с 400 «column settings.sort_order does not exist». Ошибка
 // молча превращалась в пустоту — отсюда вечное "settings=0" в логе, мёртвый
 // снапшот настроек и незаметно неработающая Метрика.
+// Возвращает массив при успехе и null при любой ошибке.
+// Это принципиально: раньше сбой отдавал [], и «сеть отвалилась» было не отличить
+// от «таблица пустая» — из-за чего упавшее обновление затирало хороший кэш нулями.
 function supaFetch(table, orderBy = 'sort_order') {
   return new Promise((resolve) => {
     try {
@@ -47,22 +50,28 @@ function supaFetch(table, orderBy = 'sort_order') {
             // Не массив — значит PostgREST вернул ошибку. Раньше она уходила
             // в тишину; теперь видна в /debug и не притворяется пустой таблицей.
             log('SUPA_ERR', `${table}: ${parsed && (parsed.message || parsed.code) || 'unexpected response'}`);
-            resolve([]);
+            resolve(null);
           } catch (e) {
             log('SUPA_ERR', `${table}: невалидный JSON (HTTP ${res.statusCode})`);
-            resolve([]);
+            resolve(null);
           }
         });
       });
-      req.on('error', (e) => { log('SUPA_ERR', `${table}: ${e.message}`); resolve([]); });
-      req.on('timeout', () => { req.destroy(); log('SUPA_ERR', `${table}: таймаут`); resolve([]); });
-    } catch (e) { log('SUPA_ERR', `${table}: ${e.message}`); resolve([]); }
+      req.on('error', (e) => { log('SUPA_ERR', `${table}: ${e.message}`); resolve(null); });
+      req.on('timeout', () => { req.destroy(); log('SUPA_ERR', `${table}: таймаут`); resolve(null); });
+    } catch (e) { log('SUPA_ERR', `${table}: ${e.message}`); resolve(null); }
   });
 }
 
-async function refreshCache() {
+// Контейнер стартует раньше, чем поднимается его сеть: первый заход в Supabase
+// стабильно ловил ECONNRESET по всем таблицам, кэш оставался пустым, а следующая
+// попытка была только через 15 минут. Значит после каждого деплоя сайт четверть
+// часа жил без снапшота (и без Метрики, которая читается из настроек).
+const RETRY_DELAYS = [2000, 5000, 15000, 45000];
+
+async function refreshCache(attempt = 0) {
   try {
-    log('CACHE', 'Refreshing from Supabase...');
+    log('CACHE', attempt ? `Повтор ${attempt}/${RETRY_DELAYS.length}...` : 'Refreshing from Supabase...');
     // NOTE: portfolio_images NOT fetched here — it's heavy base64/URLs and the client
     // loads it directly. Covers live on portfolio_categories.cover_data (light).
     const [queue, portfolioCategories, prices,
@@ -75,14 +84,48 @@ async function refreshCache() {
       supaFetch('links'),
       supaFetch('settings', null), // нет колонки sort_order
     ]);
-    const settings = {};
-    if (Array.isArray(settingsArr)) settingsArr.forEach(r => { if (r.key) settings[r.key] = r.value; });
-    cache = {
-      data: { queue, portfolioCategories, prices, calcOptions, debts, links },
-      settings,
-      updatedAt: new Date().toISOString(),
+
+    const got = [queue, portfolioCategories, prices, calcOptions, debts, links, settingsArr];
+    const failed = got.filter(r => r === null).length;
+
+    // Всё упало — почти наверняка сеть. Кэш не трогаем (пустой снапшот хуже
+    // отсутствия обновления) и пробуем ещё раз с нарастающей паузой.
+    if (failed === got.length) {
+      log('CACHE_ERR', `Supabase недоступен, все ${failed} таблиц. Кэш оставлен как был.`);
+      if (attempt < RETRY_DELAYS.length) {
+        setTimeout(() => refreshCache(attempt + 1), RETRY_DELAYS[attempt]);
+      } else {
+        log('CACHE_ERR', 'Попытки исчерпаны — ждём планового обновления через 15 мин.');
+      }
+      return;
+    }
+
+    // Частичный успех: свежее берём, за упавшие таблицы держимся за прошлое
+    // значение, чтобы один сбойный запрос не обнулил рабочий раздел.
+    const prev = cache.data || {};
+    const data = {
+      queue:               queue               ?? prev.queue               ?? [],
+      portfolioCategories: portfolioCategories ?? prev.portfolioCategories ?? [],
+      prices:              prices              ?? prev.prices              ?? [],
+      calcOptions:         calcOptions         ?? prev.calcOptions         ?? [],
+      debts:               debts               ?? prev.debts               ?? [],
+      links:               links               ?? prev.links               ?? [],
     };
-    log('CACHE', `OK: q=${queue.length} cats=${portfolioCategories.length} settings=${Object.keys(settings).length}`);
+
+    let settings = cache.settings || {};
+    if (settingsArr) {
+      settings = {};
+      settingsArr.forEach(r => { if (r && r.key) settings[r.key] = r.value; });
+    }
+
+    cache = { data, settings, updatedAt: new Date().toISOString() };
+    log('CACHE', `OK: q=${data.queue.length} cats=${data.portfolioCategories.length} settings=${Object.keys(settings).length}`
+      + (failed ? ` (не ответили: ${failed}, взяты прошлые значения)` : ''));
+
+    // Часть таблиц не ответила — дотянемся позже, не дожидаясь 15 минут.
+    if (failed && attempt < RETRY_DELAYS.length) {
+      setTimeout(() => refreshCache(attempt + 1), RETRY_DELAYS[attempt]);
+    }
   } catch (e) {
     log('CACHE_ERR', e.message);
   }
