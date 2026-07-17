@@ -1,0 +1,39 @@
+{
+  "takenAt": "2026-07-17T05:16:55.801Z",
+  "source": "https://vgwdudjgvkmlnnfgonbk.supabase.co",
+  "tables": [
+    {
+      "table": "queue_items",
+      "rows": 30
+    },
+    {
+      "table": "portfolio_categories",
+      "rows": 8
+    },
+    {
+      "table": "portfolio_images",
+      "rows": 66
+    },
+    {
+      "table": "prices",
+      "rows": 36
+    },
+    {
+      "table": "calc_options",
+      "rows": 52
+    },
+    {
+      "table": "debts",
+      "rows": 32
+    },
+    {
+      "table": "links",
+      "rows": 3
+    },
+    {
+      "table": "settings",
+      "rows": 5
+    }
+  ],
+  "note": "Файлы в Supabase Storage (сами картинки) сюда не входят — здесь только база."
+}

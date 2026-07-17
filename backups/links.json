@@ -1,0 +1,32 @@
+[
+  {
+    "created_at": "2026-05-17T06:26:10.201816+00:00",
+    "handle": "@milaria_art",
+    "id": "5c2a4a37-b7ef-41ea-b534-ec257b361bbb",
+    "kind": "social",
+    "label": "Twitter / X",
+    "sort_order": 2,
+    "updated_at": "2026-05-17T06:26:10.201816+00:00",
+    "url": "https://x.com/milaria_art"
+  },
+  {
+    "created_at": "2026-05-17T06:26:10.201816+00:00",
+    "handle": "milaria",
+    "id": "7785d1a7-0c61-4247-8f6e-3d7aae745e1f",
+    "kind": "support",
+    "label": "Boosty",
+    "sort_order": 7,
+    "updated_at": "2026-05-17T13:30:53.586085+00:00",
+    "url": "https://boosty.to/milaria"
+  },
+  {
+    "created_at": "2026-05-17T06:26:10.201816+00:00",
+    "handle": "@milaria",
+    "id": "f95e11a0-8969-4642-bb7f-9fb44849f354",
+    "kind": "chat",
+    "label": "Telegram",
+    "sort_order": 5,
+    "updated_at": "2026-05-17T06:26:10.201816+00:00",
+    "url": "https://t.me/milaria"
+  }
+]
