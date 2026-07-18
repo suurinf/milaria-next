@@ -175,45 +175,63 @@ function proxySupabase(req, res, supaPath) {
 }
 
 // Binary-safe proxy for Supabase Storage (file uploads + image reads)
+// Файлы (картинки, гифки, видео) гоняем ПОТОКОМ, не собирая целиком в памяти.
+// Раньше и загрузка, и отдача делали Buffer.concat — то есть 40-мегабайтное
+// видео целиком лежало в оперативке контейнера, дважды. На маленьком тарифе
+// это упирается в память и рвёт соединение на больших файлах.
 function proxyStorage(req, res, supaPath) {
-  const chunks = [];
-  req.on('data', c => chunks.push(c));
-  req.on('end', () => {
-    const body = Buffer.concat(chunks);
-    try {
-      const target = new URL(SUPABASE_URL + supaPath);
-      log('STORAGE', `${req.method} ${supaPath.split('?')[0]}`);
-      const headers = {
-        apikey: SUPABASE_KEY,
-        Authorization: req.headers['authorization'] || `Bearer ${SUPABASE_KEY}`,
+  try {
+    const target = new URL(SUPABASE_URL + supaPath);
+    log('STORAGE', `${req.method} ${supaPath.split('?')[0]}`);
+
+    const headers = {
+      apikey: SUPABASE_KEY,
+      Authorization: req.headers['authorization'] || `Bearer ${SUPABASE_KEY}`,
+    };
+    if (req.headers['content-type'])   headers['Content-Type'] = req.headers['content-type'];
+    if (req.headers['content-length']) headers['Content-Length'] = req.headers['content-length'];
+    // supabase-js шлёт x-upsert; без него перезапись файла не работает
+    if (req.headers['x-upsert'])       headers['x-upsert'] = req.headers['x-upsert'];
+    // Диапазоны нужны, чтобы телефон мог перематывать видео, не качая его целиком
+    if (req.headers['range'])          headers['Range'] = req.headers['range'];
+
+    const pr = https.request({
+      hostname: target.hostname,
+      path: target.pathname + target.search,
+      method: req.method,
+      headers,
+    }, (ps) => {
+      log('STORAGE', `→ ${ps.statusCode} ${supaPath.split('?')[0]}`);
+      if (['POST', 'PUT', 'DELETE'].includes(req.method)) setTimeout(refreshCache, 500);
+
+      const isMedia = req.method === 'GET' && (ps.statusCode === 200 || ps.statusCode === 206);
+      const out = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization,apikey,content-type,x-upsert,cache-control',
+        'Content-Type': ps.headers['content-type'] || 'application/octet-stream',
       };
-      if (req.headers['content-type']) headers['Content-Type'] = req.headers['content-type'];
-      if (body.length) headers['Content-Length'] = body.length;
-      const pr = https.request({
-        hostname: target.hostname, path: target.pathname + target.search,
-        method: req.method, headers,
-      }, (ps) => {
-        const out = [];
-        ps.on('data', c => out.push(c));
-        ps.on('end', () => {
-          const respBuf = Buffer.concat(out);
-          log('STORAGE', `→ ${ps.statusCode} ${supaPath.split('?')[0]}`);
-          if (['POST','PUT','DELETE'].includes(req.method)) setTimeout(refreshCache, 500);
-          const isImg = req.method === 'GET' && ps.statusCode === 200;
-          res.writeHead(ps.statusCode, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'authorization,apikey,content-type,x-upsert,cache-control',
-            'Content-Type': ps.headers['content-type'] || 'application/octet-stream',
-            ...(isImg ? { 'Cache-Control': 'public, max-age=31536000, immutable' } : {}),
-          });
-          res.end(respBuf);
-        });
+      // Пробрасываем заголовки, без которых видео не перематывается на телефоне
+      ['content-length', 'content-range', 'accept-ranges', 'etag'].forEach(h => {
+        if (ps.headers[h]) out[h === 'etag' ? 'ETag' : h] = ps.headers[h];
       });
-      pr.on('error', e => { log('STORAGE_ERR', e.message); res.writeHead(502); res.end(''); });
-      if (body.length) pr.write(body);
-      pr.end();
-    } catch (e) { log('STORAGE_ERR', e.message); res.writeHead(500); res.end(''); }
-  });
+      if (isMedia) out['Cache-Control'] = 'public, max-age=31536000, immutable';
+
+      res.writeHead(ps.statusCode, out);
+      ps.pipe(res);                       // отдаём по мере поступления
+      ps.on('error', () => res.destroy());
+    });
+
+    pr.on('error', e => {
+      log('STORAGE_ERR', e.message);
+      if (!res.headersSent) { res.writeHead(502); res.end(''); }
+    });
+
+    req.pipe(pr);                          // принимаем по мере поступления
+    req.on('error', () => pr.destroy());
+  } catch (e) {
+    log('STORAGE_ERR', e.message);
+    if (!res.headersSent) { res.writeHead(500); res.end(''); }
+  }
 }
 
 const MIME = {
@@ -402,7 +420,7 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
   }
 
   // SPA routes — serve the same HTML for app paths (URL routing inside React)
-  const SPA_PATHS = ['/', '/queue', '/portfolio', '/calculator', '/prices', '/debts', '/tos'];
+  const SPA_PATHS = ['/', '/queue', '/portfolio', '/calculator', '/debts', '/tos'];
 
   // og-image.jpg — social preview. Extracted from the hero picture already
   // embedded in index.html, so no extra asset needs to live in the repo.

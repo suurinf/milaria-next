@@ -4253,7 +4253,6 @@ const I18N = {
       queue: "Очередь заказов",
       portfolio: "Портфолио",
       calculator: "Калькулятор",
-      prices: "Прайс",
       debts: "Twitch долги",
       links: "Ссылки",
       tos: "Условия / T.O.S.",
@@ -4325,11 +4324,6 @@ const I18N = {
       groupBase: "База",
       groupAddon: "Дополнения",
     },
-    prices: {
-      title: "Прайс-лист",
-      subtitle: "Стартовые цены. Финальная зависит от сложности",
-      from: "от",
-    },
     debts: {
       title: "Twitch долги",
       subtitle: "Невыполненные обещания со стримов. Стараюсь закрыть всё.",
@@ -4364,7 +4358,6 @@ const I18N = {
       queue: "Order queue",
       portfolio: "Portfolio",
       calculator: "Calculator",
-      prices: "Prices",
       debts: "Twitch debts",
       links: "Links",
       tos: "Terms / T.O.S.",
@@ -4435,11 +4428,6 @@ const I18N = {
       },
       groupBase: "Base",
       groupAddon: "Add-ons",
-    },
-    prices: {
-      title: "Price list",
-      subtitle: "Starting prices. Final depends on complexity",
-      from: "from",
     },
     debts: {
       title: "Twitch debts",
@@ -5233,7 +5221,10 @@ async function uploadToStorage(file) {
       const up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, file, { contentType, upsert: false });
       if (up.error) {
         console.error('[storage] upload failed', up.error);
-        alert('Не удалось загрузить в хранилище.\nПроверь что создан публичный bucket "portfolio" в Supabase Storage.');
+        // Показываем НАСТОЯЩИЙ ответ сервера, а не догадку: раньше здесь висело
+        // "проверь bucket", хотя bucket очевидно на месте.
+        alert(storageErrorText(up.error) +
+          '\n\nРазмер файла: ' + Math.round(file.size / 1048576 * 10) / 10 + ' МБ');
         return null;
       }
       const url = storagePublicUrl(path);
@@ -6865,20 +6856,20 @@ function FocalPicker({ src, focal, onChange }) {
 }
 
 // ── Single media layer inside tile ──
-function TileMediaLayer({ src, focal, active, hovering }) {
+function TileMediaLayer({ src, focal, active, hovering, onScreen = true }) {
   const type = detectMedia(src);
   const vidRef = homeRef(null);
   const focalStr = focal || '50% 50%';
 
+  // Видео играет всегда, пока плашка видна — наведение больше ни при чём.
+  // Но за экраном пауза: четыре ролика, крутящиеся в фоне, съедают
+  // мобильный трафик и батарею впустую.
   homeEffect(() => {
-    if (!vidRef.current) return;
-    // No hover on touch — play whichever slot is currently shown.
-    if (active && (hovering || IS_TOUCH)) {
-      vidRef.current.play().catch(() => {});
-    } else {
-      vidRef.current.pause();
-    }
-  }, [hovering, active]);
+    const v = vidRef.current;
+    if (!v) return;
+    if (active && onScreen) v.play().catch(() => {});
+    else v.pause();
+  }, [active, onScreen]);
 
   if (type === 'youtube') {
     const id = ytIdFrom(src);
@@ -6927,17 +6918,37 @@ function RecentTile({ tileData, lang, onClick }) {
   const intRef = homeRef(null);
   const touchRef = homeRef(null);
   const swipedRef = homeRef(false);
+  const rootRef = homeRef(null);
+
+  // Видео нельзя перелистывать по таймеру: человек не успеет посмотреть.
+  // Пока показан ролик — автопрокрутка стоит, листать можно только стрелками
+  // или свайпом.
+  const currentIsVideo = detectMedia(slots[idx]) === 'video';
 
   homeEffect(() => {
     // Auto-cycling is a hover affordance. On touch the user drives it by
     // swiping, so don't spin images under their finger.
-    if (hovering && !IS_TOUCH && count > 1) {
+    if (hovering && !IS_TOUCH && count > 1 && !currentIsVideo) {
       intRef.current = setInterval(() => setIdx(i => (i + 1) % count), 3000);
     } else {
       clearInterval(intRef.current);
     }
     return () => clearInterval(intRef.current);
-  }, [hovering, count]);
+  }, [hovering, count, currentIsVideo, idx]);
+
+  // Плашка на экране? Видео за пределами вьюпорта играть не должно —
+  // это лишний трафик и разряд батареи на телефоне.
+  const [onScreen, setOnScreen] = homeState(true);
+  homeEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      entries => setOnScreen(entries[0].isIntersecting),
+      { rootMargin: '150px' }   // включаем чуть заранее, чтобы не было рывка
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const go = (dir) => setIdx(i => (i + dir + count) % count);
 
@@ -6964,7 +6975,7 @@ function RecentTile({ tileData, lang, onClick }) {
   const label = lang === 'en' ? (tileData.label_en || tileData.label) : tileData.label;
 
   return (
-    <div className="recent-tile" data-color={tileData.color}
+    <div ref={rootRef} className="recent-tile" data-color={tileData.color}
       style={{ '--hue': tileData.hue }}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
@@ -6980,7 +6991,7 @@ function RecentTile({ tileData, lang, onClick }) {
           opacity: slots.length ? 0 : 1,
         }} />
         {slots.map((src, i) => (
-          <TileMediaLayer key={i} src={src} focal={focal[i]} active={i === idx} hovering={hovering} />
+          <TileMediaLayer key={i} src={src} focal={focal[i]} active={i === idx} hovering={hovering} onScreen={onScreen} />
         ))}
       </div>
       {count > 1 && (
@@ -9079,148 +9090,6 @@ function priceTag(key) {
   return 'Art';
 }
 
-function PricesSection({ t, lang, admin }) {
-  const priceDefaults = React.useMemo(() => DEFAULT_PRICES.map((p, i) => ({ ...p, label: p.key, sort_order: i })), []);
-  const pricesRes = useResource('prices', priceDefaults);
-  const prices = pricesRes.items.map(p => ({ ...p, key: p.label || p.key, key_en: p.label_en || p.key_en || '' }));
-  const dragPrices = useDragReorder(pricesRes.items, pricesRes);
-
-  function updatePrice(id, patch) {
-    const dbPatch = { ...patch };
-    if ('key' in dbPatch) { dbPatch.label = dbPatch.key; delete dbPatch.key; }
-    if ('key_en' in dbPatch) { dbPatch.label_en = dbPatch.key_en; delete dbPatch.key_en; }
-    pricesRes.update(id, dbPatch);
-  }
-  function deletePrice(id) {
-    pricesRes.remove(id);
-  }
-  function addPrice(group) {
-    pricesRes.add({ label: 'New item', rub: 1000, usd: 0, price_group: group || 'main' });
-  }
-
-  return (
-    <section className="page anim-in">
-      <PageHead
-        eyebrow={`✦ ${t.prices.title} ✦`}
-        title={t.prices.title}
-        subtitle={t.prices.subtitle}
-      />
-
-      {(() => {
-        const renderPriceCard = (p) => {
-          const hue = priceHue(p.key);
-          const tag = priceTag(p.key);
-          // Inline SVG gradient as hover image (no asset needed; user will replace)
-          const svg = encodeURIComponent(
-            `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200" viewBox="0 0 600 200">
-              <defs>
-                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="hsl(${hue}, 60%, 50%)"/>
-                  <stop offset="100%" stop-color="hsl(${hue + 20}, 55%, 30%)"/>
-                </linearGradient>
-                <pattern id="p" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="20" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
-                </pattern>
-              </defs>
-              <rect width="600" height="200" fill="url(#g)"/>
-              <rect width="600" height="200" fill="url(#p)"/>
-              <text x="540" y="180" font-family="serif" font-style="italic" font-size="120" fill="rgba(255,255,255,0.18)" text-anchor="end">✦</text>
-            </svg>`
-          );
-          const svgImg = `url("data:image/svg+xml;utf8,${svg}")`;
-          const cardImg = p.image ? `url("${p.image}")` : svgImg;
-          const dh = admin ? dragPrices.getHandlers(p) : {};
-          return (
-            <div className={`price-card ${dh.className || ''}`} key={p.id} style={{ '--card-img': cardImg }}
-              draggable={dh.draggable}
-              onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
-              onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-              {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
-              <span className="price-card-tag">{tag}</span>
-              <span className="price-card-name">
-                {admin ? (
-                  <Editable
-                    value={lang === 'en' ? (p.key_en || '') : (p.key || '')}
-                    onSave={(v) => updatePrice(p.id, lang === 'en' ? { key_en: v } : { key: v })}
-                    admin={admin}
-                  />
-                ) : (lang === 'en' ? (p.key_en || p.key) : p.key)}
-              </span>
-              <span className="price-card-val">
-                <span className="from">{t.prices.from}</span>
-                {admin ? (
-                  <>
-                    {lang === 'en' ? (
-                      <>
-                        <span style={{ marginRight: 2 }}>$</span>
-                        <EditableNumber value={p.usd || 0} onSave={(v) => updatePrice(p.id, { usd: v })} admin={admin} />
-                      </>
-                    ) : (
-                      <>
-                        <EditableNumber value={p.rub} onSave={(v) => updatePrice(p.id, { rub: v })} admin={admin} />
-                        <span style={{ marginLeft: 4 }}>₽</span>
-                      </>
-                    )}
-                  </>
-                ) : (lang === 'en'
-                  ? `$${(p.usd || 0).toLocaleString('en-US')}`
-                  : `${(p.rub || 0).toLocaleString('ru-RU')} ₽`)}
-              </span>
-              {admin && (
-                <button className="admin-btn danger" style={{ position: 'absolute', top: 8, left: 8 }} onClick={() => deletePrice(p.id)}>×</button>
-              )}
-              {admin && (
-                <button className="admin-btn" style={{ position: 'absolute', top: 8, left: 40, fontSize: 10, whiteSpace: 'nowrap' }}
-                  title="Переместить между блоками"
-                  onClick={() => pricesRes.update(p.id, { price_group: (p.price_group === 'addon' ? 'main' : 'addon') })}>
-                  {p.price_group === 'addon' ? '↑ в основной' : '↓ в доп.'}
-                </button>
-              )}
-              {admin && (
-                <div style={{ position: 'absolute', bottom: 8, right: 8, display: 'flex', gap: 4, zIndex: 2 }}>
-                  <ImageUploader label="📷 фото" onUpload={(url) => pricesRes.update(p.id, { image: url })} />
-                  {p.image && <button className="upload-btn" onClick={() => pricesRes.update(p.id, { image: '' })}>✕</button>}
-                </div>
-              )}
-            </div>
-          );
-        };
-        const mainItems = prices.filter(p => (p.price_group || 'main') !== 'addon');
-        const addonItems = prices.filter(p => p.price_group === 'addon');
-        return (
-          <>
-            <div className="prices-grid stagger-children">
-              {mainItems.map(renderPriceCard)}
-            </div>
-            {admin && (
-              <button className="add-btn" onClick={() => addPrice('main')}>+ {lang === 'ru' ? 'Добавить в основной' : 'Add to main'}</button>
-            )}
-
-            {(addonItems.length > 0 || admin) && (
-              <>
-                <div className="price-group-head">
-                  <span className="price-group-line"></span>
-                  <h3 className="price-group-title">{lang === 'ru' ? 'Дополнительные опции' : 'Additional options'}</h3>
-                  <span className="price-group-line"></span>
-                </div>
-                <div className="prices-grid stagger-children">
-                  {addonItems.map(renderPriceCard)}
-                </div>
-                {admin && (
-                  <button className="add-btn" onClick={() => addPrice('addon')}>+ {lang === 'ru' ? 'Добавить доп. опцию' : 'Add addon'}</button>
-                )}
-              </>
-            )}
-          </>
-        );
-      })()}
-
-    </section>
-  );
-}
-
-// ──────── Debts ────────
-// ─── Countdown timer to a target date ───
 function DebtCountdown({ admin, lang }) {
   const [cfg, saveCfg] = useSetting('debt_deadline', {});
   const [now, setNow] = React.useState(Date.now());
@@ -9715,7 +9584,7 @@ function TosSection({ t, lang }) {
   );
 }
 
-Object.assign(window, { PricesSection, DebtsSection, LinksSection, TosSection });
+Object.assign(window, { DebtsSection, LinksSection, TosSection });
 
   </script>
 
@@ -9824,9 +9693,9 @@ function App() {
   const [lang, setLang] = appState(() => loadLS('lang', 'ru'));
   // ── URL routing ──
   const PATH_TO_TAB = { '/': 'home', '/queue': 'queue', '/portfolio': 'portfolio',
-    '/calculator': 'calculator', '/prices': 'prices', '/debts': 'debts', '/tos': 'tos' };
+    '/calculator': 'calculator', '/debts': 'debts', '/tos': 'tos' };
   const TAB_TO_PATH = { home: '/', queue: '/queue', portfolio: '/portfolio',
-    calculator: '/calculator', prices: '/prices', debts: '/debts', tos: '/tos' };
+    calculator: '/calculator', debts: '/debts', tos: '/tos' };
   function pathToTab(p) {
     const clean = (p || '/').replace(/\/+$/, '') || '/';
     return PATH_TO_TAB[clean] || 'home';
@@ -9838,7 +9707,7 @@ function App() {
   });
 
   // Sections are only hidden, never unmounted, so the page keeps whatever scroll
-  // offset the previous tab had — you'd tap "Прайс" from halfway down Portfolio
+  // offset the previous tab had — you'd tap "Долги" from halfway down Portfolio
   // and land in the middle of the price list. Remember a position per tab:
   // return to a tab you were reading and you're back where you left off; open a
   // fresh one and you start at the top.
@@ -9881,10 +9750,10 @@ function App() {
     const titles = {
       ru: { home: 'VTuber-художник: модели, риг, арт', queue: 'Очередь заказов',
             portfolio: 'Портфолио работ', calculator: 'Калькулятор стоимости',
-            prices: 'Прайс-лист', debts: 'Twitch долги', tos: 'Условия предоставления услуг' },
+            debts: 'Twitch долги', tos: 'Условия предоставления услуг' },
       en: { home: 'VTuber artist: models, rigging, art', queue: 'Order queue',
             portfolio: 'Portfolio', calculator: 'Price calculator',
-            prices: 'Prices', debts: 'Twitch debts', tos: 'Terms of Service' },
+            debts: 'Twitch debts', tos: 'Terms of Service' },
     };
     const label = (titles[lang] || titles.ru)[tab] || site;
     document.title = tab === 'home' ? `${site} — ${label}` : `${label} | ${site}`;
@@ -9924,7 +9793,6 @@ function App() {
     { id: 'queue',      label: i18n.nav.queue },
     { id: 'portfolio',  label: i18n.nav.portfolio },
     { id: 'calculator', label: i18n.nav.calculator },
-    { id: 'prices',     label: i18n.nav.prices },
     { id: 'debts',      label: i18n.nav.debts },
     { id: 'tos',        label: i18n.nav.tos },
   ];
@@ -9940,7 +9808,6 @@ function App() {
     { id: 'queue',      el: <QueueSection t={i18n} lang={lang} admin={admin} layout={t.layout} barStyle={t.barStyle} /> },
     { id: 'portfolio',  el: <PortfolioSection t={i18n} lang={lang} admin={admin} /> },
     { id: 'calculator', el: <CalculatorSection t={i18n} lang={lang} admin={admin} /> },
-    { id: 'prices',     el: <PricesSection t={i18n} lang={lang} admin={admin} /> },
     { id: 'debts',      el: <DebtsSection t={i18n} admin={admin} lang={lang} /> },
     { id: 'tos',        el: <TosSection t={i18n} lang={lang} /> },
   ];
