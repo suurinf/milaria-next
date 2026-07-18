@@ -5,9 +5,9 @@
     "id": "01b70112-e80f-4bd0-b1de-d3c9d15d6590",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805380779-i1skby.jpg",
     "is_cover": false,
-    "sort_order": 25,
+    "sort_order": 26,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805380779-i1skby.jpg",
-    "updated_at": "2026-05-26T14:23:11.336151+00:00"
+    "updated_at": "2026-07-17T12:56:51.644619+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -20,14 +20,44 @@
     "updated_at": "2026-05-26T14:22:30.652632+00:00"
   },
   {
+    "category_id": "650b61c9-3833-4656-90c9-77a741bd9541",
+    "created_at": "2026-07-17T12:52:18.522696+00:00",
+    "id": "0694472f-55e8-4c85-8278-780f90652f6a",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784292735616-8n2rr9.webp",
+    "is_cover": true,
+    "sort_order": -2,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784292735616-8n2rr9.webp",
+    "updated_at": "2026-07-17T12:53:31.900296+00:00"
+  },
+  {
+    "category_id": "06e652ca-c0a8-42db-a409-2aae15ee638c",
+    "created_at": "2026-07-17T13:01:55.904819+00:00",
+    "id": "06d47b4b-ffdd-4924-ba8e-cf8667542f29",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784293312712-opzwis.webp",
+    "is_cover": true,
+    "sort_order": 0,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784293312712-opzwis.webp",
+    "updated_at": "2026-07-17T13:05:12.290616+00:00"
+  },
+  {
+    "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
+    "created_at": "2026-07-17T13:00:40.419295+00:00",
+    "id": "0841f615-5b4f-445c-91e0-9bd5df83b9db",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784293237219-7as0gs.webp",
+    "is_cover": false,
+    "sort_order": -4,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784293237219-7as0gs.webp",
+    "updated_at": "2026-07-17T13:00:40.419295+00:00"
+  },
+  {
     "category_id": "06e652ca-c0a8-42db-a409-2aae15ee638c",
     "created_at": "2026-05-25T13:56:41.583176+00:00",
     "id": "0a2d85ca-8feb-41e7-ac2b-ffba60e0363c",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805634748-gk4fcx.jpg",
-    "is_cover": true,
-    "sort_order": 0,
+    "is_cover": false,
+    "sort_order": 2,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805634748-gk4fcx.jpg",
-    "updated_at": "2026-05-26T14:27:26.251751+00:00"
+    "updated_at": "2026-07-17T13:05:12.77707+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -35,9 +65,9 @@
     "id": "0dcb9b98-6062-4fe7-a34f-b7b629dc67bf",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805383291-15y9dj.jpg",
     "is_cover": false,
-    "sort_order": 26,
+    "sort_order": 17,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805383291-15y9dj.jpg",
-    "updated_at": "2026-05-26T14:23:14.046229+00:00"
+    "updated_at": "2026-07-17T12:56:51.6275+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -45,9 +75,9 @@
     "id": "0dd7856d-b51d-491b-a005-83eb16c3f735",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805222653-zalbx3.jpg",
     "is_cover": false,
-    "sort_order": 2,
+    "sort_order": 1,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805222653-zalbx3.jpg",
-    "updated_at": "2026-05-26T14:20:25.237377+00:00"
+    "updated_at": "2026-07-17T13:30:12.514128+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -55,9 +85,9 @@
     "id": "13e3a97e-0c51-46b0-8f2e-ec2e86d1a3c5",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805371368-htxfd6.jpg",
     "is_cover": false,
-    "sort_order": 20,
+    "sort_order": 21,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805371368-htxfd6.jpg",
-    "updated_at": "2026-05-26T14:23:01.369792+00:00"
+    "updated_at": "2026-07-17T12:56:51.64098+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -75,9 +105,9 @@
     "id": "16c04237-f53e-4d4f-aef7-db2c0e081675",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805378506-7a5zlw.jpg",
     "is_cover": false,
-    "sort_order": 24,
+    "sort_order": 25,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805378506-7a5zlw.jpg",
-    "updated_at": "2026-05-26T14:23:08.868625+00:00"
+    "updated_at": "2026-07-17T12:56:51.628245+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -85,9 +115,9 @@
     "id": "16f27dcf-2bd9-48f2-83c3-f9405fafcde8",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805366868-oa4htp.jpg",
     "is_cover": false,
-    "sort_order": 18,
+    "sort_order": 19,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805366868-oa4htp.jpg",
-    "updated_at": "2026-05-26T14:22:57.167865+00:00"
+    "updated_at": "2026-07-17T12:56:51.622699+00:00"
   },
   {
     "category_id": "db0bc62a-5960-44df-9168-2feff2480ce5",
@@ -95,9 +125,9 @@
     "id": "18a0bc6a-e18e-4fbf-88e4-9768bfb4863f",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282726140-mwulj4.jpg",
     "is_cover": false,
-    "sort_order": 2,
+    "sort_order": 5,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282726140-mwulj4.jpg",
-    "updated_at": "2026-06-12T16:45:28.390069+00:00"
+    "updated_at": "2026-07-17T13:22:50.316857+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -107,7 +137,27 @@
     "is_cover": false,
     "sort_order": 23,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805377071-954woe.jpg",
-    "updated_at": "2026-05-26T14:23:06.619829+00:00"
+    "updated_at": "2026-07-17T12:56:51.624078+00:00"
+  },
+  {
+    "category_id": "db0bc62a-5960-44df-9168-2feff2480ce5",
+    "created_at": "2026-07-17T13:22:44.377124+00:00",
+    "id": "1d468723-54d5-48c6-9e8c-24a799af9dcf",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294560795-x7xj85.webp",
+    "is_cover": false,
+    "sort_order": 3,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294560795-x7xj85.webp",
+    "updated_at": "2026-07-17T13:22:50.330837+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:24:15.02457+00:00",
+    "id": "1d8bc67e-168e-4647-a98a-75e3702796fc",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294651598-xt4rpk.webp",
+    "is_cover": false,
+    "sort_order": 5,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294651598-xt4rpk.webp",
+    "updated_at": "2026-07-17T13:29:10.200079+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -145,19 +195,19 @@
     "id": "227050dd-63d7-42aa-8001-a5ab4fdc4fdc",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805231977-u0kkpj.jpg",
     "is_cover": false,
-    "sort_order": 6,
+    "sort_order": 2,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805231977-u0kkpj.jpg",
-    "updated_at": "2026-05-26T14:20:33.871326+00:00"
+    "updated_at": "2026-07-17T13:30:16.433097+00:00"
   },
   {
     "category_id": "db0bc62a-5960-44df-9168-2feff2480ce5",
     "created_at": "2026-06-12T16:45:28.55557+00:00",
     "id": "295c3f57-1786-48ff-b49a-d3f30b51e1a7",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282726332-f4wzl7.jpg",
-    "is_cover": true,
-    "sort_order": -1,
+    "is_cover": false,
+    "sort_order": 1,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282726332-f4wzl7.jpg",
-    "updated_at": "2026-06-12T16:45:38.855509+00:00"
+    "updated_at": "2026-07-17T12:55:46.933367+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -167,7 +217,7 @@
     "is_cover": false,
     "sort_order": 22,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805373248-t1u4oz.jpg",
-    "updated_at": "2026-05-26T14:23:03.006966+00:00"
+    "updated_at": "2026-07-17T12:56:51.626513+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -175,9 +225,9 @@
     "id": "2b0fa3a4-1c17-4af9-98c5-aa5afc40cf5d",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805369054-vhjno9.jpg",
     "is_cover": false,
-    "sort_order": 19,
+    "sort_order": 20,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805369054-vhjno9.jpg",
-    "updated_at": "2026-05-26T14:22:59.456751+00:00"
+    "updated_at": "2026-07-17T12:56:51.640906+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -185,19 +235,19 @@
     "id": "2f9e0388-b62a-4372-be2b-8028fc260894",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805244126-kax95t.jpg",
     "is_cover": false,
-    "sort_order": 11,
+    "sort_order": 8,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805244126-kax95t.jpg",
-    "updated_at": "2026-05-26T14:20:45.652606+00:00"
+    "updated_at": "2026-07-17T13:30:51.583677+00:00"
   },
   {
     "category_id": "bfe02efd-dc33-42a5-863f-e95abc057e34",
     "created_at": "2026-05-25T20:30:03.375506+00:00",
     "id": "3382ef98-ba60-4ff7-a9d3-ea9317ca5296",
     "image_data": "https://youtu.be/C7POSq4qvAs?si=QyDZFG9GTlHYO6OG",
-    "is_cover": true,
+    "is_cover": false,
     "sort_order": -1,
     "thumb_data": null,
-    "updated_at": "2026-05-25T20:30:03.375506+00:00"
+    "updated_at": "2026-07-17T13:17:11.009247+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -225,9 +275,9 @@
     "id": "370eee2b-e414-4f92-9a76-0e25102a03fa",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805656789-nlbytl.jpg",
     "is_cover": false,
-    "sort_order": 6,
+    "sort_order": 15,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805656789-nlbytl.jpg",
-    "updated_at": "2026-05-26T14:27:46.604618+00:00"
+    "updated_at": "2026-07-17T13:28:39.004624+00:00"
   },
   {
     "category_id": "db0bc62a-5960-44df-9168-2feff2480ce5",
@@ -235,9 +285,9 @@
     "id": "384cae2f-4427-4bb2-a88a-e1a3333ec010",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282730908-43170t.jpg",
     "is_cover": false,
-    "sort_order": 4,
+    "sort_order": 6,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282730908-43170t.jpg",
-    "updated_at": "2026-06-12T16:45:32.648954+00:00"
+    "updated_at": "2026-07-17T13:22:50.316412+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -245,9 +295,9 @@
     "id": "38c8383f-c470-4980-a9a1-3936fafbeb45",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805242004-9zi0q6.jpg",
     "is_cover": false,
-    "sort_order": 10,
+    "sort_order": 7,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805242004-9zi0q6.jpg",
-    "updated_at": "2026-05-26T14:20:43.725188+00:00"
+    "updated_at": "2026-07-17T13:30:31.219847+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -265,9 +315,9 @@
     "id": "3a0bcabe-f1df-4a86-b4ae-ff52c55af632",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805649749-u7trw0.jpg",
     "is_cover": false,
-    "sort_order": 3,
+    "sort_order": 17,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805649749-u7trw0.jpg",
-    "updated_at": "2026-05-26T14:27:39.904666+00:00"
+    "updated_at": "2026-07-17T13:28:39.002898+00:00"
   },
   {
     "category_id": "32bdcfad-a9f3-4943-a962-275fd03af861",
@@ -285,9 +335,9 @@
     "id": "4309e057-8026-43fa-8c5f-ad0a12ebabc6",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805234251-m0wvmm.jpg",
     "is_cover": false,
-    "sort_order": 7,
+    "sort_order": 4,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805234251-m0wvmm.jpg",
-    "updated_at": "2026-05-26T14:20:36.937286+00:00"
+    "updated_at": "2026-07-17T13:30:21.094589+00:00"
   },
   {
     "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
@@ -295,29 +345,39 @@
     "id": "47617488-b41f-49d7-a303-5b7c63396b89",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805642692-cixica.jpg",
     "is_cover": false,
-    "sort_order": 0,
+    "sort_order": 12,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805642692-cixica.jpg",
-    "updated_at": "2026-06-12T16:45:55.60933+00:00"
+    "updated_at": "2026-07-17T13:28:38.999705+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:24:19.290326+00:00",
+    "id": "4bbc0675-0ddc-4d3e-8a93-6a05c0976600",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294655620-pak5e8.webp",
+    "is_cover": false,
+    "sort_order": 3,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294655620-pak5e8.webp",
+    "updated_at": "2026-07-17T13:29:10.676784+00:00"
   },
   {
     "category_id": "650b61c9-3833-4656-90c9-77a741bd9541",
     "created_at": "2026-05-25T13:55:48.388312+00:00",
     "id": "4e86e009-d74b-41b3-b83a-3121f619b910",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805294012-mfpdaq.jpg",
-    "is_cover": true,
+    "is_cover": false,
     "sort_order": 0,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805294012-mfpdaq.jpg",
-    "updated_at": "2026-05-26T14:21:45.362403+00:00"
+    "updated_at": "2026-07-17T12:53:31.900431+00:00"
   },
   {
     "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
     "created_at": "2026-05-25T13:46:35.533413+00:00",
     "id": "4eaede80-4323-479f-a1f3-11650262a68d",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805658475-nji7b9.jpg",
-    "is_cover": true,
-    "sort_order": 7,
+    "is_cover": false,
+    "sort_order": 16,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805658475-nji7b9.jpg",
-    "updated_at": "2026-06-12T16:45:55.615066+00:00"
+    "updated_at": "2026-07-17T13:28:38.924417+00:00"
   },
   {
     "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
@@ -325,19 +385,49 @@
     "id": "4ee53d36-f491-4f06-8a71-4008af2bc5a1",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805644202-xa5pev.jpg",
     "is_cover": false,
-    "sort_order": 1,
+    "sort_order": 13,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805644202-xa5pev.jpg",
-    "updated_at": "2026-05-26T14:27:35.562889+00:00"
+    "updated_at": "2026-07-17T13:28:38.99466+00:00"
   },
   {
     "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
-    "created_at": "2026-05-25T13:46:32.296688+00:00",
-    "id": "692d6ffd-7772-4fde-a1ed-7bf6be90ad8b",
-    "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805647995-8hsivc.jpg",
+    "created_at": "2026-07-17T13:24:11.11294+00:00",
+    "id": "509cc2d0-66d3-4601-a470-01390eacd8fd",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294647016-5f8lgb.webp",
+    "is_cover": false,
+    "sort_order": 7,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294647016-5f8lgb.webp",
+    "updated_at": "2026-07-17T13:29:10.67145+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:24:08.75331+00:00",
+    "id": "50bb21db-42d2-44c1-b999-f071def3fe16",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294645379-h2p89y.webp",
+    "is_cover": false,
+    "sort_order": 8,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294645379-h2p89y.webp",
+    "updated_at": "2026-07-17T13:29:10.536304+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:26:40.85107+00:00",
+    "id": "51bbb345-dfb3-4d28-90d2-6ff581419287",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294796305-zayup3.webp",
+    "is_cover": false,
+    "sort_order": 10,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294796305-zayup3.webp",
+    "updated_at": "2026-07-17T13:28:44.373341+00:00"
+  },
+  {
+    "category_id": "32bdcfad-a9f3-4943-a962-275fd03af861",
+    "created_at": "2026-07-17T13:27:41.014174+00:00",
+    "id": "57160408-1437-40f2-b939-151ea412d8f2",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294856531-6iq35q.webp",
     "is_cover": false,
     "sort_order": 2,
-    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805647995-8hsivc.jpg",
-    "updated_at": "2026-05-26T14:27:37.868381+00:00"
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294856531-6iq35q.webp",
+    "updated_at": "2026-07-17T13:27:44.065769+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -345,9 +435,9 @@
     "id": "6a911420-1e31-4dea-8ec7-d4eab4f69038",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282807840-yv17wk.jpg",
     "is_cover": true,
-    "sort_order": -1,
+    "sort_order": 0,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282807840-yv17wk.jpg",
-    "updated_at": "2026-06-12T16:46:53.395795+00:00"
+    "updated_at": "2026-07-17T13:30:12.395454+00:00"
   },
   {
     "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
@@ -355,9 +445,19 @@
     "id": "6ce54bf8-4477-4b8a-9137-c09221faadfa",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805660298-9xtln9.jpg",
     "is_cover": false,
-    "sort_order": 8,
+    "sort_order": 1,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805660298-9xtln9.jpg",
-    "updated_at": "2026-05-26T14:27:50.791671+00:00"
+    "updated_at": "2026-07-17T13:29:10.560942+00:00"
+  },
+  {
+    "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
+    "created_at": "2026-07-17T12:59:13.39796+00:00",
+    "id": "6dfa97db-5bcb-468f-b400-e4585bd1c827",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784293150715-gd3v04.webp",
+    "is_cover": false,
+    "sort_order": -3,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784293150715-gd3v04.webp",
+    "updated_at": "2026-07-17T12:59:13.39796+00:00"
   },
   {
     "category_id": "db0bc62a-5960-44df-9168-2feff2480ce5",
@@ -365,9 +465,9 @@
     "id": "703aab8c-9802-4c17-8fd3-06a9ebf2deff",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282728713-3at1n7.jpg",
     "is_cover": false,
-    "sort_order": 3,
+    "sort_order": 10,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282728713-3at1n7.jpg",
-    "updated_at": "2026-06-12T16:45:30.63314+00:00"
+    "updated_at": "2026-07-17T13:22:50.320709+00:00"
   },
   {
     "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
@@ -375,9 +475,29 @@
     "id": "709649f2-3cb0-438c-803c-6604c6696c90",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805652347-3lcgk4.jpg",
     "is_cover": false,
-    "sort_order": 4,
+    "sort_order": 18,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805652347-3lcgk4.jpg",
-    "updated_at": "2026-05-26T14:27:42.77069+00:00"
+    "updated_at": "2026-07-17T13:28:39.000767+00:00"
+  },
+  {
+    "category_id": "06e652ca-c0a8-42db-a409-2aae15ee638c",
+    "created_at": "2026-07-17T13:05:04.765268+00:00",
+    "id": "71ca3681-c118-4ee7-84cd-5bf6b9d53b35",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784293498632-va895a.gif",
+    "is_cover": false,
+    "sort_order": 1,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/full/1784293498632-va895a.gif",
+    "updated_at": "2026-07-17T13:05:11.347463+00:00"
+  },
+  {
+    "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
+    "created_at": "2026-07-17T12:59:12.233298+00:00",
+    "id": "7352d6fc-03e3-4632-9455-b119e3668459",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784293149530-kyca05.webp",
+    "is_cover": false,
+    "sort_order": -2,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784293149530-kyca05.webp",
+    "updated_at": "2026-07-17T12:59:12.233298+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -397,7 +517,7 @@
     "is_cover": false,
     "sort_order": 7,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282743081-gl5lye.jpg",
-    "updated_at": "2026-06-12T16:45:45.162574+00:00"
+    "updated_at": "2026-07-17T13:22:50.329876+00:00"
   },
   {
     "category_id": "650b61c9-3833-4656-90c9-77a741bd9541",
@@ -417,7 +537,7 @@
     "is_cover": false,
     "sort_order": 5,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805229852-5eujnj.jpg",
-    "updated_at": "2026-05-26T14:20:31.577569+00:00"
+    "updated_at": "2026-07-17T13:30:26.944358+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -435,9 +555,9 @@
     "id": "7ebb1acf-163f-4447-92f4-044a20273807",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282735037-pf8a4p.jpg",
     "is_cover": false,
-    "sort_order": 5,
+    "sort_order": 4,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282735037-pf8a4p.jpg",
-    "updated_at": "2026-06-12T16:45:38.806014+00:00"
+    "updated_at": "2026-07-17T13:22:50.331+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -445,9 +565,9 @@
     "id": "84984de1-a346-4500-8b2d-b9b318168c24",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805374873-3hzlvr.jpg",
     "is_cover": false,
-    "sort_order": 23,
+    "sort_order": 24,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805374873-3hzlvr.jpg",
-    "updated_at": "2026-05-26T14:23:05.178618+00:00"
+    "updated_at": "2026-07-17T12:56:51.639641+00:00"
   },
   {
     "category_id": "db0bc62a-5960-44df-9168-2feff2480ce5",
@@ -455,9 +575,29 @@
     "id": "85f32143-4bdd-4abb-89c6-1207d7ee79e8",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282739142-jm8840.jpg",
     "is_cover": false,
-    "sort_order": 6,
+    "sort_order": 2,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282739142-jm8840.jpg",
-    "updated_at": "2026-06-12T16:45:42.758116+00:00"
+    "updated_at": "2026-07-17T12:56:08.058402+00:00"
+  },
+  {
+    "category_id": "650b61c9-3833-4656-90c9-77a741bd9541",
+    "created_at": "2026-07-17T12:52:17.323249+00:00",
+    "id": "871f776c-81e3-4aa7-aa52-31d5ea025042",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784292733347-9ejaqq.webp",
+    "is_cover": false,
+    "sort_order": -1,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784292733347-9ejaqq.webp",
+    "updated_at": "2026-07-17T12:52:17.323249+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:24:21.084335+00:00",
+    "id": "87ad8d07-a273-4993-864a-9cb77a9f0e30",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294657568-8hsgjx.webp",
+    "is_cover": false,
+    "sort_order": 2,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294657568-8hsgjx.webp",
+    "updated_at": "2026-07-17T13:29:10.132401+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -470,14 +610,34 @@
     "updated_at": "2026-05-26T14:22:24.528465+00:00"
   },
   {
+    "category_id": "db0bc62a-5960-44df-9168-2feff2480ce5",
+    "created_at": "2026-07-17T12:55:39.33324+00:00",
+    "id": "8ecd8c1a-648f-4a37-9dd0-3c33aaf4b961",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784292934946-ekul71.webp",
+    "is_cover": true,
+    "sort_order": 0,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784292934946-ekul71.webp",
+    "updated_at": "2026-07-17T12:55:46.941168+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:24:13.325561+00:00",
+    "id": "95b821a9-efb7-4d79-817d-980026e84d60",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294649307-o06qac.webp",
+    "is_cover": false,
+    "sort_order": 6,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294649307-o06qac.webp",
+    "updated_at": "2026-07-17T13:29:10.532987+00:00"
+  },
+  {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
     "created_at": "2026-05-25T13:54:41.887054+00:00",
     "id": "98206829-6eac-4253-8c76-773d50aecba6",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805365009-d1nnnn.jpg",
     "is_cover": false,
-    "sort_order": 17,
+    "sort_order": 18,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805365009-d1nnnn.jpg",
-    "updated_at": "2026-05-26T14:22:54.97831+00:00"
+    "updated_at": "2026-07-17T12:56:51.625251+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -485,9 +645,9 @@
     "id": "9aa741a6-e95f-47ad-b160-18e32e8c0af3",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805228051-c5bnqf.jpg",
     "is_cover": false,
-    "sort_order": 4,
+    "sort_order": 12,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805228051-c5bnqf.jpg",
-    "updated_at": "2026-05-26T14:20:29.453+00:00"
+    "updated_at": "2026-07-17T13:30:51.584074+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -505,9 +665,9 @@
     "id": "a43cc12c-97cf-49b7-a99d-4a571a5f54ed",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805654673-hq9zmo.jpg",
     "is_cover": false,
-    "sort_order": 5,
+    "sort_order": 14,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805654673-hq9zmo.jpg",
-    "updated_at": "2026-05-26T14:27:44.898676+00:00"
+    "updated_at": "2026-07-17T13:28:38.910487+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -515,9 +675,9 @@
     "id": "a547449e-c859-4789-b42b-7281591e6b32",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805225669-8kr1oi.jpg",
     "is_cover": false,
-    "sort_order": 3,
+    "sort_order": 11,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805225669-8kr1oi.jpg",
-    "updated_at": "2026-05-26T14:20:27.62785+00:00"
+    "updated_at": "2026-07-17T13:30:51.991162+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -525,9 +685,9 @@
     "id": "b1eff626-400e-4f82-8b92-54148b831aa3",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805220161-ts4j2d.jpg",
     "is_cover": false,
-    "sort_order": 1,
+    "sort_order": 10,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805220161-ts4j2d.jpg",
-    "updated_at": "2026-05-26T14:20:22.213108+00:00"
+    "updated_at": "2026-07-17T13:30:51.584173+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -535,19 +695,29 @@
     "id": "ba5d7abf-ebd5-4ee6-83c3-d97c569467c9",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805239689-gop1d8.jpg",
     "is_cover": false,
-    "sort_order": 9,
+    "sort_order": 6,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805239689-gop1d8.jpg",
-    "updated_at": "2026-05-26T14:20:41.634713+00:00"
+    "updated_at": "2026-07-17T13:30:26.939552+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:23:03.741893+00:00",
+    "id": "c31864c4-07a1-4fc3-a978-f2a0b0aa2a5f",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294579339-w7iqug.webp",
+    "is_cover": false,
+    "sort_order": 9,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294579339-w7iqug.webp",
+    "updated_at": "2026-07-17T13:28:44.373333+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
     "created_at": "2026-05-25T13:47:59.595987+00:00",
     "id": "c4e28a03-cf9c-4546-ad4d-2aed74f3f57a",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805336471-aedils.jpg",
-    "is_cover": true,
+    "is_cover": false,
     "sort_order": 3,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805336471-aedils.jpg",
-    "updated_at": "2026-05-26T14:22:26.71213+00:00"
+    "updated_at": "2026-07-17T13:00:47.577256+00:00"
   },
   {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
@@ -555,9 +725,29 @@
     "id": "caceabee-9ec1-4b37-9f47-05a60e45777f",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805237331-e6gkoi.jpg",
     "is_cover": false,
-    "sort_order": 8,
+    "sort_order": 3,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805237331-e6gkoi.jpg",
-    "updated_at": "2026-06-12T16:46:53.396787+00:00"
+    "updated_at": "2026-07-17T13:30:19.592825+00:00"
+  },
+  {
+    "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
+    "created_at": "2026-07-17T12:59:10.890182+00:00",
+    "id": "cc8395b0-f14e-4e98-b4f3-bc976fe130b2",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784293145994-7wbp8b.webp",
+    "is_cover": false,
+    "sort_order": -1,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784293145994-7wbp8b.webp",
+    "updated_at": "2026-07-17T12:59:10.890182+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:23:19.172758+00:00",
+    "id": "ce672a12-3158-46c0-877e-d3bfc488f65a",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294594239-yca89i.webp",
+    "is_cover": true,
+    "sort_order": 0,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294594239-yca89i.webp",
+    "updated_at": "2026-07-17T13:24:26.597742+00:00"
   },
   {
     "category_id": "32bdcfad-a9f3-4943-a962-275fd03af861",
@@ -568,6 +758,26 @@
     "sort_order": 0,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805316038-uloza3.jpg",
     "updated_at": "2026-05-26T14:22:06.7835+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:28:36.661314+00:00",
+    "id": "d933c7b5-b01d-4a5e-929f-9828764a3b63",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294912504-zycvnr.webp",
+    "is_cover": false,
+    "sort_order": 11,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294912504-zycvnr.webp",
+    "updated_at": "2026-07-17T13:28:44.379463+00:00"
+  },
+  {
+    "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
+    "created_at": "2026-07-17T13:00:43.423912+00:00",
+    "id": "d97b94ac-e585-455d-a037-5f8b096a6dc3",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784293238990-y7dlgo.webp",
+    "is_cover": true,
+    "sort_order": -5,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784293238990-y7dlgo.webp",
+    "updated_at": "2026-07-17T13:00:47.662483+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -585,9 +795,9 @@
     "id": "da4833d8-e02a-4000-99b5-d407c9ed0857",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282715343-u0jno7.jpg",
     "is_cover": false,
-    "sort_order": 0,
+    "sort_order": 9,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282715343-u0jno7.jpg",
-    "updated_at": "2026-06-12T16:45:18.400091+00:00"
+    "updated_at": "2026-07-17T13:22:50.317002+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -598,6 +808,16 @@
     "sort_order": 8,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805346445-0purde.jpg",
     "updated_at": "2026-05-26T14:22:36.268016+00:00"
+  },
+  {
+    "category_id": "9efc37f0-d2d3-458a-8810-cd2086a632f9",
+    "created_at": "2026-07-17T13:24:17.356248+00:00",
+    "id": "e41f44a0-ef9e-4840-822b-286c2a854921",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784294653297-xfxk61.webp",
+    "is_cover": false,
+    "sort_order": 4,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784294653297-xfxk61.webp",
+    "updated_at": "2026-07-17T13:29:10.184671+00:00"
   },
   {
     "category_id": "650b61c9-3833-4656-90c9-77a741bd9541",
@@ -630,14 +850,24 @@
     "updated_at": "2026-05-26T14:22:18.677409+00:00"
   },
   {
+    "category_id": "bfe02efd-dc33-42a5-863f-e95abc057e34",
+    "created_at": "2026-07-17T13:16:01.774004+00:00",
+    "id": "edd43feb-46be-4e61-8d2b-13abf85bf1a8",
+    "image_data": "https://youtu.be/85fRt1qL3lg",
+    "is_cover": true,
+    "sort_order": -2,
+    "thumb_data": null,
+    "updated_at": "2026-07-17T13:17:10.987845+00:00"
+  },
+  {
     "category_id": "ca4ac347-16cb-4c0f-b2b8-b02cc940cc4f",
     "created_at": "2026-05-25T13:26:48.902139+00:00",
     "id": "f1bb669e-7ab2-4d67-b2a9-d2defba4594f",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1779805218101-ompqzo.jpg",
     "is_cover": false,
-    "sort_order": 0,
+    "sort_order": 9,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1779805218101-ompqzo.jpg",
-    "updated_at": "2026-05-26T14:20:19.7568+00:00"
+    "updated_at": "2026-07-17T13:30:52.117801+00:00"
   },
   {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
@@ -655,8 +885,8 @@
     "id": "fe281f3c-45a7-4fd3-b81c-66eafbcfbaae",
     "image_data": "/supa/storage/v1/object/public/portfolio/full/1781282719686-lf9u6p.jpg",
     "is_cover": false,
-    "sort_order": 1,
+    "sort_order": 8,
     "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1781282719686-lf9u6p.jpg",
-    "updated_at": "2026-06-12T16:45:23.343829+00:00"
+    "updated_at": "2026-07-17T13:22:50.316405+00:00"
   }
 ]
