@@ -4293,9 +4293,8 @@ select {
   font-family: var(--font-body, sans-serif);
   font-size: 15px;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  overflow-wrap: anywhere;   /* длинное название переносится, а не режется */
 }
 .channel-choice-handle {
   font-family: var(--font-mono, monospace);
@@ -4310,6 +4309,15 @@ select {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .channel-choice:hover .channel-choice-arrow { opacity: 1; transform: translateX(3px); }
+
+/* ═════ Меню выбора канала на мобильном ═════ */
+@media (max-width: 600px) {
+  .channel-choice { gap: 10px; padding: 11px 13px; }
+  .channel-choice-ico { flex: 0 0 34px; width: 34px; height: 34px; }
+  .channel-choice-name { font-size: 14px; }
+  .channel-choice-handle { font-size: 10px; }
+  .channel-choice-arrow { flex: 0 0 auto; margin-left: 4px; }
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -6602,7 +6610,7 @@ function ChannelChooser({ link, lang, onClose }) {
                 <span className="channel-choice-name">{o.label}</span>
                 {o.handle && <span className="channel-choice-handle">{o.handle}</span>}
               </span>
-              <span className="channel-choice-arrow">\u2192</span>
+              <span className="channel-choice-arrow">→</span>
             </a>
           ))}
         </div>
