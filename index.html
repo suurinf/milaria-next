@@ -4272,24 +4272,21 @@ select {
   background: rgba(234, 179, 8, 0.12);
   transform: translateX(3px);
 }
-.channel-choice-ava {
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
+.channel-choice-ico {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(245, 212, 163, 0.1);
-  border: 1px solid rgba(245, 212, 163, 0.25);
+  background: rgba(245, 212, 163, 0.08);
+  border: 1px solid rgba(245, 212, 163, 0.22);
+  color: #f5e8d4;
 }
-.channel-choice-ava img { width: 100%; height: 100%; object-fit: cover; }
-.channel-choice-ava-fallback {
-  font-family: var(--font-display, serif);
-  font-size: 20px;
-  font-style: italic;
+.channel-choice:hover .channel-choice-ico {
   color: var(--accent, #eab308);
+  border-color: var(--accent, #eab308);
 }
 .channel-choice-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .channel-choice-name {
@@ -6582,32 +6579,13 @@ function SocialGlyph({ name, size = 20 }) {
 // по коду приглашения — но это лишь удобство: если не выйдет (блокировка/ошибка),
 // остаётся то, что вписано вручную, и пустых кружков не бывает.
 function ChannelChooser({ link, lang, onClose }) {
+  // Иконку раздела показываем ту же, что на кнопке — так меню визуально связано
+  // с тем, что нажали. Аватарок нет: два адреса одного сервиса, читаются по названию.
+  const iconName = resolveSocialIcon(link);
   const options = [
-    { label: link.label,  url: link.url,  avatar: link.avatar,  handle: link.handle },
-    { label: link.label2, url: link.url2, avatar: link.avatar2, handle: link.handle2 },
+    { label: link.label,  url: link.url,  handle: link.handle },
+    { label: link.label2, url: link.url2, handle: link.handle2 },
   ].filter(o => o.url && o.label);
-
-  const [meta, setMeta] = homeState({}); // index -> { avatar, name } подтянутые автоматически
-
-  homeEffect(() => {
-    let alive = true;
-    options.forEach((o, i) => {
-      if (o.avatar) return; // уже задана вручную — не трогаем
-      const m = String(o.url).match(/discord\.gg\/([\w-]+)/i);
-      if (!m) return;
-      fetch(`https://discord.com/api/v10/invites/${m[1]}?with_counts=true`)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (!alive || !d || !d.guild) return;
-          const icon = d.guild.icon
-            ? `https://cdn.discordapp.com/icons/${d.guild.id}/${d.guild.icon}.png?size=128`
-            : null;
-          setMeta(prev => ({ ...prev, [i]: { avatar: icon, name: d.guild.name } }));
-        })
-        .catch(() => {});
-    });
-    return () => { alive = false; };
-  }, [link]);
 
   return (
     <Modal open={true} onClose={onClose}>
@@ -6616,31 +6594,22 @@ function ChannelChooser({ link, lang, onClose }) {
           {lang === 'ru' ? 'Куда перейти?' : 'Where to go?'}
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {options.map((o, i) => {
-            const avatar = o.avatar || (meta[i] && meta[i].avatar);
-            const name = o.label || (meta[i] && meta[i].name);
-            return (
-              <a key={i} href={o.url} target="_blank" rel="noopener noreferrer"
-                 className="channel-choice" onClick={onClose}>
-                <span className="channel-choice-ava">
-                  {avatar
-                    ? <img src={avatar} alt="" onError={e => { e.target.style.display = 'none'; }} />
-                    : <span className="channel-choice-ava-fallback">{(name || '?')[0]}</span>}
-                </span>
-                <span className="channel-choice-text">
-                  <span className="channel-choice-name">{name}</span>
-                  {o.handle && <span className="channel-choice-handle">{o.handle}</span>}
-                </span>
-                <span className="channel-choice-arrow">→</span>
-              </a>
-            );
-          })}
+          {options.map((o, i) => (
+            <a key={i} href={o.url} target="_blank" rel="noopener noreferrer"
+               className="channel-choice" onClick={onClose}>
+              <span className="channel-choice-ico"><SocialGlyph name={iconName} size={22} /></span>
+              <span className="channel-choice-text">
+                <span className="channel-choice-name">{o.label}</span>
+                {o.handle && <span className="channel-choice-handle">{o.handle}</span>}
+              </span>
+              <span className="channel-choice-arrow">\u2192</span>
+            </a>
+          ))}
         </div>
       </div>
     </Modal>
   );
 }
-
 function HeroSocials({ links, admin, linksRes, lang }) {
   const shown = admin ? links : links.slice(0, 12);
   const [editLink, setEditLink] = homeState(null);
@@ -6657,17 +6626,15 @@ function HeroSocials({ links, admin, linksRes, lang }) {
         .concat(SOCIAL_ICON_OPTIONS.map(k => ({ value: k, label: SOCIAL_ICONS[k].label }))) },
     // Два канала на одной иконке: если заполнить — клик открывает меню выбора.
     // Название первого варианта берётся из «Название» выше, ссылка — из «URL».
-    { key: 'avatar', label: lang === 'ru' ? 'Аватарка (URL картинки)' : 'Avatar (image URL)', type: 'text', default: '' },
+    // Второй канал: если заполнить, клик по иконке откроет меню выбора.
     { key: 'label2', label: lang === 'ru' ? '2-й канал: название' : '2nd: name', type: 'text', default: '' },
     { key: 'url2', label: lang === 'ru' ? '2-й канал: ссылка' : '2nd: URL', type: 'text', default: '' },
-    { key: 'avatar2', label: lang === 'ru' ? '2-й канал: аватарка' : '2nd: avatar', type: 'text', default: '' },
   ], [lang]);
 
   function handleSave(draft) {
     const payload = {
       label: draft.label, handle: draft.handle, url: draft.url, icon: draft.icon || null,
-      avatar: draft.avatar || null,
-      label2: draft.label2 || null, url2: draft.url2 || null, avatar2: draft.avatar2 || null,
+      label2: draft.label2 || null, url2: draft.url2 || null,
     };
     if (editLink?.isNew) {
       linksRes.add(payload);
