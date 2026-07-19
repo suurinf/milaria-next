@@ -6,18 +6,18 @@
   <title>Milaria — VTuber-художник: модели, риг, арт | портфолио и заказы</title>
   <meta name="description" content="Milaria — художник VTuber-моделей: отрисовка и риггинг Live2D, чиби, PNGtuber, иллюстрации. Портфолио, калькулятор стоимости, очередь заказов и условия работы." />
   <meta name="theme-color" content="#0c0a08" />
-  <link rel="canonical" href="https://milaria-next-suurin.amvera.io/" />
+  <link rel="canonical" href="https://milariart.ru/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Milaria" />
   <meta property="og:locale" content="ru_RU" />
   <meta property="og:title" content="Milaria — VTuber-художник: модели, риг, арт" />
   <meta property="og:description" content="Отрисовка и риггинг Live2D-моделей, чиби, PNGtuber, иллюстрации. Портфолио, калькулятор стоимости и очередь заказов." />
-  <meta property="og:url" content="https://milaria-next-suurin.amvera.io/" />
-  <meta property="og:image" content="https://milaria-next-suurin.amvera.io/og-image.jpg" />
+  <meta property="og:url" content="https://milariart.ru/" />
+  <meta property="og:image" content="https://milariart.ru/og-image.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Milaria — VTuber-художник: модели, риг, арт" />
   <meta name="twitter:description" content="Отрисовка и риггинг Live2D-моделей, чиби, PNGtuber, иллюстрации. Портфолио и калькулятор стоимости." />
-  <meta name="twitter:image" content="https://milaria-next-suurin.amvera.io/og-image.jpg" />
+  <meta name="twitter:image" content="https://milariart.ru/og-image.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Allison&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -4317,6 +4317,55 @@ select {
   .channel-choice-name { font-size: 14px; }
   .channel-choice-handle { font-size: 10px; }
   .channel-choice-arrow { flex: 0 0 auto; margin-left: 4px; }
+}
+
+/* ═════ Калькулятор: удаление функций прямо из сводки ═════ */
+.calc2-summary-line {
+  align-items: center;
+}
+.calc2-summary-line-label { flex: 1; min-width: 0; }
+.calc2-summary-line-price { white-space: nowrap; }
+.calc2-summary-remove {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(245, 212, 163, 0.1);
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+.calc2-summary-remove:hover {
+  background: rgba(220, 80, 60, 0.85);
+  color: #fff;
+  transform: scale(1.1);
+}
+.calc2-summary-clear {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 2px;
+  margin-bottom: 4px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+.calc2-summary-clear:hover {
+  opacity: 1;
+  color: var(--accent);
+  text-decoration: underline;
 }
 </style></head>
 <body>
@@ -8804,6 +8853,12 @@ function CalculatorSection({ t, lang, admin }) {
   function toggle(id) {
     setState({ ...state, [id]: { ...(state[id] || { qty: 1 }), on: !state[id]?.on } });
   }
+  function clearAll() {
+    // Выключаем все выбранные разом — быстрее, чем снимать по одной
+    const next = {};
+    Object.keys(state).forEach(id => { next[id] = { ...state[id], on: false }; });
+    setState(next);
+  }
   function setQty(id, qty) {
     setState({ ...state, [id]: { ...(state[id] || { on: true }), qty } });
   }
@@ -9138,6 +9193,11 @@ function CalculatorSection({ t, lang, admin }) {
             )}
           </div>
 
+          {globalLines.length > 0 && (
+            <button className="calc2-summary-clear" onClick={clearAll}>
+              {lang === 'ru' ? 'Очистить всё' : 'Clear all'}
+            </button>
+          )}
           <ul className="calc2-summary-list">
             {globalLines.length === 0 && (
               <li className="calc2-summary-empty">
@@ -9146,8 +9206,12 @@ function CalculatorSection({ t, lang, admin }) {
             )}
             {globalLines.map((line) => (
               <li key={line.id} className="calc2-summary-line">
-                <span>{line.label}{line.qty > 1 ? ` × ${line.qty}` : ''}</span>
-                <span>{fmtMoney(line.sum, lang)}</span>
+                <span className="calc2-summary-line-label">{line.label}{line.qty > 1 ? ` × ${line.qty}` : ''}</span>
+                <span className="calc2-summary-line-price">{fmtMoney(line.sum, lang)}</span>
+                {/* Крестик убирает функцию прямо отсюда — не нужно искать её в калькуляторе */}
+                <button className="calc2-summary-remove" onClick={() => toggle(line.id)}
+                  title={lang === 'ru' ? 'Убрать' : 'Remove'}
+                  aria-label={lang === 'ru' ? 'Убрать' : 'Remove'}>×</button>
               </li>
             ))}
           </ul>

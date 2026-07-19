@@ -9,7 +9,7 @@ const SUPABASE_URL = 'https://vgwdudjgvkmlnnfgonbk.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnd2R1ZGpndmttbG5uZmdvbmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjI2NDksImV4cCI6MjA5NDUzODY0OX0.I_ciFmhRcv2RdXZFaedlMki8c96zTvXkUyJxSVACbr4';
 const PORT = parseInt(process.env.PORT) || 3000;
 const HTML_PATH = path.join(__dirname, 'index.html');
-const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://milaria-next-suurin.amvera.io';
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://milariart.ru';
 
 // In-memory cache — served immediately, refreshed in background
 let cache = { data: null, settings: {}, updatedAt: null };
