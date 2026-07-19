@@ -1,18 +1,18 @@
 {
-  "takenAt": "2026-07-18T04:51:52.432Z",
+  "takenAt": "2026-07-19T05:26:16.308Z",
   "source": "https://vgwdudjgvkmlnnfgonbk.supabase.co",
   "tables": [
     {
       "table": "queue_items",
-      "rows": 31
+      "rows": 32
     },
     {
       "table": "portfolio_categories",
-      "rows": 8
+      "rows": 9
     },
     {
       "table": "portfolio_images",
-      "rows": 89
+      "rows": 90
     },
     {
       "table": "prices",
@@ -20,7 +20,7 @@
     },
     {
       "table": "calc_options",
-      "rows": 54
+      "rows": 59
     },
     {
       "table": "debts",
@@ -28,7 +28,7 @@
     },
     {
       "table": "links",
-      "rows": 3
+      "rows": 13
     },
     {
       "table": "settings",

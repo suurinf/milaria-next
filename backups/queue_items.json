@@ -52,8 +52,8 @@
     "progress": 0,
     "sort_order": 22,
     "tag": "prepaid",
-    "title": "CHIBI Model art",
-    "updated_at": "2026-07-17T22:42:59.553402+00:00"
+    "title": "Eitan CHIBI Model art",
+    "updated_at": "2026-07-18T18:53:46.380355+00:00"
   },
   {
     "completed_date": null,
@@ -110,6 +110,20 @@
     "tag": "paid",
     "title": "RIA_SENI YCH PANCAKES #2",
     "updated_at": "2026-05-25T15:40:35.384137+00:00"
+  },
+  {
+    "completed_date": null,
+    "created_at": "2026-07-18T18:49:40.44152+00:00",
+    "deadline_end": "2026-07-31",
+    "deadline_start": "2026-07-13",
+    "id": "52b908ad-60df-439f-8940-ddb74d1f8eb2",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 30,
+    "sort_order": 23,
+    "tag": "paid",
+    "title": "Daniilka ART",
+    "updated_at": "2026-07-18T18:49:40.44152+00:00"
   },
   {
     "completed_date": "2026-05-24",

@@ -870,6 +870,16 @@
     "updated_at": "2026-07-17T13:30:52.117801+00:00"
   },
   {
+    "category_id": "bcce653e-fee1-449a-9cdc-15ca366bbe15",
+    "created_at": "2026-07-18T19:18:25.846179+00:00",
+    "id": "f3fcbf39-2553-44b3-9ac1-8150f400646e",
+    "image_data": "/supa/storage/v1/object/public/portfolio/full/1784402301658-o2q0te.webp",
+    "is_cover": true,
+    "sort_order": -1,
+    "thumb_data": "/supa/storage/v1/object/public/portfolio/thumb/1784402301658-o2q0te.webp",
+    "updated_at": "2026-07-18T19:18:25.846179+00:00"
+  },
+  {
     "category_id": "1fa7b135-340e-4c11-9d8e-af0ca0aed06c",
     "created_at": "2026-05-25T13:49:48.774978+00:00",
     "id": "fada1a3f-f34c-4200-8c3e-5df6fe185997",
