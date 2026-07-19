@@ -1815,6 +1815,7 @@ html {
   gap: 8px;
   max-height: 280px;
   overflow-y: auto;
+  overflow-x: hidden;   /* крестик при наведении не должен вызывать нижнюю полосу */
 }
 .calc2-summary-list::-webkit-scrollbar { width: 4px; }
 .calc2-summary-list::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
@@ -4345,7 +4346,6 @@ select {
 .calc2-summary-remove:hover {
   background: rgba(220, 80, 60, 0.85);
   color: #fff;
-  transform: scale(1.1);
 }
 .calc2-summary-clear {
   align-self: flex-end;
