@@ -7,11 +7,11 @@
     "id": "08c10752-33a9-4b60-afe7-b3f88b8a4745",
     "image": null,
     "kind": "in_progress",
-    "progress": 10,
+    "progress": 20,
     "sort_order": 5,
     "tag": "paid",
     "title": "LSAHTOXA maskot art",
-    "updated_at": "2026-07-16T09:55:05.550278+00:00"
+    "updated_at": "2026-07-21T11:47:43.972153+00:00"
   },
   {
     "completed_date": "2026-05-24",
@@ -49,11 +49,11 @@
     "id": "35a2b4af-5b98-4831-b043-0cad45c6a8e6",
     "image": null,
     "kind": "in_progress",
-    "progress": 0,
+    "progress": 30,
     "sort_order": 22,
     "tag": "prepaid",
     "title": "Eitan CHIBI Model art",
-    "updated_at": "2026-07-18T18:53:46.380355+00:00"
+    "updated_at": "2026-07-21T11:47:52.609684+00:00"
   },
   {
     "completed_date": null,
@@ -63,11 +63,11 @@
     "id": "38737021-e26c-4cbe-b2fa-32c8def8163a",
     "image": null,
     "kind": "in_progress",
-    "progress": 0,
+    "progress": 5,
     "sort_order": 2,
     "tag": "paid",
     "title": "RiaSeni chibi rig model 2D",
-    "updated_at": "2026-07-03T11:42:00.099171+00:00"
+    "updated_at": "2026-07-22T03:44:41.424184+00:00"
   },
   {
     "completed_date": "2026-05-24",
@@ -119,11 +119,11 @@
     "id": "52b908ad-60df-439f-8940-ddb74d1f8eb2",
     "image": null,
     "kind": "in_progress",
-    "progress": 30,
+    "progress": 40,
     "sort_order": 23,
     "tag": "paid",
     "title": "Daniilka ART",
-    "updated_at": "2026-07-18T18:49:40.44152+00:00"
+    "updated_at": "2026-07-21T11:47:27.7012+00:00"
   },
   {
     "completed_date": "2026-05-24",
@@ -385,11 +385,11 @@
     "id": "f0476ca4-e197-42bd-bdf6-89c38643f809",
     "image": null,
     "kind": "in_progress",
-    "progress": 20,
+    "progress": 30,
     "sort_order": 3,
     "tag": "paid",
     "title": "Altis Rigg Model Chibi",
-    "updated_at": "2026-07-16T09:54:07.064851+00:00"
+    "updated_at": "2026-07-21T11:47:37.778428+00:00"
   },
   {
     "completed_date": "2026-05-24",
