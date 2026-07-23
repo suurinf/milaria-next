@@ -28,6 +28,20 @@
     "updated_at": "2026-05-25T15:40:35.589842+00:00"
   },
   {
+    "completed_date": null,
+    "created_at": "2026-07-22T17:47:48.093654+00:00",
+    "deadline_end": "2026-08-05",
+    "deadline_start": "2026-07-23",
+    "id": "344562b9-60ce-47ae-9b0a-b42f8a1733c3",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 24,
+    "tag": "paid",
+    "title": "lsahtoxa YCH SUMMER",
+    "updated_at": "2026-07-22T17:47:54.508537+00:00"
+  },
+  {
     "completed_date": "2026-06-11",
     "created_at": "2026-05-29T10:40:56.770422+00:00",
     "deadline_end": "2026-06-12",
