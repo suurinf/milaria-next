@@ -14,6 +14,20 @@
     "updated_at": "2026-07-21T11:47:43.972153+00:00"
   },
   {
+    "completed_date": null,
+    "created_at": "2026-07-27T21:52:47.493125+00:00",
+    "deadline_end": "2026-08-10",
+    "deadline_start": "2026-07-28",
+    "id": "0a052fd2-6ff4-46e7-b6b5-5b8703068f6a",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 25,
+    "tag": "paid",
+    "title": "tomo_rin ych watermelon #1",
+    "updated_at": "2026-07-27T21:53:49.489251+00:00"
+  },
+  {
     "completed_date": "2026-05-24",
     "created_at": "2026-05-24T15:01:31.730206+00:00",
     "deadline_end": null,
@@ -133,11 +147,11 @@
     "id": "52b908ad-60df-439f-8940-ddb74d1f8eb2",
     "image": null,
     "kind": "in_progress",
-    "progress": 80,
+    "progress": 90,
     "sort_order": 23,
     "tag": "paid",
     "title": "Daniilka ART",
-    "updated_at": "2026-07-23T14:22:52.535935+00:00"
+    "updated_at": "2026-07-27T21:54:18.839541+00:00"
   },
   {
     "completed_date": "2026-05-24",
@@ -152,6 +166,20 @@
     "tag": "paid",
     "title": "LSAHTOXA ART 2D MODEL",
     "updated_at": "2026-05-25T15:40:35.327204+00:00"
+  },
+  {
+    "completed_date": null,
+    "created_at": "2026-07-27T21:53:04.060996+00:00",
+    "deadline_end": "2026-08-10",
+    "deadline_start": "2026-07-28",
+    "id": "63ebbefd-a569-4036-9a3e-195b754bb5e5",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 26,
+    "tag": "paid",
+    "title": "tomo_rin ych watermelon #2 ",
+    "updated_at": "2026-07-27T21:53:40.036926+00:00"
   },
   {
     "completed_date": "2026-05-25",
@@ -236,6 +264,20 @@
     "tag": "paid",
     "title": "twarinchy ych work #1",
     "updated_at": "2026-06-29T14:19:35.523532+00:00"
+  },
+  {
+    "completed_date": null,
+    "created_at": "2026-07-27T23:45:12.998942+00:00",
+    "deadline_end": "2026-09-28",
+    "deadline_start": "2026-07-28",
+    "id": "9546f8c5-0e2e-4177-9cb0-3eb043af5a56",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 28,
+    "tag": "paid",
+    "title": "shis(taku_uori) twitch Emotion of up to 5-8 frames",
+    "updated_at": "2026-07-27T23:45:12.998942+00:00"
   },
   {
     "completed_date": "2026-05-24",
@@ -348,6 +390,20 @@
     "tag": "paid",
     "title": "LUN  YCH CULT ",
     "updated_at": "2026-05-25T15:40:35.600153+00:00"
+  },
+  {
+    "completed_date": null,
+    "created_at": "2026-07-27T23:44:25.982558+00:00",
+    "deadline_end": "2026-09-28",
+    "deadline_start": "2026-07-28",
+    "id": "d9b7e423-a2e2-41b4-96d6-2cd5b541fe08",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 27,
+    "tag": "paid",
+    "title": "shis(taku_uori) twitch Emote Art+Animation LIVE2D",
+    "updated_at": "2026-07-27T23:44:25.982558+00:00"
   },
   {
     "completed_date": "2026-07-16",
