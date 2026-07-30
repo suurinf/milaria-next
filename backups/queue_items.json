@@ -49,11 +49,11 @@
     "id": "344562b9-60ce-47ae-9b0a-b42f8a1733c3",
     "image": null,
     "kind": "in_progress",
-    "progress": 10,
+    "progress": 30,
     "sort_order": 24,
     "tag": "paid",
     "title": "lsahtoxa YCH SUMMER",
-    "updated_at": "2026-07-28T15:27:01.708839+00:00"
+    "updated_at": "2026-07-30T02:29:39.413272+00:00"
   },
   {
     "completed_date": "2026-06-11",
@@ -406,6 +406,20 @@
     "updated_at": "2026-05-25T15:40:35.340779+00:00"
   },
   {
+    "completed_date": null,
+    "created_at": "2026-07-30T00:42:11.146801+00:00",
+    "deadline_end": "2026-08-19",
+    "deadline_start": "2026-07-30",
+    "id": "c4ebea1b-e6d2-4119-9e18-d6afea255a48",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 32,
+    "tag": "paid",
+    "title": "riaseni ych watermelon #1",
+    "updated_at": "2026-07-30T00:42:11.146801+00:00"
+  },
+  {
     "completed_date": "2026-05-25",
     "created_at": "2026-05-25T12:49:52.09872+00:00",
     "deadline_end": null,
@@ -432,6 +446,20 @@
     "tag": "paid",
     "title": "LUN  YCH CULT ",
     "updated_at": "2026-05-25T15:40:35.600153+00:00"
+  },
+  {
+    "completed_date": null,
+    "created_at": "2026-07-30T00:42:37.838965+00:00",
+    "deadline_end": "2026-08-19",
+    "deadline_start": "2026-07-30",
+    "id": "d7018a3b-323b-4202-8ba8-c640a604d2dd",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 34,
+    "tag": "paid",
+    "title": "riaseni ych watermelon #3",
+    "updated_at": "2026-07-30T00:42:37.838965+00:00"
   },
   {
     "completed_date": null,
@@ -544,6 +572,20 @@
     "tag": "paid",
     "title": "ALBIELLE YCH EGGS #3",
     "updated_at": "2026-05-25T15:40:35.590483+00:00"
+  },
+  {
+    "completed_date": null,
+    "created_at": "2026-07-30T00:42:24.103996+00:00",
+    "deadline_end": "2026-08-19",
+    "deadline_start": "2026-07-30",
+    "id": "f4634ab4-cfab-4047-aae4-38c80af6f355",
+    "image": null,
+    "kind": "in_progress",
+    "progress": 0,
+    "sort_order": 33,
+    "tag": "paid",
+    "title": "riaseni ych watermelon #2",
+    "updated_at": "2026-07-30T00:42:24.103996+00:00"
   },
   {
     "completed_date": "2026-06-29",

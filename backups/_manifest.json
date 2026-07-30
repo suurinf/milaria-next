@@ -1,10 +1,10 @@
 {
-  "takenAt": "2026-07-29T05:25:30.523Z",
+  "takenAt": "2026-07-30T05:12:32.090Z",
   "source": "https://vgwdudjgvkmlnnfgonbk.supabase.co",
   "tables": [
     {
       "table": "queue_items",
-      "rows": 40
+      "rows": 43
     },
     {
       "table": "portfolio_categories",
