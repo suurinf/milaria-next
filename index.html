@@ -4367,6 +4367,27 @@ select {
   color: var(--accent);
   text-decoration: underline;
 }
+
+/* ═════ Приоритет заказа ═════
+   Небольшая точка у номера: заметно, но не спорит с прогресс-баром.
+   Средний приоритет не показываем — это норма, метка была бы шумом. */
+.q-priority {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  z-index: 2;
+}
+.q-priority.high {
+  background: #e05545;
+  box-shadow: 0 0 6px rgba(224, 85, 69, 0.8);
+}
+.q-priority.low {
+  background: rgba(245, 232, 212, 0.35);
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -4436,7 +4457,7 @@ const I18N = {
       ready: "готово",
       done: "Завершён",
       search: "Поиск по заказам…",
-      sort: { progress: "по прогрессу", new: "сначала новые", old: "сначала старые" },
+      sort: { progress: "по прогрессу", priority: "по приоритету", new: "сначала новые", old: "сначала старые" },
       filter: { all: "все", paid: "оплачено", free: "бесплатно" },
       empty: "Здесь пока пусто",
       addNew: "+ Добавить заказ",
@@ -4541,7 +4562,7 @@ const I18N = {
       ready: "done",
       done: "Finished",
       search: "Search orders…",
-      sort: { progress: "by progress", new: "newest first", old: "oldest first" },
+      sort: { progress: "by progress", priority: "by priority", new: "newest first", old: "oldest first" },
       filter: { all: "all", paid: "paid", free: "free" },
       empty: "Nothing here yet",
       addNew: "+ Add order",
@@ -7584,6 +7605,29 @@ Object.assign(window, { HomeSection });
 const { useState: qState, useEffect: qEffect, useMemo: qMemo } = React;
 
 // Format deadline range: "12.05 → 12.06.2026" or single date
+// Приоритет заказа: высокий → средний → низкий.
+// Ранг числом, чтобы сортировать; неуказанный считаем средним.
+const PRIORITY_LEVELS = ['high', 'medium', 'low'];
+const PRIORITY_META = {
+  high:   { ru: 'Высокий', en: 'High',   rank: 3 },
+  medium: { ru: 'Средний', en: 'Medium', rank: 2 },
+  low:    { ru: 'Низкий',  en: 'Low',    rank: 1 },
+};
+function PRIORITY_RANK(item) {
+  const m = PRIORITY_META[item && item.priority];
+  return m ? m.rank : 2;
+}
+// Ключ даты для сортировки заказов в работе: дедлайн, иначе порядок добавления.
+function qDateKey(item) {
+  const d = item && (item.deadline_start || item.deadline_end);
+  if (d) {
+    const t = Date.parse(d);
+    if (!isNaN(t)) return t;
+  }
+  // Без дедлайна — опираемся на sort_order, чтобы порядок был стабильным
+  return -(item && item.sort_order != null ? item.sort_order : 9999);
+}
+
 function fmtDeadline(start, end) {
   const fmt = (d) => {
     if (!d) return '';
@@ -7598,7 +7642,7 @@ function fmtDeadline(start, end) {
 }
 
 // ───── one row (list layout) ─────
-function QueueRow({ item, idx, t, admin, onUpdate, onDelete, onEdit, barStyle, dragHandlers }) {
+function QueueRow({ item, idx, t, lang, admin, onUpdate, onDelete, onEdit, barStyle, dragHandlers }) {
   // Secret items: show masked for regular users
   if (item.tag === 'secret' && !admin) {
     return <SecretRow idx={idx} t={t} item={item} />;
@@ -7615,6 +7659,12 @@ function QueueRow({ item, idx, t, admin, onUpdate, onDelete, onEdit, barStyle, d
       {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
       <div className="q-row-fill" data-style={barStyle} style={{ '--p': `${item.progress}%` }}></div>
       {item.tag && <span className={`q-tag ${item.tag}`}>{t.queue[item.tag]}</span>}
+      {/* Приоритет показываем точкой у номера: высокий — красная, низкий — приглушённая */}
+      {item.priority && item.priority !== 'medium' && (
+        <span className={`q-priority ${item.priority}`}
+          title={(lang === 'ru' ? 'Приоритет: ' : 'Priority: ') +
+            (lang === 'ru' ? PRIORITY_META[item.priority].ru : PRIORITY_META[item.priority].en)}></span>
+      )}
       <div className="q-num">{idx + 1}</div>
       <div className="q-title">
         <Editable
@@ -7811,6 +7861,13 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
     if (query) arr = arr.filter(x => x.title.toLowerCase().includes(query.toLowerCase()));
     if (filter !== 'all') arr = arr.filter(x => x.tag === filter);
     if (sort === 'progress') arr.sort((a, b) => b.progress - a.progress);
+    // Раньше «сначала новые» и «сначала старые» здесь не обрабатывались вовсе,
+    // поэтому обе кнопки показывали один и тот же исходный порядок.
+    // У заказов в работе нет даты завершения — ориентируемся на дедлайн,
+    // а при его отсутствии на порядок добавления (sort_order).
+    else if (sort === 'new') arr.sort((a, b) => qDateKey(b) - qDateKey(a));
+    else if (sort === 'old') arr.sort((a, b) => qDateKey(a) - qDateKey(b));
+    else if (sort === 'priority') arr.sort((a, b) => PRIORITY_RANK(b) - PRIORITY_RANK(a));
     return arr;
   }, [inProgress, query, filter, sort]);
 
@@ -7820,6 +7877,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
     if (filter !== 'all') arr = arr.filter(x => x.tag === filter);
     if (sort === 'new') arr.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     else if (sort === 'old') arr.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    else if (sort === 'priority') arr.sort((a, b) => PRIORITY_RANK(b) - PRIORITY_RANK(a));
     return arr;
   }, [completed, query, filter, sort]);
 
@@ -7848,6 +7906,10 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       { value: 'in_progress', label: lang === 'ru' ? 'В работе' : 'In progress' },
       { value: 'completed', label: lang === 'ru' ? 'Готово' : 'Completed' },
     ]},
+    { key: 'priority', label: lang === 'ru' ? 'Приоритет' : 'Priority', type: 'select', default: 'medium',
+      options: PRIORITY_LEVELS.map(p => ({
+        value: p, label: lang === 'ru' ? PRIORITY_META[p].ru : PRIORITY_META[p].en,
+      })) },
   ], [lang]);
 
   function addInProgress() { setEditModal({ item: null, isNew: true }); }
@@ -7862,6 +7924,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
         deadline_start: draft.deadline_start || null,
         deadline_end: draft.deadline_end || null,
         image: draft.image || null,
+          priority: draft.priority || 'medium',
         completed_date: draft.kind === 'completed' ? new Date().toISOString().slice(0, 10) : null,
       });
     } else {
@@ -7871,6 +7934,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
         deadline_start: draft.deadline_start || null,
         deadline_end: draft.deadline_end || null,
         image: draft.image || null,
+          priority: draft.priority || 'medium',
         completed_date: draft.kind === 'completed'
           ? (editModal.item.completed_date || new Date().toISOString().slice(0, 10))
           : null,
@@ -7909,7 +7973,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       <div className="q-list">
         {filteredInProgress.map((item, idx) => (
           <QueueRow
-            key={item.id}
+lang={lang}             key={item.id}
             item={animated ? item : { ...item, progress: 0 }}
             idx={idx}
             t={t}
@@ -7954,7 +8018,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
           ))}
         </div>
         <div className="seg">
-          {['progress', 'new', 'old'].map(s => (
+          {['progress', 'priority', 'new', 'old'].map(s => (
             <button key={s} className={`seg-btn ${sort === s ? 'active' : ''}`} onClick={() => setSort(s)}>
               {t.queue.sort[s]}
             </button>
