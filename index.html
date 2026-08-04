@@ -4420,6 +4420,42 @@ select {
 @media (max-width: 600px) {
   .q-days { margin-left: 6px; font-size: 8px; padding: 1px 5px; }
 }
+
+/* ═════ Дедлайн и приоритет в карточках/таймлайне ═════ */
+.q-card-deadline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.q-card-deadline svg { flex: 0 0 auto; opacity: 0.7; }
+.q-card-deadline .q-days { margin-left: 2px; }
+
+/* Приоритет словом — в карточках места хватает, читается лучше точки */
+.q-priority-tag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.q-priority-tag.high {
+  color: #ff8a7a;
+  background: rgba(224, 85, 69, 0.16);
+  border: 1px solid rgba(224, 85, 69, 0.45);
+}
+.q-priority-tag.low {
+  color: var(--text-dim);
+  background: rgba(245, 232, 212, 0.06);
+  border: 1px solid rgba(245, 232, 212, 0.15);
+}
+.q-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 </style></head>
 <body>
   <div id="root"></div>
@@ -7870,14 +7906,27 @@ function DoneRow({ item, idx, t, admin, onDelete, onEdit, dragHandlers }) {
 }
 
 // ───── card layout ─────
-function QueueCard({ item, idx, t }) {
+function QueueCard({ item, idx, t, lang }) {
+  const dl = deadlineLabel(item, lang);
   return (
     <div className="q-card">
       {item.tag && <span className={`q-tag ${item.tag}`}>{t.queue[item.tag]}</span>}
       <div className="q-card-head">
         <span className="q-card-num">{String(idx + 1).padStart(2, '0')}</span>
+        {item.priority && item.priority !== 'medium' && (
+          <span className={`q-priority-tag ${item.priority}`}>
+            {lang === 'ru' ? PRIORITY_META[item.priority].ru : PRIORITY_META[item.priority].en}
+          </span>
+        )}
       </div>
       <div className="q-card-title">{item.title}</div>
+      {(item.deadline_start || item.deadline_end) && (
+        <div className="q-card-deadline">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>{fmtDeadline(item.deadline_start, item.deadline_end)}</span>
+          {dl && <span className={`q-days ${dl.tone}`}>{dl.text}</span>}
+        </div>
+      )}
       <div className="q-card-bar">
         <span style={{ width: `${item.progress}%` }}></span>
       </div>
@@ -7890,12 +7939,24 @@ function QueueCard({ item, idx, t }) {
 }
 
 // ───── timeline layout ─────
-function QueueTimeItem({ item, idx, t, done }) {
+function QueueTimeItem({ item, idx, t, done, lang }) {
+  const dl = done ? null : deadlineLabel(item, lang);
   return (
     <div className={`q-time-item ${done ? 'done' : ''}`}>
       <div>
         <div className="q-time-num">№ {String(idx + 1).padStart(2, '0')}{item.date ? ` · ${item.date}` : ''}</div>
         <div className="q-time-title">{item.title}</div>
+        {!done && (item.deadline_start || item.deadline_end) && (
+          <div className="q-card-deadline">
+            <span>{fmtDeadline(item.deadline_start, item.deadline_end)}</span>
+            {dl && <span className={`q-days ${dl.tone}`}>{dl.text}</span>}
+            {item.priority && item.priority !== 'medium' && (
+              <span className={`q-priority-tag ${item.priority}`}>
+                {lang === 'ru' ? PRIORITY_META[item.priority].ru : PRIORITY_META[item.priority].en}
+              </span>
+            )}
+          </div>
+        )}
         {!done && (
           <div className="q-time-bar">
             <span style={{ width: `${item.progress}%` }}></span>
@@ -8048,7 +8109,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       return (
         <div className="q-cards">
           {filteredInProgress.map((item, idx) => (
-            <QueueCard key={item.id} item={animated ? item : { ...item, progress: 0 }} idx={idx} t={t} />
+            <QueueCard key={item.id} item={animated ? item : { ...item, progress: 0 }} idx={idx} t={t} lang={lang} />
           ))}
         </div>
       );
@@ -8057,7 +8118,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       return (
         <div className="q-timeline">
           {filteredInProgress.map((item, idx) => (
-            <QueueTimeItem key={item.id} item={animated ? item : { ...item, progress: 0 }} idx={idx} t={t} />
+            <QueueTimeItem key={item.id} item={animated ? item : { ...item, progress: 0 }} idx={idx} t={t} lang={lang} />
           ))}
         </div>
       );
@@ -8067,7 +8128,8 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       <div className="q-list">
         {filteredInProgress.map((item, idx) => (
           <QueueRow
-lang={lang}             key={item.id}
+            lang={lang}
+            key={item.id}
             item={animated ? item : { ...item, progress: 0 }}
             idx={idx}
             t={t}
@@ -8153,7 +8215,7 @@ lang={lang}             key={item.id}
       {layout === 'cards' || layout === 'timeline' ? (
         <div className="q-timeline">
           {filteredCompleted.map((item, idx) => (
-            <QueueTimeItem key={item.id} item={item} idx={idx} t={t} done />
+            <QueueTimeItem key={item.id} item={item} idx={idx} t={t} lang={lang} done />
           ))}
         </div>
       ) : (
