@@ -210,19 +210,19 @@
     "updated_at": "2026-08-04T22:10:37.838956+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-09",
     "created_at": "2026-07-27T21:53:04.060996+00:00",
     "deadline_end": "2026-08-10",
     "deadline_start": "2026-07-28",
     "id": "63ebbefd-a569-4036-9a3e-195b754bb5e5",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
-    "progress": 95,
+    "progress": 100,
     "sort_order": 7,
     "tag": "paid",
     "title": "tomo_rin ych watermelon #2 ",
-    "updated_at": "2026-08-08T04:03:35.472652+00:00"
+    "updated_at": "2026-08-09T04:28:26.916433+00:00"
   },
   {
     "completed_date": "2026-05-25",
@@ -563,11 +563,11 @@
     "image": null,
     "kind": "in_progress",
     "priority": "high",
-    "progress": 70,
+    "progress": 80,
     "sort_order": 1,
     "tag": "paid",
     "title": "Altis Rigg Model Chibi",
-    "updated_at": "2026-08-08T07:06:40.686818+00:00"
+    "updated_at": "2026-08-10T01:11:44.676256+00:00"
   },
   {
     "completed_date": "2026-05-24",
