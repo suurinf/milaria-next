@@ -1,6 +1,21 @@
 [
   {
     "completed_date": null,
+    "created_at": "2026-08-11T15:10:42.881213+00:00",
+    "deadline_end": "2026-08-30",
+    "deadline_start": "2026-08-12",
+    "id": "015ed1fc-e0a9-47f8-babb-9fede4381878",
+    "image": null,
+    "kind": "in_progress",
+    "priority": "high",
+    "progress": 0,
+    "sort_order": 24,
+    "tag": "paid",
+    "title": "taku uori ych watermelon #1",
+    "updated_at": "2026-08-11T15:10:42.881213+00:00"
+  },
+  {
+    "completed_date": null,
     "created_at": "2026-07-03T10:01:38.14525+00:00",
     "deadline_end": "2026-09-04",
     "deadline_start": "2026-07-04",
@@ -442,12 +457,12 @@
     "id": "c4ebea1b-e6d2-4119-9e18-d6afea255a48",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 0,
     "sort_order": 13,
     "tag": "paid",
     "title": "riaseni ych watermelon #1",
-    "updated_at": "2026-07-31T00:42:09.030755+00:00"
+    "updated_at": "2026-08-11T15:10:52.648231+00:00"
   },
   {
     "completed_date": "2026-05-25",
@@ -487,12 +502,12 @@
     "id": "d7018a3b-323b-4202-8ba8-c640a604d2dd",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 0,
     "sort_order": 15,
     "tag": "paid",
     "title": "riaseni ych watermelon #3",
-    "updated_at": "2026-07-31T00:42:08.787075+00:00"
+    "updated_at": "2026-08-11T15:11:09.3405+00:00"
   },
   {
     "completed_date": null,
@@ -622,12 +637,12 @@
     "id": "f4634ab4-cfab-4047-aae4-38c80af6f355",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 0,
     "sort_order": 14,
     "tag": "paid",
     "title": "riaseni ych watermelon #2",
-    "updated_at": "2026-07-31T00:42:09.164955+00:00"
+    "updated_at": "2026-08-11T15:10:59.324594+00:00"
   },
   {
     "completed_date": "2026-06-29",
