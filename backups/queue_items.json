@@ -22,12 +22,12 @@
     "id": "08c10752-33a9-4b60-afe7-b3f88b8a4745",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 20,
     "sort_order": 2,
     "tag": "paid",
     "title": "LSAHTOXA maskot art",
-    "updated_at": "2026-07-31T00:42:08.780676+00:00"
+    "updated_at": "2026-08-15T02:52:29.988579+00:00"
   },
   {
     "completed_date": "2026-08-03",
@@ -97,12 +97,12 @@
     "id": "35a2b4af-5b98-4831-b043-0cad45c6a8e6",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 30,
     "sort_order": 4,
     "tag": "prepaid",
     "title": "Eitan CHIBI Model art",
-    "updated_at": "2026-07-31T00:42:08.778303+00:00"
+    "updated_at": "2026-08-15T02:52:33.414137+00:00"
   },
   {
     "completed_date": null,
@@ -135,19 +135,19 @@
     "updated_at": "2026-05-25T15:40:35.583114+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-15",
     "created_at": "2026-07-28T07:10:18.291072+00:00",
-    "deadline_end": "2026-08-14",
+    "deadline_end": "2026-08-15",
     "deadline_start": "2026-07-28",
     "id": "4d3cbb79-0083-4349-b649-60d8fc4817a8",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
-    "progress": 60,
+    "progress": 100,
     "sort_order": 11,
     "tag": "paid",
     "title": "lsahtoxa ych watermelon #2",
-    "updated_at": "2026-08-13T12:24:02.824709+00:00"
+    "updated_at": "2026-08-15T02:51:27.320394+00:00"
   },
   {
     "completed_date": "2026-05-25",
@@ -210,19 +210,19 @@
     "updated_at": "2026-05-25T15:40:35.327204+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-15",
     "created_at": "2026-07-28T07:10:36.684671+00:00",
-    "deadline_end": "2026-08-14",
+    "deadline_end": "2026-08-15",
     "deadline_start": "2026-07-28",
     "id": "63d3ee1b-2ead-4c69-a298-ec3f9597fb84",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
-    "progress": 40,
+    "progress": 100,
     "sort_order": 12,
     "tag": "paid",
     "title": "lsahtoxa ych watermelon #3",
-    "updated_at": "2026-08-13T12:24:15.542319+00:00"
+    "updated_at": "2026-08-15T02:51:41.951918+00:00"
   },
   {
     "completed_date": "2026-08-09",
@@ -390,19 +390,19 @@
     "updated_at": "2026-05-25T15:40:35.607493+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-14",
     "created_at": "2026-07-28T07:10:07.804804+00:00",
     "deadline_end": "2026-08-14",
     "deadline_start": "2026-07-28",
     "id": "af13127f-5a0f-43ab-b910-e2ad585eaf16",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
-    "progress": 90,
+    "progress": 100,
     "sort_order": 10,
     "tag": "paid",
     "title": "lsahtoxa ych watermelon #1",
-    "updated_at": "2026-08-12T21:36:41.900019+00:00"
+    "updated_at": "2026-08-14T13:37:14.641259+00:00"
   },
   {
     "completed_date": "2026-05-25",
