@@ -570,19 +570,19 @@
     "updated_at": "2026-06-11T11:20:00.71094+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-15",
     "created_at": "2026-05-24T14:04:44.855793+00:00",
     "deadline_end": "2026-08-15",
     "deadline_start": "2026-05-15",
     "id": "f0476ca4-e197-42bd-bdf6-89c38643f809",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
     "progress": 80,
     "sort_order": 1,
     "tag": "paid",
     "title": "Altis Rigg Model Chibi",
-    "updated_at": "2026-08-10T01:11:44.676256+00:00"
+    "updated_at": "2026-08-15T16:41:10.442135+00:00"
   },
   {
     "completed_date": "2026-05-24",
