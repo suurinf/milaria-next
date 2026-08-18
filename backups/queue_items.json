@@ -458,11 +458,11 @@
     "image": null,
     "kind": "in_progress",
     "priority": "high",
-    "progress": 0,
+    "progress": 40,
     "sort_order": 13,
     "tag": "paid",
     "title": "riaseni ych watermelon #1",
-    "updated_at": "2026-08-11T15:10:52.648231+00:00"
+    "updated_at": "2026-08-17T09:20:14.493866+00:00"
   },
   {
     "completed_date": "2026-05-25",
@@ -570,6 +570,21 @@
     "updated_at": "2026-06-11T11:20:00.71094+00:00"
   },
   {
+    "completed_date": null,
+    "created_at": "2026-08-17T09:20:00.422083+00:00",
+    "deadline_end": "2026-08-31",
+    "deadline_start": "2026-08-18",
+    "id": "ebacf12f-6846-454d-ad5e-d0a8013c2883",
+    "image": null,
+    "kind": "in_progress",
+    "priority": "medium",
+    "progress": 0,
+    "sort_order": 25,
+    "tag": "paid",
+    "title": "lsahtoxa(for milaria) ych watermelon #3",
+    "updated_at": "2026-08-17T09:20:05.797114+00:00"
+  },
+  {
     "completed_date": "2026-08-15",
     "created_at": "2026-05-24T14:04:44.855793+00:00",
     "deadline_end": "2026-08-15",
@@ -638,11 +653,11 @@
     "image": null,
     "kind": "in_progress",
     "priority": "high",
-    "progress": 0,
+    "progress": 40,
     "sort_order": 14,
     "tag": "paid",
     "title": "riaseni ych watermelon #2",
-    "updated_at": "2026-08-11T15:10:59.324594+00:00"
+    "updated_at": "2026-08-17T09:20:18.150277+00:00"
   },
   {
     "completed_date": "2026-06-29",
