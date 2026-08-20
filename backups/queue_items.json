@@ -450,19 +450,19 @@
     "updated_at": "2026-05-25T15:40:35.340779+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-19",
     "created_at": "2026-07-30T00:42:11.146801+00:00",
     "deadline_end": "2026-08-19",
     "deadline_start": "2026-07-30",
     "id": "c4ebea1b-e6d2-4119-9e18-d6afea255a48",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
-    "progress": 40,
+    "progress": 100,
     "sort_order": 13,
     "tag": "paid",
     "title": "riaseni ych watermelon #1",
-    "updated_at": "2026-08-17T09:20:14.493866+00:00"
+    "updated_at": "2026-08-19T20:15:10.440362+00:00"
   },
   {
     "completed_date": "2026-05-25",
@@ -495,19 +495,19 @@
     "updated_at": "2026-05-25T15:40:35.600153+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-19",
     "created_at": "2026-07-30T00:42:37.838965+00:00",
     "deadline_end": "2026-08-19",
     "deadline_start": "2026-07-30",
     "id": "d7018a3b-323b-4202-8ba8-c640a604d2dd",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
-    "progress": 40,
+    "progress": 90,
     "sort_order": 15,
     "tag": "paid",
     "title": "riaseni ych watermelon #3",
-    "updated_at": "2026-08-18T16:35:09.998059+00:00"
+    "updated_at": "2026-08-19T22:29:08.262705+00:00"
   },
   {
     "completed_date": null,
@@ -645,19 +645,19 @@
     "updated_at": "2026-05-25T15:40:35.590483+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-19",
     "created_at": "2026-07-30T00:42:24.103996+00:00",
     "deadline_end": "2026-08-19",
     "deadline_start": "2026-07-30",
     "id": "f4634ab4-cfab-4047-aae4-38c80af6f355",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
-    "progress": 40,
+    "progress": 100,
     "sort_order": 14,
     "tag": "paid",
     "title": "riaseni ych watermelon #2",
-    "updated_at": "2026-08-17T09:20:18.150277+00:00"
+    "updated_at": "2026-08-19T20:15:13.904064+00:00"
   },
   {
     "completed_date": "2026-06-29",
