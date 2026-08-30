@@ -1,18 +1,18 @@
 [
   {
-    "completed_date": null,
+    "completed_date": "2026-08-24",
     "created_at": "2026-08-11T15:10:42.881213+00:00",
     "deadline_end": "2026-08-30",
     "deadline_start": "2026-08-12",
     "id": "015ed1fc-e0a9-47f8-babb-9fede4381878",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
     "progress": 0,
     "sort_order": 24,
     "tag": "paid",
     "title": "taku uori ych watermelon #1",
-    "updated_at": "2026-08-11T15:10:42.881213+00:00"
+    "updated_at": "2026-08-24T19:40:15.436712+00:00"
   },
   {
     "completed_date": null,
