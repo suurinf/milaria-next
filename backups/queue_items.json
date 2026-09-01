@@ -570,19 +570,19 @@
     "updated_at": "2026-06-11T11:20:00.71094+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-08-31",
     "created_at": "2026-08-17T09:20:00.422083+00:00",
     "deadline_end": "2026-08-31",
     "deadline_start": "2026-08-18",
     "id": "ebacf12f-6846-454d-ad5e-d0a8013c2883",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "medium",
     "progress": 0,
     "sort_order": 25,
     "tag": "paid",
     "title": "lsahtoxa(for milaria) ych watermelon #3",
-    "updated_at": "2026-08-17T09:20:05.797114+00:00"
+    "updated_at": "2026-08-31T10:13:45.057505+00:00"
   },
   {
     "completed_date": "2026-08-15",
