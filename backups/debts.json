@@ -240,22 +240,6 @@
     "watching": null
   },
   {
-    "created_at": "2026-06-29T07:52:09.836939+00:00",
-    "drawing": null,
-    "games": null,
-    "id": "8653a844-2971-49de-bb5b-cea4cf8c9df5",
-    "progress": 0,
-    "reason": "",
-    "section": "watching",
-    "sort_order": 3,
-    "status": "inProgress",
-    "stream_date": "2026-06-29",
-    "title": "LSAHTOXA (3шт) хантер х хантер 36 серии",
-    "updated_at": "2026-08-20T00:01:14.654415+00:00",
-    "vip": null,
-    "watching": null
-  },
-  {
     "created_at": "2026-06-29T06:30:08.387347+00:00",
     "drawing": null,
     "games": null,
@@ -460,6 +444,22 @@
     "stream_date": "2026-01-16",
     "title": "VexiLies - Viewfinder",
     "updated_at": "2026-08-20T00:01:29.813152+00:00",
+    "vip": null,
+    "watching": null
+  },
+  {
+    "created_at": "2026-09-02T01:57:01.920627+00:00",
+    "drawing": null,
+    "games": null,
+    "id": "fc78b63b-3ac8-49e7-a06b-4351e510b971",
+    "progress": 0,
+    "reason": "",
+    "section": "drawing",
+    "sort_order": 28,
+    "status": "waiting",
+    "stream_date": "2026-09-02",
+    "title": "Drolgar sketch",
+    "updated_at": "2026-09-02T01:57:01.920627+00:00",
     "vip": null,
     "watching": null
   }
