@@ -15,19 +15,19 @@
     "updated_at": "2026-08-24T19:40:15.436712+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-09-05",
     "created_at": "2026-07-03T10:01:38.14525+00:00",
     "deadline_end": "2026-09-04",
     "deadline_start": "2026-07-04",
     "id": "08c10752-33a9-4b60-afe7-b3f88b8a4745",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
     "progress": 20,
     "sort_order": 2,
     "tag": "paid",
     "title": "LSAHTOXA maskot art",
-    "updated_at": "2026-08-15T02:52:29.988579+00:00"
+    "updated_at": "2026-09-05T00:58:07.682559+00:00"
   },
   {
     "completed_date": "2026-08-03",
@@ -112,12 +112,12 @@
     "id": "38737021-e26c-4cbe-b2fa-32c8def8163a",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 5,
     "sort_order": 0,
     "tag": "paid",
     "title": "RiaSeni chibi rig model 2D",
-    "updated_at": "2026-07-31T00:42:08.654099+00:00"
+    "updated_at": "2026-09-05T00:58:55.188528+00:00"
   },
   {
     "completed_date": "2026-05-24",
@@ -337,12 +337,12 @@
     "id": "9546f8c5-0e2e-4177-9cb0-3eb043af5a56",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 0,
     "sort_order": 9,
     "tag": "paid",
     "title": "shis(taku_uori) twitch Emotion of up to 5-8 frames",
-    "updated_at": "2026-07-31T00:42:08.749588+00:00"
+    "updated_at": "2026-09-05T00:59:01.839137+00:00"
   },
   {
     "completed_date": "2026-05-24",
@@ -517,12 +517,12 @@
     "id": "d9b7e423-a2e2-41b4-96d6-2cd5b541fe08",
     "image": null,
     "kind": "in_progress",
-    "priority": "medium",
+    "priority": "high",
     "progress": 0,
     "sort_order": 8,
     "tag": "paid",
     "title": "shis(taku_uori) twitch Emote Art+Animation LIVE2D",
-    "updated_at": "2026-07-31T00:42:08.779745+00:00"
+    "updated_at": "2026-09-05T00:58:59.140484+00:00"
   },
   {
     "completed_date": "2026-07-16",
