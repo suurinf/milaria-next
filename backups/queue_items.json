@@ -360,6 +360,21 @@
     "updated_at": "2026-05-28T00:43:15.449918+00:00"
   },
   {
+    "completed_date": null,
+    "created_at": "2026-10-18T22:33:02.253736+00:00",
+    "deadline_end": "2026-10-23",
+    "deadline_start": "2026-10-19",
+    "id": "a1cbc01a-5876-46fe-ad57-51b491ba9d1d",
+    "image": null,
+    "kind": "in_progress",
+    "priority": "high",
+    "progress": 0,
+    "sort_order": 27,
+    "tag": "paid",
+    "title": "lsahtoxa YCH HALLOWEEN 3PCS",
+    "updated_at": "2026-10-18T22:33:13.007355+00:00"
+  },
+  {
     "completed_date": "2026-05-25",
     "created_at": "2026-05-25T12:45:54.657893+00:00",
     "deadline_end": null,
@@ -525,19 +540,19 @@
     "updated_at": "2026-09-28T13:02:05.578051+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-10-18",
     "created_at": "2026-10-15T10:35:15.486319+00:00",
     "deadline_end": "2026-10-19",
     "deadline_start": "2026-10-17",
     "id": "e2e510aa-fff3-48be-93ee-d134ea4a7105",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
     "progress": 0,
     "sort_order": 26,
     "tag": "paid",
     "title": "TAKU YCH HALLOWEEN",
-    "updated_at": "2026-10-17T14:31:17.237149+00:00"
+    "updated_at": "2026-10-18T22:32:27.10179+00:00"
   },
   {
     "completed_date": "2026-07-16",
