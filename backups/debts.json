@@ -208,6 +208,22 @@
     "watching": null
   },
   {
+    "created_at": "2026-10-22T08:22:04.89117+00:00",
+    "drawing": null,
+    "games": null,
+    "id": "45fd0657-cd00-4e9f-9641-7e1eda3242b3",
+    "progress": 0,
+    "reason": "",
+    "section": "watching",
+    "sort_order": 30,
+    "status": "open",
+    "stream_date": "2026-10-22",
+    "title": "LSAHTOXA - ?",
+    "updated_at": "2026-10-22T08:22:04.89117+00:00",
+    "vip": null,
+    "watching": null
+  },
+  {
     "created_at": "2026-09-02T16:53:28.238179+00:00",
     "drawing": null,
     "games": null,
@@ -508,6 +524,22 @@
     "stream_date": "2026-05-27",
     "title": "Sora_Aihara - навсегда",
     "updated_at": "2026-09-27T19:23:10.116316+00:00",
+    "vip": null,
+    "watching": null
+  },
+  {
+    "created_at": "2026-10-22T08:02:21.0541+00:00",
+    "drawing": null,
+    "games": null,
+    "id": "b62013fe-3b20-4da9-9480-6393f129a2a3",
+    "progress": 0,
+    "reason": "",
+    "section": "watching",
+    "sort_order": 29,
+    "status": "open",
+    "stream_date": "2026-10-22",
+    "title": "BadWolf_4pok_9 - на мой выбор",
+    "updated_at": "2026-10-22T08:05:33.800309+00:00",
     "vip": null,
     "watching": null
   },
