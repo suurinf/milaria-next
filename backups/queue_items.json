@@ -360,19 +360,19 @@
     "updated_at": "2026-05-28T00:43:15.449918+00:00"
   },
   {
-    "completed_date": null,
+    "completed_date": "2026-10-24",
     "created_at": "2026-10-18T22:33:02.253736+00:00",
-    "deadline_end": "2026-10-23",
+    "deadline_end": "2026-10-24",
     "deadline_start": "2026-10-19",
     "id": "a1cbc01a-5876-46fe-ad57-51b491ba9d1d",
     "image": null,
-    "kind": "in_progress",
+    "kind": "completed",
     "priority": "high",
     "progress": 95,
     "sort_order": 27,
     "tag": "paid",
     "title": "lsahtoxa YCH HALLOWEEN 3PCS",
-    "updated_at": "2026-10-23T15:07:51.058944+00:00"
+    "updated_at": "2026-10-24T12:05:30.566604+00:00"
   },
   {
     "completed_date": "2026-05-25",
