@@ -292,12 +292,12 @@
     "id": "7aec15c2-3fa9-45c0-8a4b-17207ec2ada8",
     "image": null,
     "kind": "in_progress",
-    "priority": "low",
+    "priority": "medium",
     "progress": 0,
     "sort_order": 3,
     "tag": "paid",
     "title": "lsahtoxa maskot rig",
-    "updated_at": "2026-08-04T22:09:11.229047+00:00"
+    "updated_at": "2026-11-03T12:53:16.738135+00:00"
   },
   {
     "completed_date": "2026-07-16",
@@ -538,6 +538,21 @@
     "tag": "paid",
     "title": "shis(taku_uori) twitch Emote Art+Animation LIVE2D",
     "updated_at": "2026-09-28T13:02:05.578051+00:00"
+  },
+  {
+    "completed_date": null,
+    "created_at": "2026-11-03T12:54:11.688202+00:00",
+    "deadline_end": "2027-03-03",
+    "deadline_start": "2026-11-03",
+    "id": "dda1a00e-d1c5-426c-b47a-b94b09283160",
+    "image": null,
+    "kind": "in_progress",
+    "priority": "medium",
+    "progress": 0,
+    "sort_order": 28,
+    "tag": "prepaid",
+    "title": "Eitan chibi rig model 2D",
+    "updated_at": "2026-11-03T12:54:11.688202+00:00"
   },
   {
     "completed_date": "2026-10-18",
