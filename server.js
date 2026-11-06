@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 const SUPABASE_URL = 'https://vgwdudjgvkmlnnfgonbk.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnd2R1ZGpndmttbG5uZmdvbmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjI2NDksImV4cCI6MjA5NDUzODY0OX0.I_ciFmhRcv2RdXZFaedlMki8c96zTvXkUyJxSVACbr4';
@@ -41,11 +42,13 @@ function supaFetch(table, orderBy = 'sort_order') {
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
         timeout: 20000,
       }, (res) => {
-        let d = '';
-        res.on('data', c => d += c);
+        // Куски собираем как байты и склеиваем в конце. Если делать d += c,
+        // русская буква на стыке кусков рвётся пополам и превращается в «��».
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
         res.on('end', () => {
           try {
-            const parsed = JSON.parse(d);
+            const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
             if (Array.isArray(parsed)) return resolve(parsed);
             // Не массив — значит PostgREST вернул ошибку. Раньше она уходила
             // в тишину; теперь видна в /debug и не притворяется пустой таблицей.
@@ -95,7 +98,7 @@ async function refreshCache(attempt = 0) {
       if (attempt < RETRY_DELAYS.length) {
         setTimeout(() => refreshCache(attempt + 1), RETRY_DELAYS[attempt]);
       } else {
-        log('CACHE_ERR', 'Попытки исчерпаны — ждём планового обновления через 15 мин.');
+        log('CACHE_ERR', 'Попытки исчерпаны — ждём планового обновления через час.');
       }
       return;
     }
@@ -122,7 +125,7 @@ async function refreshCache(attempt = 0) {
     log('CACHE', `OK: q=${data.queue.length} cats=${data.portfolioCategories.length} settings=${Object.keys(settings).length}`
       + (failed ? ` (не ответили: ${failed}, взяты прошлые значения)` : ''));
 
-    // Часть таблиц не ответила — дотянемся позже, не дожидаясь 15 минут.
+    // Часть таблиц не ответила — дотянемся позже, не дожидаясь планового обновления.
     if (failed && attempt < RETRY_DELAYS.length) {
       setTimeout(() => refreshCache(attempt + 1), RETRY_DELAYS[attempt]);
     }
@@ -133,9 +136,11 @@ async function refreshCache(attempt = 0) {
 
 // Proxy Supabase REST — bypasses Russian DPI for writes
 function proxySupabase(req, res, supaPath) {
-  let body = '';
-  req.on('data', c => body += c);
+  // Тело и ответ — байтами, см. supaFetch: строковая склейка ломает кириллицу.
+  const reqChunks = [];
+  req.on('data', c => reqChunks.push(c));
   req.on('end', () => {
+    const body = Buffer.concat(reqChunks);
     try {
       const target = new URL(SUPABASE_URL + supaPath);
       log('PROXY', `${req.method} ${supaPath.split('?')[0]}`);
@@ -150,25 +155,25 @@ function proxySupabase(req, res, supaPath) {
           Accept: req.headers['accept'] || 'application/json',
         },
       }, (ps) => {
-        let rb = '';
-        ps.on('data', c => rb += c);
+        const resChunks = [];
+        ps.on('data', c => resChunks.push(c));
         ps.on('end', () => {
           log('PROXY', `→ ${ps.statusCode} ${supaPath.split('?')[0]}`);
           // Trigger cache refresh after writes
           if (['POST','PATCH','PUT','DELETE'].includes(req.method)) {
             setTimeout(refreshCache, 500);
           }
-          res.writeHead(ps.statusCode, {
+          const headers = {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Headers': 'authorization,apikey,content-type,prefer,accept',
             'Content-Type': ps.headers['content-type'] || 'application/json',
             ...(ps.headers['content-range'] ? { 'Content-Range': ps.headers['content-range'] } : {}),
-          });
-          res.end(rb);
+          };
+          sendMaybeGzip(req, res, ps.statusCode, headers, Buffer.concat(resChunks));
         });
       });
       pr.on('error', e => { log('PROXY_ERR', e.message); res.writeHead(502); res.end('{}'); });
-      if (body) pr.write(body);
+      if (body.length) pr.write(body);
       pr.end();
     } catch (e) { log('PROXY_ERR', e.message); res.writeHead(500); res.end('{}'); }
   });
@@ -232,6 +237,25 @@ function proxyStorage(req, res, supaPath) {
     log('STORAGE_ERR', e.message);
     if (!res.headersSent) { res.writeHead(500); res.end(''); }
   }
+}
+
+function acceptsGzip(req) {
+  return /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+}
+
+// Сжимаем ответ, если браузер умеет gzip. Маленькие ответы шлём как есть.
+function sendMaybeGzip(req, res, status, headers, buf) {
+  if (buf.length < 1024 || !acceptsGzip(req)) {
+    res.writeHead(status, headers);
+    return res.end(buf);
+  }
+  zlib.gzip(buf, (err, gz) => {
+    if (err) { res.writeHead(status, headers); return res.end(buf); }
+    res.writeHead(status, Object.assign({}, headers, {
+      'Content-Encoding': 'gzip', 'Vary': 'Accept-Encoding',
+    }));
+    res.end(gz);
+  });
 }
 
 const MIME = {
@@ -323,19 +347,40 @@ function buildFingerprint() {
   } catch (e) { return 'unavailable'; }
 }
 
-function sendHTML(req, res, html, extraHeaders) {
-  const etag = '"' + crypto.createHash('sha1').update(html).digest('base64').slice(0, 27) + '"';
-  const headers = Object.assign({
+// Страница собирается заново только когда обновился кэш данных. Раньше на каждый
+// запрос заново склеивались ~4 МБ и считался sha1 — теперь это делается один раз,
+// там же готовится сжатая версия.
+let _page = null; // { cacheRef, html, etag, gz }
+function getPage() {
+  if (_page && _page.cacheRef === cache && _page.base === _baseHtml) return _page;
+  const html = Buffer.from(buildHTML(), 'utf8');
+  _page = {
+    cacheRef: cache, base: _baseHtml, html,
+    etag: '"' + crypto.createHash('sha1').update(html).digest('base64').slice(0, 27) + '"',
+    gz: zlib.gzipSync(html),
+  };
+  return _page;
+}
+
+function sendHTML(req, res) {
+  const page = getPage();
+  const headers = {
     'Content-Type': 'text/html;charset=utf-8',
     'Cache-Control': 'no-cache, must-revalidate',
-    'ETag': etag,
-  }, extraHeaders || {});
-  if (req.headers['if-none-match'] === etag) {
-    res.writeHead(304, { 'Cache-Control': headers['Cache-Control'], 'ETag': etag });
+    'ETag': page.etag,
+    'Vary': 'Accept-Encoding',
+  };
+  if (req.headers['if-none-match'] === page.etag) {
+    res.writeHead(304, { 'Cache-Control': headers['Cache-Control'], 'ETag': page.etag });
     return res.end();
   }
+  if (acceptsGzip(req)) {
+    headers['Content-Encoding'] = 'gzip';
+    res.writeHead(200, headers);
+    return res.end(page.gz);
+  }
   res.writeHead(200, headers);
-  res.end(html);
+  res.end(page.html);
 }
 
 function buildHTML() {
@@ -346,7 +391,9 @@ function buildHTML() {
   delete lightData.portfolioImages;
   const dataStr = safeJson(lightData);
   const settingsStr = safeJson(cache.settings || {});
-  const snap = `<script>window.__INITIAL_DATA=${dataStr};window.__INITIAL_DATA__=${dataStr};window.__INITIAL_SETTINGS=${settingsStr};window.__INITIAL_SETTINGS__=${settingsStr};</script>`;
+  // Данные кладём в страницу ОДИН раз. Раньше каждая копия шла дважды (под именами
+  // с подчёркиваниями и без), это ~1,5 МБ лишнего. Второе имя оставлено ссылкой.
+  const snap = `<script>window.__INITIAL_DATA=${dataStr};window.__INITIAL_DATA__=window.__INITIAL_DATA;window.__INITIAL_SETTINGS=${settingsStr};window.__INITIAL_SETTINGS__=window.__INITIAL_SETTINGS;</script>`;
   // NOTE: replacements are passed as functions on purpose — a plain string would let
   // "$&", "$'" or "$`" inside the data expand into page fragments and corrupt the HTML.
   html = html.replace('<head>', () => '<head>' + PATCH);
@@ -470,14 +517,16 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
     );
   }
   if (SPA_PATHS.includes(p) || SPA_PATHS.includes(p.replace(/\/+$/, ''))) {
-    return sendHTML(req, res, buildHTML());
+    return sendHTML(req, res);
   }
 
-  // Static files
+  // Static files — только из папки assets/. Раньше отдавался любой файл проекта:
+  // server.js, .git, бэкапы базы, package.json.
   if (p !== '/') {
+    const ASSETS = path.join(__dirname, 'assets');
     const fp = path.join(__dirname, p);
     const ext = path.extname(fp);
-    if (fs.existsSync(fp) && fs.statSync(fp).isFile()) {
+    if (fp.startsWith(ASSETS + path.sep) && fs.existsSync(fp) && fs.statSync(fp).isFile()) {
       res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
       return fs.createReadStream(fp).pipe(res);
     }
@@ -485,7 +534,7 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
   }
 
   // Main page — serve immediately from cache (no waiting!)
-  sendHTML(req, res, buildHTML());
+  sendHTML(req, res);
 });
 
 // Start server FIRST, fetch data after
@@ -493,8 +542,10 @@ server.listen(PORT, '0.0.0.0', () => {
   log('START', `Server listening on 0.0.0.0:${PORT}`);
   // Fetch data in background — don't block startup
   refreshCache();
-  // Refresh cache every 5 minutes
-  setInterval(refreshCache, 15 * 60 * 1000);
+  // Плановое обновление раз в час. После любой правки через админку кэш и так
+  // обновляется сразу (см. proxySupabase), поэтому частый опрос только жёг
+  // трафик Supabase: настройки весят ~1,5 МБ, при 15 минутах это ~4 ГБ в месяц.
+  setInterval(refreshCache, 60 * 60 * 1000);
 });
 
 server.on('error', e => { console.error('SERVER ERROR:', e); process.exit(1); });
