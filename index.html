@@ -6377,7 +6377,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
   new Date().toLocaleDateString('en-US', { month: 'long' });
   const [bannerCfg, saveBannerCfg] = useSetting('banner', {});
   const month = (lang === 'en' ? (bannerCfg.banner_month_en || bannerCfg.banner_month) : bannerCfg.banner_month) || autoMonth;
-  const bannerSlots = Array.isArray(bannerCfg.banner_slots) ? bannerCfg.banner_slots.filter(s => typeof s === 'string') : ['','','',''];
+  const bannerSlots = Array.isArray(bannerCfg.banner_slots) ? bannerCfg.banner_slots.filter(s => typeof s === 'string').map(localSupaUrl) : ['','','',''];
   const bannerImages = bannerSlots.filter(Boolean);
   const bannerStatus = bannerCfg.banner_status || 'open';
   const [editBanner, setBannerEdit] = homeState(false);
@@ -6596,6 +6596,14 @@ const DEFAULT_TILES = [
 ];
 
 // ── Media type detection (handles query params in Storage URLs) ──
+// Ссылки на наши файлы держим короткими (/supa/...), чтобы они работали на
+// любом домене. В базе остались полные адреса со старого домена
+// milaria-next-suurin.amvera.io — после переезда Amvera он не отвечает,
+// и плитки «Последних работ» стояли пустыми.
+function localSupaUrl(u) {
+  return typeof u === 'string' ? u.replace(/^https?:\/\/[^\/]+(?=\/supa\/)/, '') : u;
+}
+
 function detectMedia(url) {
   if (!url) return 'image';
   const clean = url.split('?')[0].toLowerCase();
@@ -6821,7 +6829,7 @@ const IS_TOUCH = typeof window !== 'undefined' &&
   window.matchMedia && window.matchMedia('(hover: none)').matches;
 
 function RecentTile({ tileData, lang, onClick }) {
-  const slots = (tileData.slots || []).filter(Boolean);
+  const slots = (tileData.slots || []).filter(Boolean).map(localSupaUrl);
   const focal = tileData.focal || [];
   const count = slots.length;
   const [idx, setIdx] = homeState(0);
@@ -6931,7 +6939,7 @@ function RecentTile({ tileData, lang, onClick }) {
 function RecentTileEditor({ tile, onSave, onClose, lang }) {
   const [draft, setDraft] = homeState(() => ({
     ...tile,
-    slots: [...(tile.slots || [])],
+    slots: (tile.slots || []).map(localSupaUrl),
     focal: [...(tile.focal || [])],
   }));
   const [urlInput, setUrlInput] = homeState('');
