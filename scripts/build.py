@@ -4,7 +4,7 @@
 Основа — текущий index.html, поэтому правки в HTML-оболочке
 (мета-теги, домен, canonical, OG) переживают пересборку.
 
-    python3 scripts/build.py
+    python scripts/build.py
 """
 import re
 import os
@@ -16,7 +16,7 @@ HTML = os.path.join(ROOT, 'index.html')
 SRC = os.path.join(ROOT, 'src')
 
 # ВАЖНО: порядок babel-блоков. Перепутать = сломать приложение молча.
-BABEL_ORDER = ['tweaks-panel', 'components', 'home', 'queue',
+BABEL_ORDER = ['components', 'home', 'queue',
                'portfolio', 'calculator', 'sections-misc', 'app']
 PLAIN_ORDER = ['data.js', 'supabase-client.js']
 
@@ -30,6 +30,9 @@ css = open(os.path.join(SRC, 'style.css'), encoding='utf-8').read()
 html = html[:big.start(1)] + css + html[big.end(1):]
 
 # ── babel-блоки по порядку ──
+total = len(re.findall(r'<script type="text/babel"', html))
+if total != len(BABEL_ORDER):
+    sys.exit(f'В index.html {total} babel-блоков, а в BABEL_ORDER {len(BABEL_ORDER)} — сборка прервана')
 out, pos, idx = [], 0, 0
 for m in re.finditer(r'(<script type="text/babel"[^>]*>)(.*?)(</script>)', html, re.DOTALL):
     if idx >= len(BABEL_ORDER):

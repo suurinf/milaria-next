@@ -289,7 +289,10 @@ function LoginModal({ open, onClose, auth, lang }) {
 
 
 // ──────────────── image uploader ────────────────
-function ImageUploader({ onUpload, label, multiple }) {
+// Картинки кладём в Storage, в базу идёт только ссылка. Раньше здесь был
+// base64 прямо в базе — так баннер раздул каждую страницу на 1,5 МБ.
+// icon — для значка сайта: ужимаем до 64 px.
+function ImageUploader({ onUpload, label, multiple, icon }) {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef(null);
 
@@ -299,8 +302,8 @@ function ImageUploader({ onUpload, label, multiple }) {
     setBusy(true);
     const urls = [];
     for (const file of files) {
-      const url = await window.uploadImage(file);
-      if (url) urls.push(url);
+      const up = icon ? await window.uploadIconToStorage(file) : await window.uploadToStorage(file);
+      if (up && up.url) urls.push(up.url);
     }
     setBusy(false);
     if (urls.length > 0) onUpload(multiple ? urls : urls[0]);

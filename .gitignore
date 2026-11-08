@@ -2,3 +2,6 @@ node_modules/
 
 # ручные бэкапы базы — не коммитить (репозиторий публичный)
 milaria-backup-*.json
+
+# локальные настройки Claude Code
+.claude/

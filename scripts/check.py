@@ -5,7 +5,7 @@
 поэтому проверяем баланс скобок. Порядок вырезания важен:
 сначала строки и шаблоны — иначе "https://" будет принято за комментарий.
 
-    python3 scripts/check.py
+    python scripts/check.py
 """
 import re
 import os
@@ -72,5 +72,32 @@ for path in glob.glob(os.path.join(SRC, '*.jsx')):
         print(f'  ✗ {os.path.basename(path)}: {frag!r} — писать символ напрямую')
 if not found:
     print('  ✓ чисто')
+
+# Настоящий разбор JSX тем же Babel, что и на сервере. Ловит то, что не видит
+# подсчёт скобок (например, перенос строки внутри '...'). Нужен npm install.
+print('── разбор JSX (Babel) ──')
+JS = r"""
+const fs = require('fs'), path = require('path');
+let babel, preset;
+try { babel = require('@babel/core'); preset = require('@babel/preset-react'); }
+catch (e) { console.log('SKIP'); process.exit(0); }
+let bad = 0;
+for (const f of fs.readdirSync(process.argv[1]).filter(f => f.endsWith('.jsx')).sort()) {
+  try {
+    babel.transformSync(fs.readFileSync(path.join(process.argv[1], f), 'utf8'),
+      { presets: [preset], babelrc: false, configFile: false });
+    console.log('  \u2713 ' + f);
+  } catch (e) { bad++; console.log('  \u2717 ' + f + ': ' + e.message.split('\n')[0]); }
+}
+process.exit(bad ? 1 : 0);
+"""
+r = subprocess.run(['node', '-e', JS, SRC], capture_output=True, text=True, cwd=ROOT, encoding='utf-8')
+out = (r.stdout or '').rstrip()
+if out.strip() == 'SKIP':
+    print('  – Babel не установлен (npm install), пропускаю')
+else:
+    print(out or r.stderr.strip()[:400])
+    if r.returncode != 0:
+        fail = True
 
 sys.exit(1 if fail else 0)

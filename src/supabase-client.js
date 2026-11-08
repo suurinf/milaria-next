@@ -127,7 +127,6 @@ const SNAPSHOT_KEYS = {
   queue_items: 'queue',
   portfolio_categories: 'portfolioCategories',
   calc_options: 'calcOptions',
-  prices: 'prices',
   debts: 'debts',
   links: 'links',
 };
@@ -572,106 +571,140 @@ async function uploadToStorage(file) {
   }
 }
 
-async function uploadImage(file) {
+// ── Значок сайта: маленький PNG вместо полноразмерной картинки ──
+// Раньше значок лежал в базе картинкой 889×1200 (165 КБ) и сервер вставлял его
+// в КАЖДУЮ страницу. Браузеру хватает 64 px (вкладка рисует 16–32).
+function _imageToBlob(src, max, mime, quality) {
   return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        // Resize to max 1200px — high quality for portfolio
-        const MAX = 1200;
-        let w = img.width, h = img.height;
-        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        console.log('[upload] image:', w, 'x', h, '—', Math.round(dataUrl.length / 1024), 'KB');
-        resolve(dataUrl);
-      };
-      img.onerror = function() { alert('Ошибка загрузки картинки'); resolve(null); };
-      img.src = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * k));
+      const h = Math.max(1, Math.round(img.height * k));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      c.toBlob(b => resolve(b), mime, quality);
     };
-    reader.onerror = function() { alert('Ошибка чтения файла'); resolve(null); };
-    reader.readAsDataURL(file);
+    img.onerror = () => resolve(null);
+    img.src = src;
   });
 }
 
-async function seedDefaults() {
-  const report = [];
-
-  // queue_items — deliberately NOT seeded.
-  // The queue holds real client orders; there is no meaningful demo content for
-  // it, and wiping it here would destroy live data.
-
-  // portfolio_categories
-  const portfolioRows = [
-    ...DEFAULT_PORTFOLIO.models.map((m, i) => ({ key: m.key, kind: "model", count: m.count, hue: m.hue, sort_order: i })),
-    ...DEFAULT_PORTFOLIO.illustrations.map((m, i) => ({ key: m.key, kind: "illustration", count: m.count, hue: m.hue, sort_order: i })),
-  ];
-  await wipe("portfolio_categories"); report.push(await bulkInsert("portfolio_categories", portfolioRows));
-
-  // prices
-  const priceRows = DEFAULT_PRICES.map((p, i) => ({ label: p.key, rub: p.rub, sort_order: i }));
-  await wipe("prices"); report.push(await bulkInsert("prices", priceRows));
-
-  // calc_options — flatten the nested tree
-  const calcRows = [];
-  Object.entries(DEFAULT_CALC).forEach(([cat, catObj]) => {
-    Object.entries(catObj.variants).forEach(([variant, varObj]) => {
-      ["base", "addon"].forEach((group) => {
-        (varObj[group] || []).forEach((opt, i) => {
-          calcRows.push({
-            id: opt.id, category: cat, variant, group_type: group,
-            label_ru: opt.ru, label_en: opt.en, rub: opt.rub, has_qty: !!opt.qty,
-            sort_order: i,
-          });
-        });
-      });
-    });
+function _fileToDataUrl(file) {
+  return new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = (e) => resolve(e.target.result);
+    r.onerror = () => resolve(null);
+    r.readAsDataURL(file);
   });
-  await wipe("calc_options"); report.push(await bulkInsert("calc_options", calcRows));
+}
 
-  // debts
-  const debtRows = DEFAULT_DEBTS.map((d, i) => ({
-    title: d.title, stream_date: d.stream, reason: d.reason, status: d.status, progress: d.progress, sort_order: i,
-  }));
-  await wipe("debts"); report.push(await bulkInsert("debts", debtRows));
+function _storageName(folder, ext) {
+  return `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+}
 
-  // links
-  const linkRows = DEFAULT_LINKS.map((l, i) => ({
-    label: l.label, handle: l.handle, url: l.url, kind: l.kind, sort_order: i,
-  }));
-  await wipe("links"); report.push(await bulkInsert("links", linkRows));
+// Принимает файл или адрес картинки (в т.ч. data:). Возвращает { url } или null.
+async function uploadIconToStorage(fileOrSrc, opts) {
+  const quiet = opts && opts.quiet;
+  try {
+    const src = typeof fileOrSrc === 'string' ? fileOrSrc : await _fileToDataUrl(fileOrSrc);
+    const png = src && await _imageToBlob(src, 64, 'image/png');
+    if (!png) { if (!quiet) alert('Не удалось обработать картинку'); return null; }
+    let path = _storageName('site', 'png');
+    let up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, png, { contentType: 'image/png', upsert: false });
+    // Bucket может не принимать png — тогда jpeg, значку это не страшно.
+    if (up.error && /mime|not supported/i.test(String(up.error.message || ''))) {
+      const jpg = await _imageToBlob(src, 64, 'image/jpeg', 0.9);
+      if (jpg) {
+        path = _storageName('site', 'jpg');
+        up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, jpg, { contentType: 'image/jpeg', upsert: false });
+      }
+    }
+    if (up.error) {
+      console.error('[storage] icon upload failed', up.error);
+      if (!quiet) alert(storageErrorText(up.error));
+      return null;
+    }
+    return { url: storagePublicUrl(path) };
+  } catch (e) {
+    console.error('[storage] icon error', e);
+    return null;
+  }
+}
 
+// ── Перенос картинок, которые раньше сохранялись прямо в базу (data:...) ──
+// Баннер и значок жили в таблице settings строками base64 (~1,5 МБ) и уходили
+// каждому посетителю внутри страницы. Переносим их в Storage, в базе остаются
+// короткие ссылки. Слот, который не удалось загрузить, остаётся как был.
+function _isInlineImage(s) { return typeof s === 'string' && s.indexOf('data:image/') === 0; }
+
+async function _readImageSettings() {
+  const { data, error } = await _sbc.from('settings').select('key,value').in('key', ['banner', 'site_favicon']);
+  if (error) throw new Error(error.message);
+  const map = {};
+  (data || []).forEach(r => { if (r && r.key) map[r.key] = r.value; });
+  return map;
+}
+
+async function inlineImagesInfo() {
+  if (!_sbc) return { count: 0, kb: 0 };
+  const map = await _readImageSettings();
+  const slots = (map.banner && Array.isArray(map.banner.banner_slots)) ? map.banner.banner_slots : [];
+  const inline = slots.filter(_isInlineImage);
+  if (_isInlineImage(map.site_favicon)) inline.push(map.site_favicon);
+  return { count: inline.length, kb: Math.round(inline.reduce((s, x) => s + x.length, 0) / 1024) };
+}
+
+async function migrateInlineImages() {
+  if (!_sbc) throw new Error('Supabase не загружен');
+  const map = await _readImageSettings();
+  const report = { moved: 0, failed: 0, errors: [] };
+
+  const banner = map.banner;
+  if (banner && Array.isArray(banner.banner_slots) && banner.banner_slots.some(_isInlineImage)) {
+    const slots = banner.banner_slots.slice();
+    let changed = false;
+    for (let i = 0; i < slots.length; i++) {
+      if (!_isInlineImage(slots[i])) continue;
+      try {
+        const blob = await (await fetch(slots[i])).blob();
+        const type = blob.type || 'image/jpeg';
+        const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : type === 'image/gif' ? 'gif' : 'jpg';
+        const path = _storageName('banner', ext);
+        const up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, blob, { contentType: type, upsert: false });
+        if (up.error) throw up.error;
+        slots[i] = storagePublicUrl(path);
+        changed = true;
+        report.moved++;
+      } catch (e) {
+        report.failed++;
+        report.errors.push(`баннер #${i + 1}: ${(e && e.message) || e}`);
+      }
+    }
+    if (changed) {
+      const { error } = await _sbc.from('settings')
+        .upsert({ key: 'banner', value: Object.assign({}, banner, { banner_slots: slots }) }, { onConflict: 'key' });
+      if (error) throw new Error('баннер не сохранён: ' + error.message);
+    }
+  }
+
+  if (_isInlineImage(map.site_favicon)) {
+    const up = await uploadIconToStorage(map.site_favicon, { quiet: true });
+    if (up) {
+      const { error } = await _sbc.from('settings')
+        .upsert({ key: 'site_favicon', value: up.url }, { onConflict: 'key' });
+      if (error) throw new Error('значок не сохранён: ' + error.message);
+      report.moved++;
+    } else {
+      report.failed++;
+      report.errors.push('значок: не удалось загрузить');
+    }
+  }
   return report;
 }
 
-// Race a Supabase operation against a 15s timeout so the seed UI can't
-// hang forever on a stuck network.
-function _withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, rej) => setTimeout(() => rej(new Error(label + ' timed out after ' + ms + 'ms')), ms)),
-  ]);
-}
-async function wipe(table) {
-  if (!_sbc) return;
-  try { await _withTimeout(_sbc.from(table).delete().neq("id", "00000000-0000-0000-0000-000000000000"), 15000, `wipe ${table}`); }
-  catch (e) { console.warn(`[${table}] wipe failed:`, e?.message); }
-}
-async function bulkInsert(table, rows) {
-  if (rows.length === 0) return { table, count: 0 };
-  if (!_sbc) return { table, error: 'no Supabase client' };
-  try {
-    const { error } = await _withTimeout(_sbc.from(table).insert(rows), 15000, `insert ${table}`);
-    if (error) { console.error(`[${table}] seed:`, error.message); return { table, error: error.message }; }
-    return { table, count: rows.length };
-  } catch (e) { return { table, error: e?.message || 'threw' }; }
-}
-
-Object.assign(window, { _sbc, useAuth, useResource, calcOptionsToTree, seedDefaults, uploadImage, uploadToStorage });
+Object.assign(window, { _sbc, useAuth, useResource, calcOptionsToTree, uploadToStorage,
+  uploadIconToStorage, inlineImagesInfo, migrateInlineImages });
 
   

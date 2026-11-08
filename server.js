@@ -77,18 +77,18 @@ async function refreshCache(attempt = 0) {
     log('CACHE', attempt ? `Повтор ${attempt}/${RETRY_DELAYS.length}...` : 'Refreshing from Supabase...');
     // NOTE: portfolio_images NOT fetched here — it's heavy base64/URLs and the client
     // loads it directly. Covers live on portfolio_categories.cover_data (light).
-    const [queue, portfolioCategories, prices,
+    // prices не берём: раздел «Прайс» с сайта убран, таблица осталась только в базе.
+    const [queue, portfolioCategories,
            calcOptions, debts, links, settingsArr] = await Promise.all([
       supaFetch('queue_items'),
       supaFetch('portfolio_categories'),
-      supaFetch('prices'),
       supaFetch('calc_options'),
       supaFetch('debts'),
       supaFetch('links'),
       supaFetch('settings', null), // нет колонки sort_order
     ]);
 
-    const got = [queue, portfolioCategories, prices, calcOptions, debts, links, settingsArr];
+    const got = [queue, portfolioCategories, calcOptions, debts, links, settingsArr];
     const failed = got.filter(r => r === null).length;
 
     // Всё упало — почти наверняка сеть. Кэш не трогаем (пустой снапшот хуже
@@ -109,7 +109,6 @@ async function refreshCache(attempt = 0) {
     const data = {
       queue:               queue               ?? prev.queue               ?? [],
       portfolioCategories: portfolioCategories ?? prev.portfolioCategories ?? [],
-      prices:              prices              ?? prev.prices              ?? [],
       calcOptions:         calcOptions         ?? prev.calcOptions         ?? [],
       debts:               debts               ?? prev.debts               ?? [],
       links:               links               ?? prev.links               ?? [],

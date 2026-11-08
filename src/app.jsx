@@ -20,13 +20,15 @@ const ACCENT_PALETTES = {
   honey:   { accent: "#d4b94a", deep: "#9a832a", soft: "#f0e3a0" },
 };
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+// Оформление сайта. Раньше правилось панелью Tweaks из редактора-прототипа,
+// на живом сайте она не открывалась — оставили только сами значения.
+const TWEAK_DEFAULTS = {
   "fontPair": "cormorant",
   "accent": "amber",
   "radius": 14,
   "barStyle": "classic",
   "layout": "list"
-}/*EDITMODE-END*/;
+};
 
 async function connection_check() {
   if (!window.__supabase) return { ok: false, msg: 'SDK не загружен' };
@@ -84,7 +86,7 @@ function SiteFavicon({ admin }) {
               <span>URL значка</span>
               <input value={input} onChange={e => setInput(e.target.value)} placeholder="https://... или data:image/..." />
             </label>
-            <ImageUploader label="📷 Загрузить файл" onUpload={url => setInput(url)} />
+            <ImageUploader icon label="📷 Загрузить файл" onUpload={url => setInput(url)} />
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
                 onClick={() => { saveFavicon(input); setOpen(false); }}>Сохранить</button>
@@ -96,6 +98,51 @@ function SiteFavicon({ admin }) {
         </Modal>
       )}
     </>
+  );
+}
+
+// ── Перенос баннера и значка из базы в хранилище ──
+// Показывается админу, только пока в базе есть картинки base64.
+// После переноса пропадает сама.
+function InlineImagesMigrator() {
+  const [info, setInfo] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    window.inlineImagesInfo?.().then(r => { if (alive) setInfo(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  if (!info || !info.count) return null;
+
+  async function run() {
+    if (!confirm(`Перенести ${info.count} картинок (${info.kb} КБ) из базы в хранилище файлов?\n\n` +
+      'Баннер и значок останутся теми же, но сайт станет легче для каждого посетителя.\n' +
+      'Если хочешь подстраховаться — сначала нажми «💾 Бэкап».')) return;
+    setBusy(true);
+    try {
+      const r = await window.migrateInlineImages();
+      try {
+        ['banner', 'site_favicon'].forEach(k => localStorage.removeItem('milaria:setting:' + k));
+        localStorage.removeItem('milaria:milaria:banner');
+      } catch (e) {}
+      alert(r.failed
+        ? `Перенесено: ${r.moved}, не получилось: ${r.failed}.\n\n${r.errors.join('\n')}\n\nНеперенесённые остались как были.`
+        : `✓ Перенесено картинок: ${r.moved}. Страница перезагрузится.`);
+      location.reload();
+    } catch (e) {
+      alert('Не получилось: ' + (e && e.message || e) + '\n\nНичего не сломано, картинки остались в базе.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button className="admin-btn" onClick={run} disabled={busy} style={{ marginRight: 8 }}
+      title="Баннер и значок лежат в базе и утяжеляют каждую страницу">
+      {busy ? '⏳ переношу…' : `⇪ Картинки в хранилище (${info.kb} КБ)`}
+    </button>
   );
 }
 
@@ -177,7 +224,7 @@ function App() {
       } catch (e) {}
     }
   }, [tab, lang]);
-  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const t = TWEAK_DEFAULTS;
   const auth = useAuth();
   const [loginOpen, setLoginOpen] = appState(false);
   const admin = auth.isAdmin;
@@ -277,30 +324,10 @@ function App() {
     const clean = v.replace(/\D/g, '');
     saveMetrikaId(clean);
     alert(clean
-      ? `Счётчик ${clean} сохранён.\nПоявится на сайте в течение ~15 минут (сервер обновляет кэш) или сразу после пересборки.`
+      ? `Счётчик ${clean} сохранён.\nПоявится на сайте в течение минуты.`
       : 'Аналитика отключена.');
   }
 
-  async function runSeed() {
-    if (!confirm(lang === 'ru'
-      ? 'Заполнить базу демо-данными? Это перепишет всё что сейчас в Supabase.'
-      : 'Seed database with demo data? This will overwrite anything currently in Supabase.')) return;
-    setSeeding(true);
-    try {
-      const report = await seedDefaults();
-      const errors = report.filter(r => r.error);
-      if (errors.length) {
-        alert((lang === 'ru' ? 'Ошибки при загрузке: ' : 'Errors: ') + errors.map(e => `${e.table}: ${e.error}`).join('\n'));
-      } else {
-        alert(lang === 'ru' ? '✓ Готово! Обнови страницу.' : '✓ Done! Reload the page.');
-        location.reload();
-      }
-    } catch (e) {
-      alert('Error: ' + e.message);
-    } finally {
-      setSeeding(false);
-    }
-  }
 
   function handleAdminToggle() {
     if (admin) {
@@ -337,6 +364,7 @@ function App() {
               </span>
             </span>
             <span className="admin-bar-actions">
+              <InlineImagesMigrator />
               <SiteFavicon admin={admin} />
               <button className="admin-btn" onClick={downloadBackup} disabled={backupBusy}
                 title="Скачать все данные из Supabase одним JSON">
@@ -381,50 +409,6 @@ function App() {
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} auth={auth} lang={lang} />
 
-      <TweaksPanel>
-        <TweakSection label={lang === 'ru' ? 'Типографика' : 'Typography'} />
-        <TweakSelect
-          label={lang === 'ru' ? 'Пара шрифтов' : 'Font pair'}
-          value={t.fontPair}
-          options={Object.entries(FONT_PAIRS).map(([k, v]) => ({ value: k, label: v.label }))}
-          onChange={(v) => setTweak('fontPair', v)}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Цвет' : 'Color'} />
-        <TweakColor
-          label={lang === 'ru' ? 'Акцент' : 'Accent'}
-          value={ACCENT_PALETTES[t.accent]?.accent}
-          options={Object.values(ACCENT_PALETTES).map(p => p.accent)}
-          onChange={(v) => {
-            const key = Object.keys(ACCENT_PALETTES).find(k => ACCENT_PALETTES[k].accent === v);
-            if (key) setTweak('accent', key);
-          }}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Форма' : 'Shape'} />
-        <TweakSlider
-          label={lang === 'ru' ? 'Скругление углов' : 'Corner radius'}
-          value={t.radius}
-          min={0} max={32} unit="px"
-          onChange={(v) => setTweak('radius', v)}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Прогресс-бары' : 'Progress bars'} />
-        <TweakRadio
-          label={lang === 'ru' ? 'Стиль' : 'Style'}
-          value={t.barStyle}
-          options={['classic', 'striped', 'ticks', 'minimal']}
-          onChange={(v) => setTweak('barStyle', v)}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Очередь' : 'Queue'} />
-        <TweakRadio
-          label={lang === 'ru' ? 'Layout' : 'Layout'}
-          value={t.layout}
-          options={['list', 'cards', 'timeline']}
-          onChange={(v) => setTweak('layout', v)}
-        />
-      </TweaksPanel>
     </>
   );
 }

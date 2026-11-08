@@ -4521,11 +4521,12 @@ window.addEventListener('unhandledrejection', function (e) {
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- версия закреплена: «@2» сам переезжал на каждый новый выпуск -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
   <script>
     // CDN fallback: if jsdelivr was blocked or failed, fall through to unpkg.
     if (typeof window.supabase === 'undefined' || typeof window.supabase.createClient !== 'function') {
-      document.write('\u003Cscript src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"\u003E\u003C/script\u003E');
+      document.write('\u003Cscript src="https://unpkg.com/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"\u003E\u003C/script\u003E');
     }
   </script>
 
@@ -5102,7 +5103,6 @@ const SNAPSHOT_KEYS = {
   queue_items: 'queue',
   portfolio_categories: 'portfolioCategories',
   calc_options: 'calcOptions',
-  prices: 'prices',
   debts: 'debts',
   links: 'links',
 };
@@ -5547,679 +5547,141 @@ async function uploadToStorage(file) {
   }
 }
 
-async function uploadImage(file) {
+// ── Значок сайта: маленький PNG вместо полноразмерной картинки ──
+// Раньше значок лежал в базе картинкой 889×1200 (165 КБ) и сервер вставлял его
+// в КАЖДУЮ страницу. Браузеру хватает 64 px (вкладка рисует 16–32).
+function _imageToBlob(src, max, mime, quality) {
   return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        // Resize to max 1200px — high quality for portfolio
-        const MAX = 1200;
-        let w = img.width, h = img.height;
-        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        console.log('[upload] image:', w, 'x', h, '—', Math.round(dataUrl.length / 1024), 'KB');
-        resolve(dataUrl);
-      };
-      img.onerror = function() { alert('Ошибка загрузки картинки'); resolve(null); };
-      img.src = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * k));
+      const h = Math.max(1, Math.round(img.height * k));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      c.toBlob(b => resolve(b), mime, quality);
     };
-    reader.onerror = function() { alert('Ошибка чтения файла'); resolve(null); };
-    reader.readAsDataURL(file);
+    img.onerror = () => resolve(null);
+    img.src = src;
   });
 }
 
-async function seedDefaults() {
-  const report = [];
-
-  // queue_items — deliberately NOT seeded.
-  // The queue holds real client orders; there is no meaningful demo content for
-  // it, and wiping it here would destroy live data.
-
-  // portfolio_categories
-  const portfolioRows = [
-    ...DEFAULT_PORTFOLIO.models.map((m, i) => ({ key: m.key, kind: "model", count: m.count, hue: m.hue, sort_order: i })),
-    ...DEFAULT_PORTFOLIO.illustrations.map((m, i) => ({ key: m.key, kind: "illustration", count: m.count, hue: m.hue, sort_order: i })),
-  ];
-  await wipe("portfolio_categories"); report.push(await bulkInsert("portfolio_categories", portfolioRows));
-
-  // prices
-  const priceRows = DEFAULT_PRICES.map((p, i) => ({ label: p.key, rub: p.rub, sort_order: i }));
-  await wipe("prices"); report.push(await bulkInsert("prices", priceRows));
-
-  // calc_options — flatten the nested tree
-  const calcRows = [];
-  Object.entries(DEFAULT_CALC).forEach(([cat, catObj]) => {
-    Object.entries(catObj.variants).forEach(([variant, varObj]) => {
-      ["base", "addon"].forEach((group) => {
-        (varObj[group] || []).forEach((opt, i) => {
-          calcRows.push({
-            id: opt.id, category: cat, variant, group_type: group,
-            label_ru: opt.ru, label_en: opt.en, rub: opt.rub, has_qty: !!opt.qty,
-            sort_order: i,
-          });
-        });
-      });
-    });
+function _fileToDataUrl(file) {
+  return new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = (e) => resolve(e.target.result);
+    r.onerror = () => resolve(null);
+    r.readAsDataURL(file);
   });
-  await wipe("calc_options"); report.push(await bulkInsert("calc_options", calcRows));
+}
 
-  // debts
-  const debtRows = DEFAULT_DEBTS.map((d, i) => ({
-    title: d.title, stream_date: d.stream, reason: d.reason, status: d.status, progress: d.progress, sort_order: i,
-  }));
-  await wipe("debts"); report.push(await bulkInsert("debts", debtRows));
+function _storageName(folder, ext) {
+  return `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+}
 
-  // links
-  const linkRows = DEFAULT_LINKS.map((l, i) => ({
-    label: l.label, handle: l.handle, url: l.url, kind: l.kind, sort_order: i,
-  }));
-  await wipe("links"); report.push(await bulkInsert("links", linkRows));
+// Принимает файл или адрес картинки (в т.ч. data:). Возвращает { url } или null.
+async function uploadIconToStorage(fileOrSrc, opts) {
+  const quiet = opts && opts.quiet;
+  try {
+    const src = typeof fileOrSrc === 'string' ? fileOrSrc : await _fileToDataUrl(fileOrSrc);
+    const png = src && await _imageToBlob(src, 64, 'image/png');
+    if (!png) { if (!quiet) alert('Не удалось обработать картинку'); return null; }
+    let path = _storageName('site', 'png');
+    let up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, png, { contentType: 'image/png', upsert: false });
+    // Bucket может не принимать png — тогда jpeg, значку это не страшно.
+    if (up.error && /mime|not supported/i.test(String(up.error.message || ''))) {
+      const jpg = await _imageToBlob(src, 64, 'image/jpeg', 0.9);
+      if (jpg) {
+        path = _storageName('site', 'jpg');
+        up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, jpg, { contentType: 'image/jpeg', upsert: false });
+      }
+    }
+    if (up.error) {
+      console.error('[storage] icon upload failed', up.error);
+      if (!quiet) alert(storageErrorText(up.error));
+      return null;
+    }
+    return { url: storagePublicUrl(path) };
+  } catch (e) {
+    console.error('[storage] icon error', e);
+    return null;
+  }
+}
 
+// ── Перенос картинок, которые раньше сохранялись прямо в базу (data:...) ──
+// Баннер и значок жили в таблице settings строками base64 (~1,5 МБ) и уходили
+// каждому посетителю внутри страницы. Переносим их в Storage, в базе остаются
+// короткие ссылки. Слот, который не удалось загрузить, остаётся как был.
+function _isInlineImage(s) { return typeof s === 'string' && s.indexOf('data:image/') === 0; }
+
+async function _readImageSettings() {
+  const { data, error } = await _sbc.from('settings').select('key,value').in('key', ['banner', 'site_favicon']);
+  if (error) throw new Error(error.message);
+  const map = {};
+  (data || []).forEach(r => { if (r && r.key) map[r.key] = r.value; });
+  return map;
+}
+
+async function inlineImagesInfo() {
+  if (!_sbc) return { count: 0, kb: 0 };
+  const map = await _readImageSettings();
+  const slots = (map.banner && Array.isArray(map.banner.banner_slots)) ? map.banner.banner_slots : [];
+  const inline = slots.filter(_isInlineImage);
+  if (_isInlineImage(map.site_favicon)) inline.push(map.site_favicon);
+  return { count: inline.length, kb: Math.round(inline.reduce((s, x) => s + x.length, 0) / 1024) };
+}
+
+async function migrateInlineImages() {
+  if (!_sbc) throw new Error('Supabase не загружен');
+  const map = await _readImageSettings();
+  const report = { moved: 0, failed: 0, errors: [] };
+
+  const banner = map.banner;
+  if (banner && Array.isArray(banner.banner_slots) && banner.banner_slots.some(_isInlineImage)) {
+    const slots = banner.banner_slots.slice();
+    let changed = false;
+    for (let i = 0; i < slots.length; i++) {
+      if (!_isInlineImage(slots[i])) continue;
+      try {
+        const blob = await (await fetch(slots[i])).blob();
+        const type = blob.type || 'image/jpeg';
+        const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : type === 'image/gif' ? 'gif' : 'jpg';
+        const path = _storageName('banner', ext);
+        const up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, blob, { contentType: type, upsert: false });
+        if (up.error) throw up.error;
+        slots[i] = storagePublicUrl(path);
+        changed = true;
+        report.moved++;
+      } catch (e) {
+        report.failed++;
+        report.errors.push(`баннер #${i + 1}: ${(e && e.message) || e}`);
+      }
+    }
+    if (changed) {
+      const { error } = await _sbc.from('settings')
+        .upsert({ key: 'banner', value: Object.assign({}, banner, { banner_slots: slots }) }, { onConflict: 'key' });
+      if (error) throw new Error('баннер не сохранён: ' + error.message);
+    }
+  }
+
+  if (_isInlineImage(map.site_favicon)) {
+    const up = await uploadIconToStorage(map.site_favicon, { quiet: true });
+    if (up) {
+      const { error } = await _sbc.from('settings')
+        .upsert({ key: 'site_favicon', value: up.url }, { onConflict: 'key' });
+      if (error) throw new Error('значок не сохранён: ' + error.message);
+      report.moved++;
+    } else {
+      report.failed++;
+      report.errors.push('значок: не удалось загрузить');
+    }
+  }
   return report;
 }
 
-// Race a Supabase operation against a 15s timeout so the seed UI can't
-// hang forever on a stuck network.
-function _withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, rej) => setTimeout(() => rej(new Error(label + ' timed out after ' + ms + 'ms')), ms)),
-  ]);
-}
-async function wipe(table) {
-  if (!_sbc) return;
-  try { await _withTimeout(_sbc.from(table).delete().neq("id", "00000000-0000-0000-0000-000000000000"), 15000, `wipe ${table}`); }
-  catch (e) { console.warn(`[${table}] wipe failed:`, e?.message); }
-}
-async function bulkInsert(table, rows) {
-  if (rows.length === 0) return { table, count: 0 };
-  if (!_sbc) return { table, error: 'no Supabase client' };
-  try {
-    const { error } = await _withTimeout(_sbc.from(table).insert(rows), 15000, `insert ${table}`);
-    if (error) { console.error(`[${table}] seed:`, error.message); return { table, error: error.message }; }
-    return { table, count: rows.length };
-  } catch (e) { return { table, error: e?.message || 'threw' }; }
-}
-
-Object.assign(window, { _sbc, useAuth, useResource, calcOptionsToTree, seedDefaults, uploadImage, uploadToStorage });
-
-  </script>
-
-  <script type="text/babel" data-presets="react">
-
-// tweaks-panel.jsx
-// Reusable Tweaks shell + form-control helpers.
-//
-// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
-// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
-// individual prototypes don't re-roll it. Ships a consistent set of controls so you
-// don't hand-draw <input type="range">, segmented radios, steppers, etc.
-//
-// Usage (in an HTML file that loads React + Babel):
-//
-//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-//     "primaryColor": "#D97757",
-//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
-//     "fontSize": 16,
-//     "density": "regular",
-//     "dark": false
-//   }/*EDITMODE-END*/;
-//
-//   function App() {
-//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-//     return (
-//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
-//         Hello
-//         <TweaksPanel>
-//           <TweakSection label="Typography" />
-//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
-//                        onChange={(v) => setTweak('fontSize', v)} />
-//           <TweakRadio  label="Density" value={t.density}
-//                        options={['compact', 'regular', 'comfy']}
-//                        onChange={(v) => setTweak('density', v)} />
-//           <TweakSection label="Theme" />
-//           <TweakColor  label="Primary" value={t.primaryColor}
-//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
-//                        onChange={(v) => setTweak('primaryColor', v)} />
-//           <TweakColor  label="Palette" value={t.palette}
-//                        options={[['#D97757', '#29261b', '#f6f4ef'],
-//                                  ['#475569', '#0f172a', '#f1f5f9']]}
-//                        onChange={(v) => setTweak('palette', v)} />
-//           <TweakToggle label="Dark mode" value={t.dark}
-//                        onChange={(v) => setTweak('dark', v)} />
-//         </TweaksPanel>
-//       </div>
-//     );
-//   }
-//
-// ─────────────────────────────────────────────────────────────────────────────
-
-const __TWEAKS_STYLE = `
-  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
-    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
-    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
-    background:rgba(250,249,247,.78);color:#29261b;
-    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
-    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
-    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
-    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
-  .twk-hd{display:flex;align-items:center;justify-content:space-between;
-    padding:10px 8px 10px 14px;cursor:move;user-select:none}
-  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
-  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
-    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
-  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
-  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
-    overflow-y:auto;overflow-x:hidden;min-height:0;
-    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
-  .twk-body::-webkit-scrollbar{width:8px}
-  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
-  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
-    border:2px solid transparent;background-clip:content-box}
-  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
-    border:2px solid transparent;background-clip:content-box}
-  .twk-row{display:flex;flex-direction:column;gap:5px}
-  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
-  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
-    color:rgba(41,38,27,.72)}
-  .twk-lbl>span:first-child{font-weight:500}
-  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
-
-  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
-    color:rgba(41,38,27,.45);padding:10px 0 0}
-  .twk-sect:first-child{padding-top:0}
-
-  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
-    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
-    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
-  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
-  select.twk-field{padding-right:22px;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
-    background-repeat:no-repeat;background-position:right 8px center}
-
-  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
-    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
-  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
-    width:14px;height:14px;border-radius:50%;background:#fff;
-    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
-  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
-    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
-
-  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
-    background:rgba(0,0,0,.06);user-select:none}
-  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
-    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
-    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
-  .twk-seg.dragging .twk-seg-thumb{transition:none}
-  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
-    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
-    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
-    overflow-wrap:anywhere}
-
-  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
-    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
-  .twk-toggle[data-on="1"]{background:#34c759}
-  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
-    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
-  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
-
-  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
-    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
-  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
-    user-select:none;padding-right:8px}
-  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
-    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
-    outline:none;color:inherit;-moz-appearance:textfield}
-  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
-    -webkit-appearance:none;margin:0}
-  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
-
-  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
-    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
-  .twk-btn:hover{background:rgba(0,0,0,.88)}
-  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
-  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
-
-  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
-    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
-    background:transparent;flex-shrink:0}
-  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
-  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
-  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
-
-  .twk-chips{display:flex;gap:6px}
-  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
-    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
-    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
-    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
-  .twk-chip:hover{transform:translateY(-1px);
-    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
-  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
-    0 2px 6px rgba(0,0,0,.15)}
-  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
-    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
-  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
-  .twk-chip>span>i:first-child{box-shadow:none}
-  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
-    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
-`;
-
-// ── useTweaks ───────────────────────────────────────────────────────────────
-// Single source of truth for tweak values. setTweak persists via the host
-// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
-function useTweaks(defaults) {
-  const [values, setValues] = React.useState(defaults);
-  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
-  // useState-style call doesn't write a "[object Object]" key into the persisted
-  // JSON block.
-  const setTweak = React.useCallback((keyOrEdits, val) => {
-    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
-      ? keyOrEdits : { [keyOrEdits]: val };
-    setValues((prev) => ({ ...prev, ...edits }));
-    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
-    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
-    // can react — the parent message only reaches the host, not peers.
-    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
-  }, []);
-  return [values, setTweak];
-}
-
-// ── TweaksPanel ─────────────────────────────────────────────────────────────
-// Floating shell. Registers the protocol listener BEFORE announcing
-// availability — if the announce ran first, the host's activate could land
-// before our handler exists and the toolbar toggle would silently no-op.
-// The close button posts __edit_mode_dismissed so the host's toolbar toggle
-// flips off in lockstep; the host echoes __deactivate_edit_mode back which
-// is what actually hides the panel.
-function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
-  const [open, setOpen] = React.useState(false);
-  const dragRef = React.useRef(null);
-  // Auto-inject a rail toggle when a <deck-stage> is on the page. The
-  // toggle drives the deck's per-viewer _railVisible via window message;
-  // state is mirrored from the same localStorage key the deck reads so
-  // the control reflects reality across reloads. The mechanism is the
-  // message — authors who want custom placement can post it directly
-  // and pass noDeckControls to suppress this one.
-  const hasDeckStage = React.useMemo(
-    () => typeof document !== 'undefined' && !!document.querySelector('deck-stage'),
-    [],
-  );
-  // deck-stage enables its rail in connectedCallback, but this panel can
-  // mount before that element has upgraded. The initial read catches the
-  // common case; the listener covers mounting first. (Older deck-stage.js
-  // copies still wait for the host's __omelette_rail_enabled postMessage —
-  // same listener handles those.)
-  const [railEnabled, setRailEnabled] = React.useState(
-    () => hasDeckStage && !!document.querySelector('deck-stage')?._railEnabled,
-  );
-  React.useEffect(() => {
-    if (!hasDeckStage || railEnabled) return undefined;
-    const onMsg = (e) => {
-      if (e.data && e.data.type === '__omelette_rail_enabled') setRailEnabled(true);
-    };
-    window.addEventListener('message', onMsg);
-    return () => window.removeEventListener('message', onMsg);
-  }, [hasDeckStage, railEnabled]);
-  const [railVisible, setRailVisible] = React.useState(() => {
-    try { return localStorage.getItem('deck-stage.railVisible') !== '0'; } catch (e) { return true; }
-  });
-  const toggleRail = (on) => {
-    setRailVisible(on);
-    window.postMessage({ type: '__deck_rail_visible', on }, '*');
-  };
-  const offsetRef = React.useRef({ x: 16, y: 16 });
-  const PAD = 16;
-
-  const clampToViewport = React.useCallback(() => {
-    const panel = dragRef.current;
-    if (!panel) return;
-    const w = panel.offsetWidth, h = panel.offsetHeight;
-    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
-    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
-    offsetRef.current = {
-      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
-      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
-    };
-    panel.style.right = offsetRef.current.x + 'px';
-    panel.style.bottom = offsetRef.current.y + 'px';
-  }, []);
-
-  React.useEffect(() => {
-    if (!open) return;
-    clampToViewport();
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', clampToViewport);
-      return () => window.removeEventListener('resize', clampToViewport);
-    }
-    const ro = new ResizeObserver(clampToViewport);
-    ro.observe(document.documentElement);
-    return () => ro.disconnect();
-  }, [open, clampToViewport]);
-
-  React.useEffect(() => {
-    const onMsg = (e) => {
-      const t = e?.data?.type;
-      if (t === '__activate_edit_mode') setOpen(true);
-      else if (t === '__deactivate_edit_mode') setOpen(false);
-    };
-    window.addEventListener('message', onMsg);
-    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
-    return () => window.removeEventListener('message', onMsg);
-  }, []);
-
-  const dismiss = () => {
-    setOpen(false);
-    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
-  };
-
-  const onDragStart = (e) => {
-    const panel = dragRef.current;
-    if (!panel) return;
-    const r = panel.getBoundingClientRect();
-    const sx = e.clientX, sy = e.clientY;
-    const startRight = window.innerWidth - r.right;
-    const startBottom = window.innerHeight - r.bottom;
-    const move = (ev) => {
-      offsetRef.current = {
-        x: startRight - (ev.clientX - sx),
-        y: startBottom - (ev.clientY - sy),
-      };
-      clampToViewport();
-    };
-    const up = () => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
-    };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
-  };
-
-  if (!open) return null;
-  return (
-    <>
-      <style>{__TWEAKS_STYLE}</style>
-      <div ref={dragRef} className="twk-panel" data-noncommentable=""
-           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
-        <div className="twk-hd" onMouseDown={onDragStart}>
-          <b>{title}</b>
-          <button className="twk-x" aria-label="Close tweaks"
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={dismiss}>✕</button>
-        </div>
-        <div className="twk-body">
-          {children}
-          {hasDeckStage && railEnabled && !noDeckControls && (
-            <TweakSection label="Deck">
-              <TweakToggle label="Thumbnail rail" value={railVisible} onChange={toggleRail} />
-            </TweakSection>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ── Layout helpers ──────────────────────────────────────────────────────────
-
-function TweakSection({ label, children }) {
-  return (
-    <>
-      <div className="twk-sect">{label}</div>
-      {children}
-    </>
-  );
-}
-
-function TweakRow({ label, value, children, inline = false }) {
-  return (
-    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
-      <div className="twk-lbl">
-        <span>{label}</span>
-        {value != null && <span className="twk-val">{value}</span>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-// ── Controls ────────────────────────────────────────────────────────────────
-
-function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
-  return (
-    <TweakRow label={label} value={`${value}${unit}`}>
-      <input type="range" className="twk-slider" min={min} max={max} step={step}
-             value={value} onChange={(e) => onChange(Number(e.target.value))} />
-    </TweakRow>
-  );
-}
-
-function TweakToggle({ label, value, onChange }) {
-  return (
-    <div className="twk-row twk-row-h">
-      <div className="twk-lbl"><span>{label}</span></div>
-      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
-              role="switch" aria-checked={!!value}
-              onClick={() => onChange(!value)}><i /></button>
-    </div>
-  );
-}
-
-function TweakRadio({ label, value, options, onChange }) {
-  const trackRef = React.useRef(null);
-  const [dragging, setDragging] = React.useState(false);
-  // The active value is read by pointer-move handlers attached for the lifetime
-  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
-  const valueRef = React.useRef(value);
-  valueRef.current = value;
-
-  // Segments wrap mid-word once per-segment width runs out. The track is
-  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
-  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
-  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
-  // back to a dropdown rather than wrap.
-  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
-  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
-  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
-  if (!fitsAsSegments) {
-    // <select> emits strings — map back to the original option value so the
-    // fallback stays type-preserving (numbers, booleans) like the segment path.
-    const resolve = (s) => {
-      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
-      return m === undefined ? s : typeof m === 'object' ? m.value : m;
-    };
-    return <TweakSelect label={label} value={value} options={options}
-                        onChange={(s) => onChange(resolve(s))} />;
-  }
-  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
-  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
-  const n = opts.length;
-
-  const segAt = (clientX) => {
-    const r = trackRef.current.getBoundingClientRect();
-    const inner = r.width - 4;
-    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
-    return opts[Math.max(0, Math.min(n - 1, i))].value;
-  };
-
-  const onPointerDown = (e) => {
-    setDragging(true);
-    const v0 = segAt(e.clientX);
-    if (v0 !== valueRef.current) onChange(v0);
-    const move = (ev) => {
-      if (!trackRef.current) return;
-      const v = segAt(ev.clientX);
-      if (v !== valueRef.current) onChange(v);
-    };
-    const up = () => {
-      setDragging(false);
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  };
-
-  return (
-    <TweakRow label={label}>
-      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
-           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
-        <div className="twk-seg-thumb"
-             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
-                      width: `calc((100% - 4px) / ${n})` }} />
-        {opts.map((o) => (
-          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </TweakRow>
-  );
-}
-
-function TweakSelect({ label, value, options, onChange }) {
-  return (
-    <TweakRow label={label}>
-      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map((o) => {
-          const v = typeof o === 'object' ? o.value : o;
-          const l = typeof o === 'object' ? o.label : o;
-          return <option key={v} value={v}>{l}</option>;
-        })}
-      </select>
-    </TweakRow>
-  );
-}
-
-function TweakText({ label, value, placeholder, onChange }) {
-  return (
-    <TweakRow label={label}>
-      <input className="twk-field" type="text" value={value} placeholder={placeholder}
-             onChange={(e) => onChange(e.target.value)} />
-    </TweakRow>
-  );
-}
-
-function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
-  const clamp = (n) => {
-    if (min != null && n < min) return min;
-    if (max != null && n > max) return max;
-    return n;
-  };
-  const startRef = React.useRef({ x: 0, val: 0 });
-  const onScrubStart = (e) => {
-    e.preventDefault();
-    startRef.current = { x: e.clientX, val: value };
-    const decimals = (String(step).split('.')[1] || '').length;
-    const move = (ev) => {
-      const dx = ev.clientX - startRef.current.x;
-      const raw = startRef.current.val + dx * step;
-      const snapped = Math.round(raw / step) * step;
-      onChange(clamp(Number(snapped.toFixed(decimals))));
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  };
-  return (
-    <div className="twk-num">
-      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
-      <input type="number" value={value} min={min} max={max} step={step}
-             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
-      {unit && <span className="twk-num-unit">{unit}</span>}
-    </div>
-  );
-}
-
-// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
-// read on both #111 and #fafafa without per-option configuration. Hex input
-// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
-function __twkIsLight(hex) {
-  const h = String(hex).replace('#', '');
-  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
-  const n = parseInt(x.slice(0, 6), 16);
-  if (Number.isNaN(n)) return true;
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  return r * 299 + g * 587 + b * 114 > 148000;
-}
-
-const __TwkCheck = ({ light }) => (
-  <svg viewBox="0 0 14 14" aria-hidden="true">
-    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
-          strokeLinecap="round" strokeLinejoin="round"
-          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
-  </svg>
-);
-
-// TweakColor — curated color/palette picker. Each option is either a single
-// hex string or an array of 1-5 hex strings; the card adapts — a lone color
-// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
-// rest stacked in a sharp column on the right. onChange emits the
-// option in the shape it was passed (string stays string, array stays array).
-// Without options it falls back to the native color input for back-compat.
-function TweakColor({ label, value, options, onChange }) {
-  if (!options || !options.length) {
-    return (
-      <div className="twk-row twk-row-h">
-        <div className="twk-lbl"><span>{label}</span></div>
-        <input type="color" className="twk-swatch" value={value}
-               onChange={(e) => onChange(e.target.value)} />
-      </div>
-    );
-  }
-  // Native <input type=color> emits lowercase hex per the HTML spec, so
-  // compare case-insensitively. String() guards JSON.stringify(undefined),
-  // which returns the primitive undefined (no .toLowerCase).
-  const key = (o) => String(JSON.stringify(o)).toLowerCase();
-  const cur = key(value);
-  return (
-    <TweakRow label={label}>
-      <div className="twk-chips" role="radiogroup">
-        {options.map((o, i) => {
-          const colors = Array.isArray(o) ? o : [o];
-          const [hero, ...rest] = colors;
-          const sup = rest.slice(0, 4);
-          const on = key(o) === cur;
-          return (
-            <button key={i} type="button" className="twk-chip" role="radio"
-                    aria-checked={on} data-on={on ? '1' : '0'}
-                    aria-label={colors.join(', ')} title={colors.join(' · ')}
-                    style={{ background: hero }}
-                    onClick={() => onChange(o)}>
-              {sup.length > 0 && (
-                <span>
-                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
-                </span>
-              )}
-              {on && <__TwkCheck light={__twkIsLight(hero)} />}
-            </button>
-          );
-        })}
-      </div>
-    </TweakRow>
-  );
-}
-
-function TweakButton({ label, onClick, secondary = false }) {
-  return (
-    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
-            onClick={onClick}>{label}</button>
-  );
-}
-
-Object.assign(window, {
-  useTweaks, TweaksPanel, TweakSection, TweakRow,
-  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
-  TweakText, TweakNumber, TweakColor, TweakButton,
-});
+Object.assign(window, { _sbc, useAuth, useResource, calcOptionsToTree, uploadToStorage,
+  uploadIconToStorage, inlineImagesInfo, migrateInlineImages });
 
   </script>
 
@@ -6514,7 +5976,10 @@ function LoginModal({ open, onClose, auth, lang }) {
 
 
 // ──────────────── image uploader ────────────────
-function ImageUploader({ onUpload, label, multiple }) {
+// Картинки кладём в Storage, в базу идёт только ссылка. Раньше здесь был
+// base64 прямо в базе — так баннер раздул каждую страницу на 1,5 МБ.
+// icon — для значка сайта: ужимаем до 64 px.
+function ImageUploader({ onUpload, label, multiple, icon }) {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef(null);
 
@@ -6524,8 +5989,8 @@ function ImageUploader({ onUpload, label, multiple }) {
     setBusy(true);
     const urls = [];
     for (const file of files) {
-      const url = await window.uploadImage(file);
-      if (url) urls.push(url);
+      const up = icon ? await window.uploadIconToStorage(file) : await window.uploadToStorage(file);
+      if (up && up.url) urls.push(up.url);
     }
     setBusy(false);
     if (urls.length > 0) onUpload(multiple ? urls : urls[0]);
@@ -7016,7 +6481,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>Месяц — рус. (напр. Май)</span>
                 <input type="text" value={bannerCfg.banner_month || ''} onChange={e => {
                   const upd = {...bannerCfg, banner_month: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }} />
               </label>
 
@@ -7024,7 +6489,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>Month — eng. (e.g. May)</span>
                 <input type="text" value={bannerCfg.banner_month_en || ''} placeholder="May" onChange={e => {
                   const upd = {...bannerCfg, banner_month_en: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }} />
               </label>
 
@@ -7032,7 +6497,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>{lang === 'ru' ? 'Статус' : 'Status'}</span>
                 <select value={bannerCfg.banner_status || 'open'} onChange={e => {
                   const upd = {...bannerCfg, banner_status: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }}>
                   <option value="open">{lang === 'ru' ? '🟢 Открыты' : '🟢 Open'}</option>
                   <option value="closed">{lang === 'ru' ? '🔴 Закрыты' : '🔴 Closed'}</option>
@@ -7044,7 +6509,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>YouTube (URL)</span>
                 <input type="text" value={bannerCfg.banner_video || ''} placeholder="https://youtube.com/watch?v=..." onChange={e => {
                   const upd = {...bannerCfg, banner_video: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }} />
               </label>
 
@@ -7069,12 +6534,12 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                           <ImageUploader label="📷" onUpload={(url) => {
                             const slots = [...bannerSlots]; slots[i] = url;
                             const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                            saveBannerCfg(upd);
                           }} />
                           {slot && <button className="admin-btn danger" style={{width:24,height:24,fontSize:11}} onClick={() => {
                             const slots = bannerSlots.filter((_, idx) => idx !== i);
                             const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                            saveBannerCfg(upd);
                           }}>×</button>}
                         </div>
                       </div>
@@ -7084,7 +6549,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                   <button onClick={() => {
                     const slots = [...bannerSlots, ''];
                     const upd = {...bannerCfg, banner_slots: slots};
-                    saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                    saveBannerCfg(upd);
                   }} style={{
                     aspectRatio: '16/9', borderRadius: 8,
                     background: 'rgba(255,255,255,0.03)',
@@ -7102,7 +6567,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                       if (url) {
                         const slots = [...bannerSlots, url];
                         const upd = {...bannerCfg, banner_slots: slots};
-                        saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                        saveBannerCfg(upd);
                         document.getElementById('yt-new-url').value = '';
                       }
                     }}>+ {lang === 'ru' ? 'Добавить' : 'Add'}</button>
@@ -10202,13 +9667,15 @@ const ACCENT_PALETTES = {
   honey:   { accent: "#d4b94a", deep: "#9a832a", soft: "#f0e3a0" },
 };
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+// Оформление сайта. Раньше правилось панелью Tweaks из редактора-прототипа,
+// на живом сайте она не открывалась — оставили только сами значения.
+const TWEAK_DEFAULTS = {
   "fontPair": "cormorant",
   "accent": "amber",
   "radius": 14,
   "barStyle": "classic",
   "layout": "list"
-}/*EDITMODE-END*/;
+};
 
 async function connection_check() {
   if (!window.__supabase) return { ok: false, msg: 'SDK не загружен' };
@@ -10266,7 +9733,7 @@ function SiteFavicon({ admin }) {
               <span>URL значка</span>
               <input value={input} onChange={e => setInput(e.target.value)} placeholder="https://... или data:image/..." />
             </label>
-            <ImageUploader label="📷 Загрузить файл" onUpload={url => setInput(url)} />
+            <ImageUploader icon label="📷 Загрузить файл" onUpload={url => setInput(url)} />
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
                 onClick={() => { saveFavicon(input); setOpen(false); }}>Сохранить</button>
@@ -10278,6 +9745,51 @@ function SiteFavicon({ admin }) {
         </Modal>
       )}
     </>
+  );
+}
+
+// ── Перенос баннера и значка из базы в хранилище ──
+// Показывается админу, только пока в базе есть картинки base64.
+// После переноса пропадает сама.
+function InlineImagesMigrator() {
+  const [info, setInfo] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    window.inlineImagesInfo?.().then(r => { if (alive) setInfo(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  if (!info || !info.count) return null;
+
+  async function run() {
+    if (!confirm(`Перенести ${info.count} картинок (${info.kb} КБ) из базы в хранилище файлов?\n\n` +
+      'Баннер и значок останутся теми же, но сайт станет легче для каждого посетителя.\n' +
+      'Если хочешь подстраховаться — сначала нажми «💾 Бэкап».')) return;
+    setBusy(true);
+    try {
+      const r = await window.migrateInlineImages();
+      try {
+        ['banner', 'site_favicon'].forEach(k => localStorage.removeItem('milaria:setting:' + k));
+        localStorage.removeItem('milaria:milaria:banner');
+      } catch (e) {}
+      alert(r.failed
+        ? `Перенесено: ${r.moved}, не получилось: ${r.failed}.\n\n${r.errors.join('\n')}\n\nНеперенесённые остались как были.`
+        : `✓ Перенесено картинок: ${r.moved}. Страница перезагрузится.`);
+      location.reload();
+    } catch (e) {
+      alert('Не получилось: ' + (e && e.message || e) + '\n\nНичего не сломано, картинки остались в базе.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button className="admin-btn" onClick={run} disabled={busy} style={{ marginRight: 8 }}
+      title="Баннер и значок лежат в базе и утяжеляют каждую страницу">
+      {busy ? '⏳ переношу…' : `⇪ Картинки в хранилище (${info.kb} КБ)`}
+    </button>
   );
 }
 
@@ -10359,7 +9871,7 @@ function App() {
       } catch (e) {}
     }
   }, [tab, lang]);
-  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const t = TWEAK_DEFAULTS;
   const auth = useAuth();
   const [loginOpen, setLoginOpen] = appState(false);
   const admin = auth.isAdmin;
@@ -10459,30 +9971,10 @@ function App() {
     const clean = v.replace(/\D/g, '');
     saveMetrikaId(clean);
     alert(clean
-      ? `Счётчик ${clean} сохранён.\nПоявится на сайте в течение ~15 минут (сервер обновляет кэш) или сразу после пересборки.`
+      ? `Счётчик ${clean} сохранён.\nПоявится на сайте в течение минуты.`
       : 'Аналитика отключена.');
   }
 
-  async function runSeed() {
-    if (!confirm(lang === 'ru'
-      ? 'Заполнить базу демо-данными? Это перепишет всё что сейчас в Supabase.'
-      : 'Seed database with demo data? This will overwrite anything currently in Supabase.')) return;
-    setSeeding(true);
-    try {
-      const report = await seedDefaults();
-      const errors = report.filter(r => r.error);
-      if (errors.length) {
-        alert((lang === 'ru' ? 'Ошибки при загрузке: ' : 'Errors: ') + errors.map(e => `${e.table}: ${e.error}`).join('\n'));
-      } else {
-        alert(lang === 'ru' ? '✓ Готово! Обнови страницу.' : '✓ Done! Reload the page.');
-        location.reload();
-      }
-    } catch (e) {
-      alert('Error: ' + e.message);
-    } finally {
-      setSeeding(false);
-    }
-  }
 
   function handleAdminToggle() {
     if (admin) {
@@ -10519,6 +10011,7 @@ function App() {
               </span>
             </span>
             <span className="admin-bar-actions">
+              <InlineImagesMigrator />
               <SiteFavicon admin={admin} />
               <button className="admin-btn" onClick={downloadBackup} disabled={backupBusy}
                 title="Скачать все данные из Supabase одним JSON">
@@ -10563,50 +10056,6 @@ function App() {
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} auth={auth} lang={lang} />
 
-      <TweaksPanel>
-        <TweakSection label={lang === 'ru' ? 'Типографика' : 'Typography'} />
-        <TweakSelect
-          label={lang === 'ru' ? 'Пара шрифтов' : 'Font pair'}
-          value={t.fontPair}
-          options={Object.entries(FONT_PAIRS).map(([k, v]) => ({ value: k, label: v.label }))}
-          onChange={(v) => setTweak('fontPair', v)}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Цвет' : 'Color'} />
-        <TweakColor
-          label={lang === 'ru' ? 'Акцент' : 'Accent'}
-          value={ACCENT_PALETTES[t.accent]?.accent}
-          options={Object.values(ACCENT_PALETTES).map(p => p.accent)}
-          onChange={(v) => {
-            const key = Object.keys(ACCENT_PALETTES).find(k => ACCENT_PALETTES[k].accent === v);
-            if (key) setTweak('accent', key);
-          }}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Форма' : 'Shape'} />
-        <TweakSlider
-          label={lang === 'ru' ? 'Скругление углов' : 'Corner radius'}
-          value={t.radius}
-          min={0} max={32} unit="px"
-          onChange={(v) => setTweak('radius', v)}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Прогресс-бары' : 'Progress bars'} />
-        <TweakRadio
-          label={lang === 'ru' ? 'Стиль' : 'Style'}
-          value={t.barStyle}
-          options={['classic', 'striped', 'ticks', 'minimal']}
-          onChange={(v) => setTweak('barStyle', v)}
-        />
-
-        <TweakSection label={lang === 'ru' ? 'Очередь' : 'Queue'} />
-        <TweakRadio
-          label={lang === 'ru' ? 'Layout' : 'Layout'}
-          value={t.layout}
-          options={['list', 'cards', 'timeline']}
-          onChange={(v) => setTweak('layout', v)}
-        />
-      </TweaksPanel>
     </>
   );
 }

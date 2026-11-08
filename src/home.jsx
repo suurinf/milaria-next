@@ -331,7 +331,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>Месяц — рус. (напр. Май)</span>
                 <input type="text" value={bannerCfg.banner_month || ''} onChange={e => {
                   const upd = {...bannerCfg, banner_month: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }} />
               </label>
 
@@ -339,7 +339,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>Month — eng. (e.g. May)</span>
                 <input type="text" value={bannerCfg.banner_month_en || ''} placeholder="May" onChange={e => {
                   const upd = {...bannerCfg, banner_month_en: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }} />
               </label>
 
@@ -347,7 +347,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>{lang === 'ru' ? 'Статус' : 'Status'}</span>
                 <select value={bannerCfg.banner_status || 'open'} onChange={e => {
                   const upd = {...bannerCfg, banner_status: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }}>
                   <option value="open">{lang === 'ru' ? '🟢 Открыты' : '🟢 Open'}</option>
                   <option value="closed">{lang === 'ru' ? '🔴 Закрыты' : '🔴 Closed'}</option>
@@ -359,7 +359,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                 <span>YouTube (URL)</span>
                 <input type="text" value={bannerCfg.banner_video || ''} placeholder="https://youtube.com/watch?v=..." onChange={e => {
                   const upd = {...bannerCfg, banner_video: e.target.value};
-                  saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                  saveBannerCfg(upd);
                 }} />
               </label>
 
@@ -384,12 +384,12 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                           <ImageUploader label="📷" onUpload={(url) => {
                             const slots = [...bannerSlots]; slots[i] = url;
                             const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                            saveBannerCfg(upd);
                           }} />
                           {slot && <button className="admin-btn danger" style={{width:24,height:24,fontSize:11}} onClick={() => {
                             const slots = bannerSlots.filter((_, idx) => idx !== i);
                             const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                            saveBannerCfg(upd);
                           }}>×</button>}
                         </div>
                       </div>
@@ -399,7 +399,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                   <button onClick={() => {
                     const slots = [...bannerSlots, ''];
                     const upd = {...bannerCfg, banner_slots: slots};
-                    saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                    saveBannerCfg(upd);
                   }} style={{
                     aspectRatio: '16/9', borderRadius: 8,
                     background: 'rgba(255,255,255,0.03)',
@@ -417,7 +417,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
                       if (url) {
                         const slots = [...bannerSlots, url];
                         const upd = {...bannerCfg, banner_slots: slots};
-                        saveBannerCfg(upd); saveLS('milaria:banner', upd);
+                        saveBannerCfg(upd);
                         document.getElementById('yt-new-url').value = '';
                       }
                     }}>+ {lang === 'ru' ? 'Добавить' : 'Add'}</button>
