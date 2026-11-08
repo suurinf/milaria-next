@@ -221,6 +221,17 @@ function HeroSocials({ links, admin, linksRes, lang }) {
     </div>);
 }
 
+// Пропорции карточек для окна превью. На компьютере меряем настоящую карточку
+// на странице (если она видна), на телефоне форма фиксирована в CSS.
+function tilePreviewShapes() {
+  const desk = window.innerWidth > 880 ? edMeasureRatio('.recent-tile', 0.49) : 0.49;
+  return [{ label: 'Компьютер', ratio: desk }, { label: 'Телефон', ratio: 3 / 4 }];
+}
+function bannerPreviewShapes() {
+  const desk = window.innerWidth > 880 ? edMeasureRatio('.banner-img', 1.55) : 1.55;
+  return [{ label: 'Компьютер', ratio: desk }, { label: 'Телефон', ratio: 16 / 10 }];
+}
+
 // ─── Banner: "Открыты заказы на Май" ───
 function CommissionBanner({ t, lang, onGoTo, admin }) {
   const autoMonth = lang === 'ru' ?
@@ -229,7 +240,10 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
   const [bannerCfg, saveBannerCfg] = useSetting('banner', {});
   const month = (lang === 'en' ? (bannerCfg.banner_month_en || bannerCfg.banner_month) : bannerCfg.banner_month) || autoMonth;
   const bannerSlots = Array.isArray(bannerCfg.banner_slots) ? bannerCfg.banner_slots.filter(s => typeof s === 'string').map(localSupaUrl) : ['','','',''];
+  const bannerFocal = Array.isArray(bannerCfg.banner_focal) ? bannerCfg.banner_focal : [];
   const bannerImages = bannerSlots.filter(Boolean);
+  // Кадр каждого непустого слайда (индексы слайдов и кадров идут парами)
+  const bannerImageFocal = bannerSlots.map((s, i) => s ? (bannerFocal[i] || 'center') : null).filter(f => f !== null);
   const bannerStatus = bannerCfg.banner_status || 'open';
   const [editBanner, setBannerEdit] = homeState(false);
 
@@ -276,7 +290,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
               className={`banner-img-layer ${i === bIdx ? 'show' : ''}`}
               style={typeof src === 'string' ? {
                 backgroundImage: ytId ? `url(https://img.youtube.com/vi/${ytId}/hqdefault.jpg)` : `url(${src})`,
-                backgroundSize: 'cover', backgroundPosition: 'center',
+                backgroundSize: 'cover', backgroundPosition: (bannerImages.length ? bannerImageFocal[i] : null) || 'center',
               } : { '--hue': 30 + i * 18 }}>
             </div>
           );
@@ -320,7 +334,7 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
         )}
       </div>
       {admin && editBanner && (
-        <BannerEditor cfg={bannerCfg} save={saveBannerCfg} slots={bannerSlots} lang={lang}
+        <BannerEditor cfg={bannerCfg} save={saveBannerCfg} slots={bannerSlots} focal={bannerFocal} lang={lang}
           autoMonth={autoMonth} onClose={() => setBannerEdit(false)} />
       )}
     </div>);
@@ -329,12 +343,17 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
 
 // ── Редактор баннера «Открыты заказы на …» ──
 // Каждое изменение сохраняется сразу, как и раньше; «Готово» просто закрывает окно.
-function BannerEditor({ cfg, save, slots, lang, autoMonth, onClose }) {
+function BannerEditor({ cfg, save, slots, focal, lang, autoMonth, onClose }) {
   const ru = lang === 'ru';
   const [ytUrl, setYtUrl] = homeState('');
   const [busy, setBusy] = homeState(false);
+  const [pvSlot, setPvSlot] = homeState(null);
   const set = (patch) => save({ ...cfg, ...patch });
-  const setSlots = (next) => set({ banner_slots: next });
+  // Кадры хранятся рядом со слайдами: banner_focal[i] — для banner_slots[i].
+  const focals = slots.map((_, i) => (focal || [])[i] || '50% 50%');
+  const setPairs = (pairs) => set({ banner_slots: pairs.map(p => p.src), banner_focal: pairs.map(p => p.focal) });
+  const pairs = slots.map((src, i) => ({ src, focal: focals[i] }));
+  const setSlots = (next) => setPairs(next.map((src, i) => ({ src, focal: src === slots[i] ? focals[i] : '50% 50%' })));
 
   async function uploadFiles(files) {
     setBusy(true);
@@ -344,25 +363,25 @@ function BannerEditor({ cfg, save, slots, lang, autoMonth, onClose }) {
       if (up && up.url) urls.push(up.url);
     }
     setBusy(false);
-    if (urls.length) setSlots([...slots.filter(Boolean), ...urls]);
+    if (urls.length) setPairs([...pairs.filter(p => p.src), ...urls.map(src => ({ src, focal: '50% 50%' }))]);
   }
   async function replaceSlot(i, files) {
     setBusy(true);
     const up = await window.uploadToStorage(files[0]);
     setBusy(false);
-    if (up && up.url) { const next = [...slots]; next[i] = up.url; setSlots(next); }
+    if (up && up.url) { const next = [...pairs]; next[i] = { src: up.url, focal: '50% 50%' }; setPairs(next); }
   }
   function moveSlot(i, dir) {
     const j = i + dir;
     if (j < 0 || j >= slots.length) return;
-    const next = [...slots];
+    const next = [...pairs];
     [next[i], next[j]] = [next[j], next[i]];
-    setSlots(next);
+    setPairs(next);
   }
   function addYt() {
     const url = ytUrl.trim();
     if (!url) return;
-    setSlots([...slots, url]);
+    setPairs([...pairs, { src: url, focal: '50% 50%' }]);
     setYtUrl('');
   }
 
@@ -415,12 +434,21 @@ function BannerEditor({ cfg, save, slots, lang, autoMonth, onClose }) {
                   {i > 0 && <button type="button" className="ed-tool" title={ru ? 'Левее' : 'Move left'} onClick={(e) => { e.stopPropagation(); moveSlot(i, -1); }}>‹</button>}
                   {i < slots.length - 1 && <button type="button" className="ed-tool" title={ru ? 'Правее' : 'Move right'} onClick={(e) => { e.stopPropagation(); moveSlot(i, 1); }}>›</button>}
                 </>}
-                onDelete={() => setSlots(slots.filter((_, idx) => idx !== i))}
+                onDelete={() => setPairs(pairs.filter((_, idx) => idx !== i))}
                 deleteText={ru ? `Убрать слайд №${i + 1} из баннера?` : 'Remove this slide?'} />
-              <EdThumb src={slot} />
+              {slot && edMediaKind(slot) !== 'video' ? (
+                <button type="button" className="ed-thumb-btn" onClick={() => setPvSlot(i)} title={ru ? 'Выбрать, что видно в баннере' : 'Pick visible area'}>
+                  <EdThumb src={slot} focal={focals[i]} />
+                  <span className="ed-thumb-hint"><EdIcon name="target" size={11} /> {ru ? 'кадр' : 'area'}</span>
+                </button>
+              ) : <EdThumb src={slot} />}
               <div className="ed-media-foot">
                 <EdDropzone compact onFiles={(f) => replaceSlot(i, f)} busy={busy}
                   label={slot ? (ru ? 'Заменить' : 'Replace') : (ru ? 'Загрузить' : 'Upload')} />
+                {slot && edMediaKind(slot) !== 'video' && edMediaKind(slot) !== 'youtube' && (
+                  <button type="button" className="ed-btn ed-btn--ghost ed-btn--sm ed-btn--icon" onClick={() => setPvSlot(i)}
+                    title={ru ? 'Кадр' : 'Area'}><EdIcon name="target" size={13} /></button>
+                )}
               </div>
             </div>
           ))}
@@ -436,6 +464,15 @@ function BannerEditor({ cfg, save, slots, lang, autoMonth, onClose }) {
           <button className="ed-btn" onClick={addYt} disabled={!ytUrl.trim()}><EdIcon name="plus" size={14} /> {ru ? 'Добавить' : 'Add'}</button>
         </div>
       </EdSection>
+      {pvSlot !== null && slots[pvSlot] && (
+        <PreviewEditor
+          src={edMediaKind(slots[pvSlot]) === 'youtube' ? `https://img.youtube.com/vi/${ytIdFrom(slots[pvSlot])}/hqdefault.jpg` : slots[pvSlot]}
+          focal={focals[pvSlot]}
+          shapes={bannerPreviewShapes()}
+          title={ru ? `Слайд №${pvSlot + 1}: что видно в баннере` : `Slide #${pvSlot + 1}`}
+          onSave={(v) => { const next = [...pairs]; next[pvSlot] = { ...next[pvSlot], focal: v }; setPairs(next); }}
+          onClose={() => setPvSlot(null)} />
+      )}
     </EditorModal>
   );
 }
@@ -467,164 +504,6 @@ function detectMedia(url) {
 }
 function ytIdFrom(url) {
   return (String(url).match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]+)/) || [])[1];
-}
-
-// ── Focal point picker: click image → sets center point ──
-// ── Focal point picker: drag the frame, preview = exactly what the tile shows ──
-function FocalPicker({ src, focal, onChange }) {
-  function parseFocal(f) {
-    if (!f) return { x: 50, y: 50 };
-    const p = String(f).replace(/%/g, '').trim().split(/\s+/);
-    const x = parseFloat(p[0]), y = parseFloat(p[1]);
-    return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y };
-  }
-
-  const [pos, setPos] = homeState(() => parseFocal(focal));
-  const [ratio, setRatio] = homeState(0.487);      // tile w/h — measured from the real tile
-  const [imgRatio, setImgRatio] = homeState(null); // natural w/h of the picture
-
-  const imgWrapRef = homeRef(null);
-  const frameRef = homeRef(null);
-  const previewRef = homeRef(null);
-  const posRef = homeRef(pos);
-  const draggingRef = homeRef(false);
-
-  // Measure the real tile on screen so the preview matches 1:1
-  homeEffect(() => {
-    const tile = document.querySelector('.recent-tile');
-    if (tile) {
-      const r = tile.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) setRatio(r.width / r.height);
-    }
-  }, []);
-
-  // The crop rectangle the tile actually shows, in % of the image (background-size:cover math)
-  function cropBox() {
-    if (!imgRatio) return { w: 45, h: 92 };
-    if (imgRatio > ratio) {
-      // image wider than tile → full height used, width cropped
-      return { w: (ratio / imgRatio) * 100, h: 100 };
-    }
-    // image taller than tile → full width used, height cropped
-    return { w: 100, h: (imgRatio / ratio) * 100 };
-  }
-
-  // Paint frame + preview straight to the DOM (no React re-render → no lag)
-  function paint(x, y) {
-    const box = cropBox();
-    const left = Math.max(0, Math.min(100 - box.w, x - box.w / 2));
-    const top = Math.max(0, Math.min(100 - box.h, y - box.h / 2));
-    if (frameRef.current) {
-      frameRef.current.style.left = left + '%';
-      frameRef.current.style.top = top + '%';
-      frameRef.current.style.width = box.w + '%';
-      frameRef.current.style.height = box.h + '%';
-    }
-    if (previewRef.current) previewRef.current.style.backgroundPosition = x + '% ' + y + '%';
-  }
-
-  homeEffect(() => { paint(pos.x, pos.y); }, [imgRatio, ratio]);
-
-  function pointFromEvent(e) {
-    const el = imgWrapRef.current;
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return {
-      x: Math.max(0, Math.min(100, (src.clientX - r.left) / r.width * 100)),
-      y: Math.max(0, Math.min(100, (src.clientY - r.top) / r.height * 100)),
-    };
-  }
-
-  function moveTo(e) {
-    const p = pointFromEvent(e);
-    if (!p) return;
-    posRef.current = p;
-    paint(p.x, p.y); // instant, DOM-only
-  }
-
-  function commit() {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    const p = posRef.current;
-    const x = Math.round(p.x), y = Math.round(p.y);
-    setPos({ x, y });        // one re-render at the very end
-    onChange(x + '% ' + y + '%');
-  }
-
-  function onDown(e) {
-    draggingRef.current = true;
-    moveTo(e);
-    e.preventDefault();
-  }
-
-  // Track drag beyond the image bounds too
-  homeEffect(() => {
-    function onMove(e) { if (draggingRef.current) moveTo(e); }
-    function onUp() { commit(); }
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchmove', onMove, { passive: false });
-    window.addEventListener('touchend', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('touchmove', onMove);
-      window.removeEventListener('touchend', onUp);
-    };
-  }, [imgRatio, ratio]);
-
-  const box = cropBox();
-  const initLeft = Math.max(0, Math.min(100 - box.w, pos.x - box.w / 2));
-  const initTop = Math.max(0, Math.min(100 - box.h, pos.y - box.h / 2));
-
-  return (
-    <div style={{ marginTop: 8 }}>
-      <div style={{ fontSize: 11, color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
-        Перетащи рамку — справа видно как будет в плашке
-      </div>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        {/* Image with draggable crop frame */}
-        <div ref={imgWrapRef}
-          style={{ flex: '1 1 0', position: 'relative', borderRadius: 8, overflow: 'hidden',
-                   cursor: 'grab', lineHeight: 0, userSelect: 'none', touchAction: 'none' }}
-          onMouseDown={onDown} onTouchStart={onDown}>
-          <img src={src} alt=""
-            onLoad={e => {
-              const n = e.target;
-              if (n.naturalWidth && n.naturalHeight) setImgRatio(n.naturalWidth / n.naturalHeight);
-            }}
-            style={{ width: '100%', display: 'block', maxHeight: 190, objectFit: 'contain', background: '#111' }} />
-          {/* Crop frame — dark outside, clear inside */}
-          <div ref={frameRef} style={{
-            position: 'absolute',
-            left: initLeft + '%', top: initTop + '%',
-            width: box.w + '%', height: box.h + '%',
-            border: '2px solid var(--accent)',
-            borderRadius: 4, pointerEvents: 'none',
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)',
-          }} />
-        </div>
-
-        {/* Live preview — identical CSS to the real tile */}
-        <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center' }}>
-          <span style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>в плашке</span>
-          <div ref={previewRef} style={{
-            width: Math.round(190 * ratio), height: 190,
-            borderRadius: 14, border: '1px solid var(--line)',
-            backgroundImage: 'url(' + src + ')',
-            backgroundSize: 'cover',
-            backgroundPosition: pos.x + '% ' + pos.y + '%',
-            backgroundColor: '#111',
-          }} />
-          <button type="button" className="ed-btn ed-btn--ghost ed-btn--sm"
-            onClick={() => { posRef.current = { x: 50, y: 50 }; paint(50, 50); setPos({ x: 50, y: 50 }); onChange('50% 50%'); }}>
-            <EdIcon name="center" size={13} /> по центру
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ── Single media layer inside tile ──
@@ -797,7 +676,7 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
     focal: [...(tile.focal || [])],
   }));
   const [urlInput, setUrlInput] = homeState('');
-  const [focalSlot, setFocalSlot] = homeState(null); // index of slot being edited
+  const [focalSlot, setFocalSlot] = homeState(null); // какая работа открыта в окне превью
   const [busy, setBusy] = homeState(false);
 
   // Autosave: keep refs fresh so a flush never writes with a stale closure
@@ -893,14 +772,19 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
                   </>}
                   onDelete={() => removeSlot(i)}
                   deleteText={ru ? `Убрать работу №${i + 1} с плашки?` : 'Remove this item?'} />
-                <EdThumb src={s} focal={type !== 'video' ? focal : undefined} />
+                {type !== 'video' ? (
+                  <button type="button" className="ed-thumb-btn" onClick={() => setFocalSlot(i)} title={ru ? 'Выбрать, что видно в плашке' : 'Pick visible area'}>
+                    <EdThumb src={s} focal={focal} />
+                    <span className="ed-thumb-hint"><EdIcon name="target" size={11} /> {ru ? 'кадр' : 'area'}</span>
+                  </button>
+                ) : <EdThumb src={s} />}
                 <div className="ed-media-foot">
                   <span className="ed-mono ed-ellipsis" title={s}>{type === 'video' ? (ru ? 'видео' : 'video') : type === 'gif' ? 'GIF' : (ru ? 'картинка' : 'image')}</span>
                   {type !== 'video' && (
-                    <button type="button" className={`ed-btn ed-btn--sm ${isEditing ? 'ed-btn--accent' : 'ed-btn--ghost'}`}
-                      onClick={() => setFocalSlot(isEditing ? null : i)} title={ru ? 'Выбрать кадр' : 'Pick area'}>
-                      <EdIcon name={isEditing ? 'check' : 'target'} size={13} />
-                      <span>{isEditing ? (ru ? 'Готово' : 'Done') : (ru ? 'Кадр' : 'Area')}</span>
+                    <button type="button" className="ed-btn ed-btn--sm ed-btn--ghost"
+                      onClick={() => setFocalSlot(i)} title={ru ? 'Выбрать кадр' : 'Pick area'}>
+                      <EdIcon name="target" size={13} />
+                      <span>{ru ? 'Кадр' : 'Area'}</span>
                     </button>
                   )}
                 </div>
@@ -913,16 +797,13 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
         </div>
 
         {focalSlot !== null && slots[focalSlot] && detectMedia(slots[focalSlot]) !== 'video' && (
-          <div className="ed-panel" style={{ marginTop: 14 }}>
-            <div className="ed-row ed-row--between" style={{ marginBottom: 4 }}>
-              <span className="ed-section-title">{ru ? `Кадр для работы №${focalSlot + 1}` : `Area for #${focalSlot + 1}`}</span>
-              <button type="button" className="ed-icon-btn" style={{ width: 30, height: 30 }} onClick={() => setFocalSlot(null)} aria-label={ru ? 'Закрыть' : 'Close'}>
-                <EdIcon name="close" size={14} />
-              </button>
-            </div>
-            <FocalPicker key={focalSlot} src={slots[focalSlot]} focal={(draft.focal || [])[focalSlot] || '50% 50%'}
-              onChange={val => setFocal(focalSlot, val)} />
-          </div>
+          <PreviewEditor
+            src={slots[focalSlot]}
+            focal={(draft.focal || [])[focalSlot] || '50% 50%'}
+            shapes={tilePreviewShapes()}
+            title={ru ? `Работа №${focalSlot + 1}: что видно в плашке` : `Item #${focalSlot + 1}`}
+            onSave={val => setFocal(focalSlot, val)}
+            onClose={() => setFocalSlot(null)} />
         )}
 
         <div className="ed-row" style={{ marginTop: 12 }}>

@@ -406,6 +406,185 @@ function EdThumb({ src, className, style, focal }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  Редактор превью — отдельное окно «какую часть картинки показывать»
+//  Картинка показана целиком, сверху рамка той формы, в какую её обрежет
+//  карточка. Рамку двигают мышкой/пальцем или стрелками; справа живой
+//  предпросмотр в настоящих пропорциях (на компьютере и на телефоне).
+//  Значение — как у CSS background-position: «x% y%».
+// ════════════════════════════════════════════════════════════════════
+function edParseFocal(f) {
+  if (!f || f === 'center') return { x: 50, y: 50 };
+  const p = String(f).replace(/%/g, '').trim().split(/\s+/);
+  const x = parseFloat(p[0]), y = parseFloat(p[1]);
+  return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y };
+}
+const edClamp = (v) => Math.max(0, Math.min(100, v));
+
+// Какую долю картинки видно в карточке с пропорцией ratio (ширина/высота),
+// если картинка растянута «cover». Возвращает доли 0..1.
+function edCropBox(imgRatio, ratio) {
+  if (!imgRatio || !ratio) return { w: 1, h: 1 };
+  if (imgRatio > ratio) return { w: ratio / imgRatio, h: 1 };
+  return { w: 1, h: imgRatio / ratio };
+}
+
+// Измерить настоящую карточку на странице; если её не видно — запасное значение.
+function edMeasureRatio(selector, fallback) {
+  try {
+    const el = document.querySelector(selector);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 20 && r.height > 20) return r.width / r.height;
+    }
+  } catch (e) {}
+  return fallback;
+}
+
+const ED_PRESETS = [
+  [0, 0], [50, 0], [100, 0],
+  [0, 50], [50, 50], [100, 50],
+  [0, 100], [50, 100], [100, 100],
+];
+
+function PreviewEditor({ src, focal, shapes, title, subtitle, onSave, onClose }) {
+  const [pos, setPos] = useState(() => edParseFocal(focal));
+  const [imgRatio, setImgRatio] = useState(null);
+  const [active, setActive] = useState(0);
+  const stageRef = useRef(null);
+  const dragRef = useRef(null);
+
+  const shape = shapes[active] || shapes[0];
+  const box = edCropBox(imgRatio, shape.ratio);
+  const frame = {
+    left: (1 - box.w) * pos.x,
+    top: (1 - box.h) * pos.y,
+    width: box.w * 100,
+    height: box.h * 100,
+  };
+  const value = `${Math.round(pos.x)}% ${Math.round(pos.y)}%`;
+  const changed = value !== `${Math.round(edParseFocal(focal).x)}% ${Math.round(edParseFocal(focal).y)}%`;
+
+  // Точка под пальцем — центр рамки. Переводим в background-position.
+  function posFromPointer(e, grab) {
+    const el = stageRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const cx = (e.clientX - r.left) / r.width - (grab ? grab.dx : 0);
+    const cy = (e.clientY - r.top) / r.height - (grab ? grab.dy : 0);
+    setPos(p => ({
+      x: box.w < 1 ? edClamp(((cx - box.w / 2) / (1 - box.w)) * 100) : p.x,
+      y: box.h < 1 ? edClamp(((cy - box.h / 2) / (1 - box.h)) * 100) : p.y,
+    }));
+  }
+
+  function onPointerDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    const el = stageRef.current;
+    if (!el) return;
+    e.preventDefault();
+    el.setPointerCapture?.(e.pointerId);
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    // Схватили внутри рамки — тянем её за это место; снаружи — рамка прыгает сюда.
+    const fx = frame.left / 100, fy = frame.top / 100;
+    const inside = px >= fx && px <= fx + box.w && py >= fy && py <= fy + box.h;
+    const grab = inside ? { dx: px - (fx + box.w / 2), dy: py - (fy + box.h / 2) } : null;
+    dragRef.current = { grab };
+    posFromPointer(e, grab);
+  }
+  function onPointerMove(e) {
+    if (!dragRef.current) return;
+    posFromPointer(e, dragRef.current.grab);
+  }
+  function onPointerUp() { dragRef.current = null; }
+
+  function onKey(e) {
+    const step = e.shiftKey ? 5 : 1;
+    const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    const m = moves[e.key];
+    if (!m) return;
+    e.preventDefault();
+    setPos(p => ({ x: edClamp(p.x + m[0]), y: edClamp(p.y + m[1]) }));
+  }
+
+  const lockedX = imgRatio && box.w >= 0.999;
+  const lockedY = imgRatio && box.h >= 0.999;
+
+  return (
+    <EditorModal onClose={onClose} size="xl" className="ed-pv"
+      eyebrow="превью" title={title || 'Что показывать в карточке'}
+      subtitle={subtitle || 'Перетащи рамку или нажми туда, что должно быть в центре. Стрелки на клавиатуре — точная подстройка (с Shift — шагом крупнее).'}
+      footer={<>
+        <span className="ed-foot-hint">{lockedX && lockedY ? 'Картинка помещается целиком — двигать нечего' : `Сдвиг: ${value}`}</span>
+        <button type="button" className="ed-btn ed-btn--ghost" onClick={onClose}>Отмена</button>
+        <button type="button" className="ed-btn ed-btn--primary" onClick={() => { onSave(value); onClose(); }} disabled={!changed}>
+          <EdIcon name="check" size={15} /> Сохранить
+        </button>
+      </>}>
+      <div className="ed-pv-layout">
+        <div className="ed-pv-main">
+          {shapes.length > 1 && (
+            <div className="ed-pv-shape">
+              <span className="ed-label">Рамка по форме</span>
+              <EdSegment size="sm" value={active} onChange={setActive}
+                options={shapes.map((s, i) => ({ value: i, label: s.label }))} />
+            </div>
+          )}
+          <div className="ed-pv-stage-wrap">
+            <div ref={stageRef} className="ed-pv-stage" tabIndex={0} onKeyDown={onKey}
+              onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+              <img src={src} alt="" draggable={false}
+                onLoad={e => { const n = e.currentTarget; if (n.naturalWidth && n.naturalHeight) setImgRatio(n.naturalWidth / n.naturalHeight); }} />
+              {imgRatio && (
+                <div className="ed-pv-frame" style={{ left: frame.left + '%', top: frame.top + '%', width: frame.width + '%', height: frame.height + '%' }}>
+                  <span className="ed-pv-grid" />
+                  <span className="ed-pv-frame-label">{shape.label}</span>
+                </div>
+              )}
+              {!imgRatio && <span className="ed-spinner" style={{ position: 'absolute', left: '50%', top: '50%' }} />}
+            </div>
+          </div>
+        </div>
+
+        <aside className="ed-pv-side">
+          <div className="ed-section-title" style={{ marginBottom: 10 }}>Как увидят зрители</div>
+          <div className="ed-pv-previews">
+            {shapes.map((s, i) => (
+              <button key={i} type="button" className={`ed-pv-preview ${i === active ? 'on' : ''}`} onClick={() => setActive(i)}>
+                <span className="ed-pv-preview-box"
+                  style={{
+                    aspectRatio: String(s.ratio),
+                    width: s.ratio >= 1 ? '100%' : Math.round(s.ratio * 100 * 1.15) + '%',
+                    backgroundImage: `url("${src}")`, backgroundPosition: value,
+                  }} />
+                <span className="ed-pv-preview-label">{s.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="ed-section-title" style={{ margin: '18px 0 10px' }}>Быстро</div>
+          <div className="ed-pv-presets" role="group" aria-label="Быстрый выбор">
+            {ED_PRESETS.map(([x, y]) => (
+              <button key={x + '-' + y} type="button"
+                className={Math.round(pos.x) === x && Math.round(pos.y) === y ? 'on' : ''}
+                title={`${x}% ${y}%`}
+                onClick={() => setPos(p => ({ x: lockedX ? p.x : x, y: lockedY ? p.y : y }))}>
+                <span />
+              </button>
+            ))}
+          </div>
+          <button type="button" className="ed-btn ed-btn--ghost ed-btn--sm" style={{ marginTop: 12, width: '100%' }}
+            onClick={() => setPos({ x: 50, y: 50 })}>
+            <EdIcon name="center" size={13} /> По центру
+          </button>
+        </aside>
+      </div>
+    </EditorModal>
+  );
+}
+
 // ──────────────── inline-редактируемое поле ────────────────
 // В режиме редактора текст подсвечивается при наведении; клик — поле ввода.
 // Enter — сохранить, Esc — отменить.
@@ -839,5 +1018,6 @@ Object.assign(window, {
   Editable, EditableNumber, Modal, FootOrnament, LoginModal, EditItemModal, ImageUploader, useDragReorder,
   EdIcon, EditorModal, EdField, EdSection, EdSegment, EdDropzone, ItemTools, DragHandle, EdThumb,
   EdDialogHost, askConfirm, askText, edNotice, edMediaKind,
+  PreviewEditor, edMeasureRatio,
 });
   

@@ -4954,3 +4954,93 @@ select {
   /* В режиме редактора слева место под ручку перетаскивания — ужимаем колонки, чтобы процент влез */
   .q-row:has(> .q-tools) { grid-template-columns: 30px 1fr 84px; }
 }
+
+/* ── Окно «Редактор превью» ── */
+.ed-modal--xl { max-width: 1120px; }
+.ed-pv .ed-modal-body { padding-top: 18px; }
+.ed-pv-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 22px; align-items: start; }
+.ed-pv-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ed-pv-shape { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ed-pv-stage-wrap {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 260px; padding: 16px; border-radius: 18px;
+  background:
+    repeating-conic-gradient(rgba(245, 232, 212, 0.035) 0 25%, transparent 0 50%) 0 0 / 22px 22px,
+    #0d0906;
+  border: 1px solid var(--line);
+}
+.ed-pv-stage {
+  position: relative; display: inline-block; max-width: 100%;
+  line-height: 0; overflow: hidden; border-radius: 8px;
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+  outline: none;
+}
+.ed-pv-stage:active { cursor: grabbing; }
+.ed-pv-stage:focus-visible { box-shadow: var(--ed-ring); }
+.ed-pv-stage img { display: block; max-width: 100%; max-height: min(50vh, 560px); width: auto; height: auto; pointer-events: none; }
+.ed-pv-frame {
+  position: absolute; pointer-events: none;
+  border: 2px solid var(--accent); border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(8, 5, 3, 0.62), 0 0 24px rgba(232, 169, 59, 0.35) inset;
+}
+.ed-pv-grid {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, transparent calc(33.33% - .5px), rgba(255, 246, 230, .35) calc(33.33% - .5px), rgba(255, 246, 230, .35) calc(33.33% + .5px), transparent calc(33.33% + .5px), transparent calc(66.66% - .5px), rgba(255, 246, 230, .35) calc(66.66% - .5px), rgba(255, 246, 230, .35) calc(66.66% + .5px), transparent calc(66.66% + .5px)),
+    linear-gradient(180deg, transparent calc(33.33% - .5px), rgba(255, 246, 230, .35) calc(33.33% - .5px), rgba(255, 246, 230, .35) calc(33.33% + .5px), transparent calc(33.33% + .5px), transparent calc(66.66% - .5px), rgba(255, 246, 230, .35) calc(66.66% - .5px), rgba(255, 246, 230, .35) calc(66.66% + .5px), transparent calc(66.66% + .5px));
+}
+.ed-pv-frame-label {
+  position: absolute; left: 6px; top: 6px; line-height: 1;
+  padding: 4px 8px; border-radius: 6px;
+  background: var(--accent); color: #15100a;
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+}
+.ed-pv-side { position: sticky; top: 0; }
+.ed-pv-previews { display: flex; gap: 12px; align-items: flex-end; }
+.ed-pv-preview {
+  appearance: none; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 10px; border-radius: 14px; cursor: pointer;
+  background: var(--ed-field); border: 1px solid var(--line);
+  color: var(--text-muted); transition: all .15s;
+}
+.ed-pv-preview:hover { border-color: var(--line-strong); }
+.ed-pv-preview.on { border-color: var(--accent); box-shadow: var(--ed-ring); color: var(--accent); }
+.ed-pv-preview-box {
+  display: block; max-width: 100%; max-height: 260px;
+  border-radius: 12px; background-color: #111; background-size: cover; background-repeat: no-repeat;
+  border: 1px solid var(--line-strong);
+  transition: background-position .08s linear;
+}
+.ed-pv-preview-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.ed-pv-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 6px; border-radius: 14px; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--line); }
+.ed-pv-presets button {
+  appearance: none; aspect-ratio: 1.6; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(245, 232, 212, 0.04); border: 1px solid transparent; transition: all .15s;
+}
+.ed-pv-presets button span { width: 7px; height: 7px; border-radius: 50%; background: rgba(245, 232, 212, 0.3); }
+.ed-pv-presets button:hover { background: rgba(232, 169, 59, 0.1); }
+.ed-pv-presets button:hover span { background: var(--accent); }
+.ed-pv-presets button.on { border-color: var(--accent); background: rgba(232, 169, 59, 0.14); }
+.ed-pv-presets button.on span { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+/* Превью в карточке медиа можно нажать — откроется окно превью */
+.ed-thumb-btn { appearance: none; padding: 0; border: 0; background: none; cursor: zoom-in; display: block; width: 100%; position: relative; }
+.ed-thumb-btn:hover .ed-thumb img { transform: scale(1.03); }
+.ed-thumb img { transition: transform .25s ease; }
+.ed-thumb-hint {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  padding: 4px 9px; border-radius: 999px; opacity: 0; transition: opacity .15s;
+  background: rgba(10, 7, 4, 0.8); color: var(--accent-soft); backdrop-filter: blur(4px);
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+}
+.ed-thumb-btn:hover .ed-thumb-hint, .ed-thumb-btn:focus-visible .ed-thumb-hint { opacity: 1; }
+@media (hover: none) { .ed-thumb-hint { opacity: 1; } }
+@media (max-width: 860px) {
+  .ed-pv-layout { grid-template-columns: 1fr; }
+  .ed-pv-side { position: static; }
+  .ed-pv-stage-wrap { min-height: 220px; padding: 10px; }
+  .ed-pv-stage img { max-height: 46vh; }
+  .ed-pv-preview-box { max-height: 180px; }
+}
