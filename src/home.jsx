@@ -142,19 +142,22 @@ function HeroSocials({ links, admin, linksRes, lang }) {
   const [chooseLink, setChooseLink] = homeState(null); // ссылка с двумя каналами → меню выбора
 
   const linkFields = React.useMemo(() => [
-    { key: 'label', label: lang === 'ru' ? 'Название' : 'Label', type: 'text', required: true, default: '' },
-    { key: 'handle', label: 'Handle / @', type: 'text', default: '' },
-    { key: 'url', label: 'URL', type: 'text', required: true, default: 'https://' },
+    { key: 'label', label: lang === 'ru' ? 'Название' : 'Label', type: 'text', required: true, default: '', half: true, placeholder: 'Telegram' },
+    { key: 'handle', label: lang === 'ru' ? 'Ник / @' : 'Handle / @', type: 'text', default: '', half: true, placeholder: '@milaria' },
+    { key: 'url', label: lang === 'ru' ? 'Ссылка' : 'URL', type: 'text', required: true, default: 'https://' },
     // Иконка по умолчанию определяется по ссылке автоматически; выбор здесь —
     // только если хочется переопределить вручную.
     { key: 'icon', label: lang === 'ru' ? 'Иконка' : 'Icon', type: 'select', default: '',
+      hint: lang === 'ru' ? 'Обычно определяется по ссылке сама — выбирай, только если хочется другую.' : 'Detected from the URL automatically.',
       options: [{ value: '', label: lang === 'ru' ? 'Авто (по ссылке)' : 'Auto (by URL)' }]
         .concat(SOCIAL_ICON_OPTIONS.map(k => ({ value: k, label: SOCIAL_ICONS[k].label }))) },
     // Два канала на одной иконке: если заполнить — клик открывает меню выбора.
     // Название первого варианта берётся из «Название» выше, ссылка — из «URL».
     // Второй канал: если заполнить, клик по иконке откроет меню выбора.
-    { key: 'label2', label: lang === 'ru' ? '2-й канал: название' : '2nd: name', type: 'text', default: '' },
-    { key: 'url2', label: lang === 'ru' ? '2-й канал: ссылка' : '2nd: URL', type: 'text', default: '' },
+    { key: 'label2', label: lang === 'ru' ? 'Название' : 'Name', type: 'text', default: '', half: true,
+      group: lang === 'ru' ? 'Второй канал — необязательно' : 'Second channel — optional' },
+    { key: 'url2', label: lang === 'ru' ? 'Ссылка' : 'URL', type: 'text', default: '', half: true,
+      hint: lang === 'ru' ? 'Если заполнить, клик по иконке откроет меню выбора из двух каналов.' : 'If set, the icon opens a chooser.' },
   ], [lang]);
 
   function handleSave(draft) {
@@ -185,20 +188,18 @@ function HeroSocials({ links, admin, linksRes, lang }) {
              }}>
             <span className="hero-soc-h-icon"><SocialGlyph name={iconName} /></span>
             {admin && (
-              <span className="hero-soc-admin">
-                <button className="admin-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditLink({ item: l, isNew: false }); }}>✎</button>
-                <button className="admin-btn danger" onClick={(e) => { e.preventDefault(); e.stopPropagation(); linksRes.remove(l.id); }}>×</button>
-              </span>
+              <ItemTools size="sm" className="hero-soc-tools"
+                onEdit={() => setEditLink({ item: l, isNew: false })}
+                onDelete={() => linksRes.remove(l.id)}
+                deleteText={`Удалить ссылку «${l.label}»?`} />
             )}
           </a>);
       })}
       {admin && (
-        <button className="hero-soc-h" style={{ cursor: 'pointer', border: '1px dashed rgba(255,255,255,0.15)' }}
+        <button className="hero-soc-h hero-soc-add" title={lang === 'ru' ? 'Добавить ссылку' : 'Add link'}
           onClick={() => setEditLink({ item: null, isNew: true })}>
-          <span className="hero-soc-h-icon" style={{ fontSize: 18, lineHeight: 1 }}>+</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em' }}>
-            {lang === 'ru' ? 'Добавить' : 'Add'}
-          </span>
+          <span className="hero-soc-h-icon"><EdIcon name="plus" size={16} /></span>
+          <span className="hero-soc-add-text">{lang === 'ru' ? 'Добавить' : 'Add'}</span>
         </button>
       )}
 
@@ -314,127 +315,129 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
         </button>
         <span className="banner-deco">✦ ✦ ✦</span>
         {admin && (
-          <button className="admin-btn" style={{ position: 'absolute', top: 8, right: 8 }}
-            onClick={() => setBannerEdit(true)}>✎</button>
+          <button className="ed-btn ed-btn--accent ed-btn--sm" style={{ position: 'absolute', top: 12, right: 12 }}
+            onClick={() => setBannerEdit(true)}><EdIcon name="edit" size={13} /> {lang === 'ru' ? 'Изменить' : 'Edit'}</button>
         )}
       </div>
       {admin && editBanner && (
-        <Modal open={true} onClose={() => setBannerEdit(false)}>
-          <div style={{ maxWidth: 520, minWidth: 320 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8 }}>✦ баннер</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 32, margin: '0 0 20px', fontWeight: 500 }}>
-              {lang === 'ru' ? 'Настройки баннера' : 'Banner settings'}
-            </h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <label className="login-field">
-                <span>Месяц — рус. (напр. Май)</span>
-                <input type="text" value={bannerCfg.banner_month || ''} onChange={e => {
-                  const upd = {...bannerCfg, banner_month: e.target.value};
-                  saveBannerCfg(upd);
-                }} />
-              </label>
-
-              <label className="login-field">
-                <span>Month — eng. (e.g. May)</span>
-                <input type="text" value={bannerCfg.banner_month_en || ''} placeholder="May" onChange={e => {
-                  const upd = {...bannerCfg, banner_month_en: e.target.value};
-                  saveBannerCfg(upd);
-                }} />
-              </label>
-
-              <label className="login-field">
-                <span>{lang === 'ru' ? 'Статус' : 'Status'}</span>
-                <select value={bannerCfg.banner_status || 'open'} onChange={e => {
-                  const upd = {...bannerCfg, banner_status: e.target.value};
-                  saveBannerCfg(upd);
-                }}>
-                  <option value="open">{lang === 'ru' ? '🟢 Открыты' : '🟢 Open'}</option>
-                  <option value="closed">{lang === 'ru' ? '🔴 Закрыты' : '🔴 Closed'}</option>
-                  <option value="waitlist">{lang === 'ru' ? '🟡 Лист ожидания' : '🟡 Waitlist'}</option>
-                </select>
-              </label>
-
-              <label className="login-field">
-                <span>YouTube (URL)</span>
-                <input type="text" value={bannerCfg.banner_video || ''} placeholder="https://youtube.com/watch?v=..." onChange={e => {
-                  const upd = {...bannerCfg, banner_video: e.target.value};
-                  saveBannerCfg(upd);
-                }} />
-              </label>
-
-              <div>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
-                  {lang === 'ru' ? `Слоты баннера (${bannerSlots.length}) — картинка или YouTube` : `Banner slots (${bannerSlots.length}) — image or YouTube`}
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {bannerSlots.map((slot, i) => {
-                    const slotYT = slot && (slot.includes('youtube.com') || slot.includes('youtu.be'))
-                      ? slot.match(/(?:v=|youtu\.be\/|embed\/)([\w-]+)/)?.[1] : null;
-                    const thumb = slotYT ? `https://img.youtube.com/vi/${slotYT}/mqdefault.jpg` : slot;
-                    return (
-                      <div key={i} style={{
-                        position: 'relative', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden',
-                        background: slot ? 'none' : `linear-gradient(135deg, hsl(${30+i*18},50%,30%), hsl(${48+i*18},45%,20%))`,
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}>
-                        {thumb && <img src={thumb} style={{ width:'100%',height:'100%',objectFit:'cover' }} alt="" />}
-                        <div style={{ position:'absolute',top:4,left:4,fontFamily:'var(--font-mono)',fontSize:10,color:'rgba(255,255,255,.5)' }}>#{i+1}</div>
-                        <div style={{ position:'absolute',bottom:4,right:4,display:'flex',gap:3 }}>
-                          <ImageUploader label="📷" onUpload={(url) => {
-                            const slots = [...bannerSlots]; slots[i] = url;
-                            const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd);
-                          }} />
-                          {slot && <button className="admin-btn danger" style={{width:24,height:24,fontSize:11}} onClick={() => {
-                            const slots = bannerSlots.filter((_, idx) => idx !== i);
-                            const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd);
-                          }}>×</button>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {/* Add new slot card */}
-                  <button onClick={() => {
-                    const slots = [...bannerSlots, ''];
-                    const upd = {...bannerCfg, banner_slots: slots};
-                    saveBannerCfg(upd);
-                  }} style={{
-                    aspectRatio: '16/9', borderRadius: 8,
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1.5px dashed rgba(255,255,255,0.18)',
-                    color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)', fontSize: 14,
-                  }}>+ {lang === 'ru' ? 'Добавить слот' : 'Add slot'}</button>
-                </div>
-                <label className="login-field" style={{ marginTop: 8 }}>
-                  <span>{lang === 'ru' ? 'Вставить YouTube URL → создаст новый слот' : 'Paste YouTube URL → creates new slot'}</span>
-                  <div style={{ display:'flex', gap:6 }}>
-                    <input type="text" placeholder="https://youtube.com/watch?v=..." style={{flex:1}} id="yt-new-url" />
-                    <button className="btn btn-primary" style={{fontSize:12,padding:'6px 14px'}} onClick={() => {
-                      const url = document.getElementById('yt-new-url').value.trim();
-                      if (url) {
-                        const slots = [...bannerSlots, url];
-                        const upd = {...bannerCfg, banner_slots: slots};
-                        saveBannerCfg(upd);
-                        document.getElementById('yt-new-url').value = '';
-                      }
-                    }}>+ {lang === 'ru' ? 'Добавить' : 'Add'}</button>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <button className="btn btn-primary" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}
-              onClick={() => setBannerEdit(false)}>
-              {lang === 'ru' ? 'Готово' : 'Done'}
-            </button>
-          </div>
-        </Modal>
+        <BannerEditor cfg={bannerCfg} save={saveBannerCfg} slots={bannerSlots} lang={lang}
+          autoMonth={autoMonth} onClose={() => setBannerEdit(false)} />
       )}
     </div>);
 
+}
+
+// ── Редактор баннера «Открыты заказы на …» ──
+// Каждое изменение сохраняется сразу, как и раньше; «Готово» просто закрывает окно.
+function BannerEditor({ cfg, save, slots, lang, autoMonth, onClose }) {
+  const ru = lang === 'ru';
+  const [ytUrl, setYtUrl] = homeState('');
+  const [busy, setBusy] = homeState(false);
+  const set = (patch) => save({ ...cfg, ...patch });
+  const setSlots = (next) => set({ banner_slots: next });
+
+  async function uploadFiles(files) {
+    setBusy(true);
+    const urls = [];
+    for (const f of files) {
+      const up = await window.uploadToStorage(f);
+      if (up && up.url) urls.push(up.url);
+    }
+    setBusy(false);
+    if (urls.length) setSlots([...slots.filter(Boolean), ...urls]);
+  }
+  async function replaceSlot(i, files) {
+    setBusy(true);
+    const up = await window.uploadToStorage(files[0]);
+    setBusy(false);
+    if (up && up.url) { const next = [...slots]; next[i] = up.url; setSlots(next); }
+  }
+  function moveSlot(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= slots.length) return;
+    const next = [...slots];
+    [next[i], next[j]] = [next[j], next[i]];
+    setSlots(next);
+  }
+  function addYt() {
+    const url = ytUrl.trim();
+    if (!url) return;
+    setSlots([...slots, url]);
+    setYtUrl('');
+  }
+
+  const statusOptions = [
+    { value: 'open', label: ru ? 'Открыты' : 'Open', dot: '#4ade80' },
+    { value: 'waitlist', label: ru ? 'Лист ожидания' : 'Waitlist', dot: '#eab308' },
+    { value: 'closed', label: ru ? 'Закрыты' : 'Closed', dot: '#ef4444' },
+  ];
+
+  return (
+    <EditorModal onClose={onClose} size="lg"
+      eyebrow={ru ? 'главная · баннер' : 'home · banner'}
+      title={ru ? 'Баннер заказов' : 'Commission banner'}
+      subtitle={ru ? 'Изменения сохраняются сразу — закрыть окно можно в любой момент.' : 'Changes save instantly.'}
+      footer={<>
+        <span className="ed-autosave">{ru ? 'Сохраняется автоматически' : 'Saved automatically'}</span>
+        <button className="ed-btn ed-btn--primary" onClick={onClose}><EdIcon name="check" size={15} /> {ru ? 'Готово' : 'Done'}</button>
+      </>}>
+
+      <EdSection title={ru ? 'Статус и месяц' : 'Status & month'}>
+        <div className="ed-form">
+          <EdField plain label={ru ? 'Статус заказов' : 'Status'}>
+            <EdSegment value={cfg.banner_status || 'open'} options={statusOptions}
+              onChange={v => set({ banner_status: v })} />
+          </EdField>
+          <EdField half label={ru ? 'Месяц по-русски' : 'Month (RU)'} hint={ru ? `Пусто — подставится текущий: «${autoMonth}»` : ''}>
+            <input className="ed-input" value={cfg.banner_month || ''} placeholder={ru ? 'Май' : 'May'}
+              onChange={e => set({ banner_month: e.target.value })} />
+          </EdField>
+          <EdField half label={ru ? 'Месяц по-английски' : 'Month (EN)'}>
+            <input className="ed-input" value={cfg.banner_month_en || ''} placeholder="May"
+              onChange={e => set({ banner_month_en: e.target.value })} />
+          </EdField>
+          <EdField label="YouTube" hint={ru ? 'Необязательно. Ссылка на ролик для баннера.' : 'Optional video link.'}>
+            <input className="ed-input" value={cfg.banner_video || ''} placeholder="https://youtube.com/watch?v=..."
+              onChange={e => set({ banner_video: e.target.value })} />
+          </EdField>
+        </div>
+      </EdSection>
+
+      <EdSection
+        title={<>{ru ? 'Слайды' : 'Slides'}<span className="ed-count">{slots.filter(Boolean).length}</span></>}
+        hint={ru ? 'Картинки сменяют друг друга при наведении на баннер. Порядок — стрелками.' : 'Images rotate on hover.'}>
+        <div className="ed-media-grid">
+          {slots.map((slot, i) => (
+            <div key={i} className="ed-media-card">
+              <span className="ed-media-num">{i + 1}</span>
+              <ItemTools size="sm"
+                extra={<>
+                  {i > 0 && <button type="button" className="ed-tool" title={ru ? 'Левее' : 'Move left'} onClick={(e) => { e.stopPropagation(); moveSlot(i, -1); }}>‹</button>}
+                  {i < slots.length - 1 && <button type="button" className="ed-tool" title={ru ? 'Правее' : 'Move right'} onClick={(e) => { e.stopPropagation(); moveSlot(i, 1); }}>›</button>}
+                </>}
+                onDelete={() => setSlots(slots.filter((_, idx) => idx !== i))}
+                deleteText={ru ? `Убрать слайд №${i + 1} из баннера?` : 'Remove this slide?'} />
+              <EdThumb src={slot} />
+              <div className="ed-media-foot">
+                <EdDropzone compact onFiles={(f) => replaceSlot(i, f)} busy={busy}
+                  label={slot ? (ru ? 'Заменить' : 'Replace') : (ru ? 'Загрузить' : 'Upload')} />
+              </div>
+            </div>
+          ))}
+          <EdDropzone className="ed-media-add" multiple onFiles={uploadFiles} busy={busy}
+            label={ru ? 'Добавить слайды' : 'Add slides'} hint={ru ? 'можно несколько сразу' : 'several at once'} />
+        </div>
+        <div className="ed-row" style={{ marginTop: 12 }}>
+          <div className="ed-input-wrap" style={{ flex: 1, minWidth: 220 }}>
+            <EdIcon name="video" size={14} />
+            <input className="ed-input ed-input--icon" value={ytUrl} placeholder={ru ? 'Или вставь ссылку на YouTube — станет слайдом' : 'Or paste a YouTube link'}
+              onChange={e => setYtUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addYt(); }} />
+          </div>
+          <button className="ed-btn" onClick={addYt} disabled={!ytUrl.trim()}><EdIcon name="plus" size={14} /> {ru ? 'Добавить' : 'Add'}</button>
+        </div>
+      </EdSection>
+    </EditorModal>
+  );
 }
 
 // ─── Recent Works: 4 editable tiles, each with multiple image slots ───
@@ -614,9 +617,9 @@ function FocalPicker({ src, focal, onChange }) {
             backgroundPosition: pos.x + '% ' + pos.y + '%',
             backgroundColor: '#111',
           }} />
-          <button className="admin-btn" style={{ fontSize: 10 }}
+          <button type="button" className="ed-btn ed-btn--ghost ed-btn--sm"
             onClick={() => { posRef.current = { x: 50, y: 50 }; paint(50, 50); setPos({ x: 50, y: 50 }); onChange('50% 50%'); }}>
-            ⟳ по центру
+            <EdIcon name="center" size={13} /> по центру
           </button>
         </div>
       </div>
@@ -787,6 +790,7 @@ function RecentTile({ tileData, lang, onClick }) {
 }
 
 function RecentTileEditor({ tile, onSave, onClose, lang }) {
+  const ru = lang === 'ru';
   const [draft, setDraft] = homeState(() => ({
     ...tile,
     slots: (tile.slots || []).map(localSupaUrl),
@@ -794,7 +798,7 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
   }));
   const [urlInput, setUrlInput] = homeState('');
   const [focalSlot, setFocalSlot] = homeState(null); // index of slot being edited
-  const fileRef = homeRef(null);
+  const [busy, setBusy] = homeState(false);
 
   // Autosave: keep refs fresh so a flush never writes with a stale closure
   const draftRef = homeRef(draft);   draftRef.current = draft;
@@ -827,6 +831,18 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
     });
     if (focalSlot === i) setFocalSlot(null);
   }
+  function moveSlot(i, dir) {
+    setDraft(d => {
+      const j = i + dir;
+      if (j < 0 || j >= d.slots.length) return d;
+      const slots = [...d.slots];
+      const focal = [...(d.focal || d.slots.map(() => '50% 50%'))];
+      [slots[i], slots[j]] = [slots[j], slots[i]];
+      [focal[i], focal[j]] = [focal[j], focal[i]];
+      return { ...d, slots, focal };
+    });
+    setFocalSlot(null);
+  }
   function setFocal(i, val) {
     setDraft(d => {
       const focal = [...(d.focal || d.slots.map(() => '50% 50%'))];
@@ -834,99 +850,92 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
       return { ...d, focal };
     });
   }
-  async function handleFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const up = await window.uploadToStorage(file);
-    if (up) {
-      setDraft(d => ({ ...d, slots: [...d.slots, up.url], focal: [...(d.focal || []), '50% 50%'] }));
+  async function handleFiles(files) {
+    setBusy(true);
+    for (const file of files) {
+      const up = await window.uploadToStorage(file);
+      if (up) {
+        setDraft(d => ({ ...d, slots: [...d.slots, up.url], focal: [...(d.focal || []), '50% 50%'] }));
+      }
     }
-    if (fileRef.current) fileRef.current.value = '';
+    setBusy(false);
   }
 
+  const slots = draft.slots || [];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <label className="login-field">
-          <span>Название (RU)</span>
-          <input value={draft.label || ''} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
-        </label>
-        <label className="login-field">
-          <span>Label (EN)</span>
-          <input value={draft.label_en || ''} onChange={e => setDraft(d => ({ ...d, label_en: e.target.value }))} />
-        </label>
+    <>
+      <EdSection title={ru ? 'Подпись на плашке' : 'Tile label'}>
+        <div className="ed-form">
+          <EdField half label={ru ? 'По-русски' : 'Russian'}>
+            <input className="ed-input" value={draft.label || ''} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
+          </EdField>
+          <EdField half label={ru ? 'По-английски' : 'English'}>
+            <input className="ed-input" value={draft.label_en || ''} onChange={e => setDraft(d => ({ ...d, label_en: e.target.value }))} />
+          </EdField>
+        </div>
+      </EdSection>
 
-        <div>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
-            {lang === 'ru' ? 'Медиафайлы — картинки, видео (mp4), гиф' : 'Media — images, video (mp4), gif'}
-          </span>
-
-          {/* Slot list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-            {(draft.slots || []).map((s, i) => {
-              const type = detectMedia(s);
-              const focal = (draft.focal || [])[i] || '50% 50%';
-              const isEditing = focalSlot === i;
-              return (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 8 }}>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    {type === 'video' ? (
-                      <div style={{ width: 48, height: 36, borderRadius: 4, background: '#111', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                        <span style={{ fontSize: 18 }}>🎬</span>
-                      </div>
-                    ) : type === 'gif' ? (
-                      <img src={s} style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 4 }} alt="" />
-                    ) : (
-                      <img src={s} style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 4 }} alt=""
-                        onError={e => e.target.style.display='none'} />
-                    )}
-                    <span style={{ flex: 1, fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {type === 'video' ? '🎬 ' : type === 'gif' ? '🎞 ' : ''}{s.split('/').pop().split('?')[0]}
-                    </span>
-                    {type !== 'video' && (
-                      <button className="admin-btn" style={{ fontSize: 11, whiteSpace: 'nowrap' }}
-                        onClick={() => setFocalSlot(isEditing ? null : i)}
-                        title="Выбрать кадр">
-                        {isEditing ? '✓' : '🎯'}
-                      </button>
-                    )}
-                    <button className="admin-btn danger" style={{ width: 24, height: 24, fontSize: 11, flexShrink: 0 }}
-                      onClick={() => removeSlot(i)}>×</button>
-                  </div>
-                  {/* Focal picker expanded */}
-                  {isEditing && type !== 'video' && (
-                    <FocalPicker src={s} focal={focal}
-                      onChange={val => setFocal(i, val)} />
+      <EdSection
+        title={<>{ru ? 'Работы на плашке' : 'Media'}<span className="ed-count">{slots.length}</span></>}
+        hint={ru ? 'Картинки, гифки и видео mp4 сменяют друг друга. У картинки можно выбрать кадр — какую часть показывать в узкой плашке.' : 'Images, GIFs and mp4 rotate. Pick the visible area of an image.'}>
+        <div className="ed-media-grid">
+          {slots.map((s, i) => {
+            const type = detectMedia(s);
+            const isEditing = focalSlot === i;
+            const focal = (draft.focal || [])[i] || '50% 50%';
+            return (
+              <div key={i} className={`ed-media-card ed-media-card--tall ${isEditing ? 'active' : ''}`}>
+                <span className="ed-media-num">{i + 1}</span>
+                <ItemTools size="sm"
+                  extra={<>
+                    {i > 0 && <button type="button" className="ed-tool" title={ru ? 'Раньше' : 'Earlier'} onClick={(e) => { e.stopPropagation(); moveSlot(i, -1); }}>‹</button>}
+                    {i < slots.length - 1 && <button type="button" className="ed-tool" title={ru ? 'Позже' : 'Later'} onClick={(e) => { e.stopPropagation(); moveSlot(i, 1); }}>›</button>}
+                  </>}
+                  onDelete={() => removeSlot(i)}
+                  deleteText={ru ? `Убрать работу №${i + 1} с плашки?` : 'Remove this item?'} />
+                <EdThumb src={s} focal={type !== 'video' ? focal : undefined} />
+                <div className="ed-media-foot">
+                  <span className="ed-mono ed-ellipsis" title={s}>{type === 'video' ? (ru ? 'видео' : 'video') : type === 'gif' ? 'GIF' : (ru ? 'картинка' : 'image')}</span>
+                  {type !== 'video' && (
+                    <button type="button" className={`ed-btn ed-btn--sm ${isEditing ? 'ed-btn--accent' : 'ed-btn--ghost'}`}
+                      onClick={() => setFocalSlot(isEditing ? null : i)} title={ru ? 'Выбрать кадр' : 'Pick area'}>
+                      <EdIcon name={isEditing ? 'check' : 'target'} size={13} />
+                      <span>{isEditing ? (ru ? 'Готово' : 'Done') : (ru ? 'Кадр' : 'Area')}</span>
+                    </button>
                   )}
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Add URL */}
-          <label className="login-field">
-            <span>+ {lang === 'ru' ? 'URL (картинка / mp4 / youtube)' : 'URL (image / mp4 / youtube)'}</span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addUrl()}
-                placeholder="https://..." style={{ flex: 1 }} />
-              <button className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px', flexShrink: 0 }} onClick={addUrl}>+</button>
-            </div>
-          </label>
-
-          {/* Upload file */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button className="btn" style={{ fontSize: 12 }} onClick={() => fileRef.current?.click()}>
-              📷 {lang === 'ru' ? 'Загрузить файл' : 'Upload file'}
-            </button>
-            <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm" style={{ display: 'none' }} onChange={handleFile} />
-          </div>
+              </div>
+            );
+          })}
+          <EdDropzone className="ed-media-add" multiple busy={busy} onFiles={handleFiles}
+            accept="image/*,video/mp4,video/webm"
+            label={ru ? 'Добавить работы' : 'Add media'} hint={ru ? 'картинки, гиф, mp4' : 'images, gif, mp4'} />
         </div>
 
-        <button className="btn btn-primary" style={{ marginTop: 6, justifyContent: 'center' }}
-          onClick={() => { onSaveRef.current(draftRef.current); dirtyRef.current = false; onClose(); }}>
-          {lang === 'ru' ? 'Готово' : 'Done'}
-        </button>
-    </div>
+        {focalSlot !== null && slots[focalSlot] && detectMedia(slots[focalSlot]) !== 'video' && (
+          <div className="ed-panel" style={{ marginTop: 14 }}>
+            <div className="ed-row ed-row--between" style={{ marginBottom: 4 }}>
+              <span className="ed-section-title">{ru ? `Кадр для работы №${focalSlot + 1}` : `Area for #${focalSlot + 1}`}</span>
+              <button type="button" className="ed-icon-btn" style={{ width: 30, height: 30 }} onClick={() => setFocalSlot(null)} aria-label={ru ? 'Закрыть' : 'Close'}>
+                <EdIcon name="close" size={14} />
+              </button>
+            </div>
+            <FocalPicker key={focalSlot} src={slots[focalSlot]} focal={(draft.focal || [])[focalSlot] || '50% 50%'}
+              onChange={val => setFocal(focalSlot, val)} />
+          </div>
+        )}
+
+        <div className="ed-row" style={{ marginTop: 12 }}>
+          <div className="ed-input-wrap" style={{ flex: 1, minWidth: 220 }}>
+            <EdIcon name="link" size={14} />
+            <input className="ed-input ed-input--icon" value={urlInput} onChange={e => setUrlInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addUrl()}
+              placeholder={ru ? 'Или вставь ссылку: картинка, mp4 или YouTube' : 'Or paste a link: image, mp4 or YouTube'} />
+          </div>
+          <button className="ed-btn" onClick={addUrl} disabled={!urlInput.trim()}><EdIcon name="plus" size={14} /> {ru ? 'Добавить' : 'Add'}</button>
+        </div>
+      </EdSection>
+    </>
   );
 }
 
@@ -935,6 +944,7 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
   const tiles = Array.isArray(tilesData) && tilesData.length === 4 ? tilesData : DEFAULT_TILES;
   const [editorOpen, setEditorOpen] = homeState(false);
   const [activeTab, setActiveTab] = homeState(0);
+  const ru = lang === 'ru';
 
   function saveTile(i, updated) {
     const next = tiles.map((tl, idx) => idx === i ? { ...tl, ...updated } : tl);
@@ -946,9 +956,8 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
       <div className="home-section-head">
         <h2 className="home-section-title"><em>{t.home.recent}</em></h2>
         {admin && (
-          <button className="btn btn-ghost" style={{ fontSize: 12, padding: '6px 14px' }}
-            onClick={() => setEditorOpen(true)}>
-            ✎ {lang === 'ru' ? 'Редактировать плашки' : 'Edit tiles'}
+          <button className="ed-btn ed-btn--accent" onClick={() => setEditorOpen(true)}>
+            <EdIcon name="edit" size={14} /> {ru ? 'Изменить плашки' : 'Edit tiles'}
           </button>
         )}
       </div>
@@ -958,30 +967,25 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
         ))}
       </div>
       {admin && editorOpen && (
-        <Modal open={true} onClose={() => setEditorOpen(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '86vh', overflowY: 'auto' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
-              {lang === 'ru' ? 'Плашки последних работ' : 'Recent works tiles'}
-            </h3>
-            {/* Разделы — по одной вкладке на плашку */}
-            <div style={{ display: 'flex', gap: 6 }}>
-              {tiles.map((tile, i) => (
-                <button key={i} onClick={() => setActiveTab(i)}
-                  className={activeTab === i ? 'btn btn-primary' : 'btn'}
-                  style={{ flex: 1, fontSize: 11, padding: '8px 4px', justifyContent: 'center' }}>
-                  {tile.label || `#${i + 1}`}
-                </button>
-              ))}
-            </div>
-            <RecentTileEditor
-              key={activeTab}
-              tile={tiles[activeTab]}
-              lang={lang}
-              onSave={updated => saveTile(activeTab, updated)}
-              onClose={() => setEditorOpen(false)}
-            />
+        <EditorModal onClose={() => setEditorOpen(false)} size="lg"
+          eyebrow={ru ? 'главная · последние работы' : 'home · recent works'}
+          title={ru ? 'Плашки последних работ' : 'Recent works tiles'}
+          footer={<>
+            <span className="ed-autosave">{ru ? 'Сохраняется автоматически' : 'Saved automatically'}</span>
+            <button className="ed-btn ed-btn--primary" onClick={() => setEditorOpen(false)}><EdIcon name="check" size={15} /> {ru ? 'Готово' : 'Done'}</button>
+          </>}>
+          <div style={{ marginBottom: 20 }}>
+            <EdSegment value={activeTab} onChange={setActiveTab}
+              options={tiles.map((tile, i) => ({ value: i, label: (ru ? tile.label : (tile.label_en || tile.label)) || `#${i + 1}` }))} />
           </div>
-        </Modal>
+          <RecentTileEditor
+            key={activeTab}
+            tile={tiles[activeTab]}
+            lang={lang}
+            onSave={updated => saveTile(activeTab, updated)}
+            onClose={() => setEditorOpen(false)}
+          />
+        </EditorModal>
       )}
     </div>
   );

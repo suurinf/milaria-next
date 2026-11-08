@@ -2818,7 +2818,7 @@ html {
 .login-field select,
 .login-field textarea {
   padding: 10px 14px;
-  border-radius: var(--r);
+  border-radius: var(--ed-r, 12px);
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   color: var(--text);
@@ -2834,7 +2834,7 @@ html {
   border-color: var(--accent);
 }
 .login-field select option {
-  background: var(--bg);
+  background: var(--bg-2);
   color: var(--text);
 }
 /* admin edit pencil button */
@@ -2864,56 +2864,6 @@ html {
 }
 .hero-soc-admin .admin-btn { width: 20px; height: 20px; font-size: 10px; }
 
-
-/* ── Edit modal form styling ── */
-.login-field select,
-.login-field textarea {
-  padding: 10px 14px;
-  border-radius: var(--r);
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 14px;
-  outline: none;
-  transition: border-color .2s;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.login-field select:focus,
-.login-field textarea:focus {
-  border-color: var(--accent);
-}
-.login-field select option {
-  background: var(--bg);
-  color: var(--text);
-}
-/* admin edit pencil button */
-.admin-btn {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.05);
-  color: var(--text-dim);
-  font-size: 13px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all .15s;
-  padding: 0;
-  line-height: 1;
-}
-.admin-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
-.admin-btn.danger:hover { background: rgba(220,50,50,0.3); color: #ff6b6b; }
-
-/* hero socials admin controls */
-.hero-soc-h { position: relative; }
-.hero-soc-admin {
-  position: absolute; top: -8px; right: -8px;
-  display: flex; gap: 2px; z-index: 2;
-}
-.hero-soc-admin .admin-btn { width: 20px; height: 20px; font-size: 10px; }
 
 /* ── Status indicator lamps ── */
 .status-lamp {
@@ -4502,6 +4452,532 @@ select {
 @media (max-width: 600px) {
   .foot-legal { font-size: 9px; padding: 0 20px; }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   РЕДАКТОР (админка) — единый вид для всех разделов
+   Цвета, шрифты и скругления — те же, что у сайта. Всё, что видит только
+   админ, начинается с .ed-* (плюс старые .admin-btn / .add-btn, которые
+   здесь приведены к тому же виду).
+   ═════════════════════════════════════════════════════════════════════ */
+:root {
+  --ed-surface: #1c150e;
+  --ed-surface-2: #241b12;
+  --ed-field: rgba(245, 232, 212, 0.045);
+  --ed-field-hover: rgba(245, 232, 212, 0.07);
+  --ed-ring: 0 0 0 3px rgba(232, 169, 59, 0.18);
+  --ed-danger: #ff7a90;
+  --ed-danger-bg: rgba(255, 107, 142, 0.1);
+  --ed-r: 12px;
+}
+
+.ed-ico { flex-shrink: 0; display: block; }
+
+/* ── Кнопки ── */
+.ed-btn {
+  appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 38px; padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(245, 232, 212, 0.05);
+  color: var(--text);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, border-color .15s, color .15s, transform .15s, box-shadow .15s;
+}
+.ed-btn:hover { background: rgba(245, 232, 212, 0.1); border-color: rgba(245, 232, 212, 0.28); }
+.ed-btn:focus-visible { outline: none; box-shadow: var(--ed-ring); }
+.ed-btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.ed-btn--primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  border-color: transparent; color: #15100a;
+  box-shadow: 0 6px 18px rgba(232, 169, 59, 0.28);
+}
+.ed-btn--primary:hover { background: linear-gradient(135deg, var(--accent), var(--accent-deep)); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(232, 169, 59, 0.4); }
+.ed-btn--ghost { background: transparent; border-color: var(--line); color: var(--text-muted); }
+.ed-btn--ghost:hover { color: var(--text); background: rgba(245, 232, 212, 0.05); }
+.ed-btn--danger { background: var(--ed-danger-bg); border-color: rgba(255, 122, 144, 0.4); color: var(--ed-danger); }
+.ed-btn--danger:hover { background: rgba(255, 107, 142, 0.18); border-color: var(--ed-danger); color: #ffd4dc; }
+.ed-btn--accent { background: rgba(232, 169, 59, 0.1); border-color: rgba(232, 169, 59, 0.35); color: var(--accent); }
+.ed-btn--accent:hover { background: rgba(232, 169, 59, 0.18); border-color: var(--accent); color: var(--accent-soft); }
+.ed-btn--sm { height: 30px; padding: 0 12px; font-size: 10px; gap: 6px; }
+.ed-btn--icon { width: 30px; padding: 0; }
+.ed-btn--wide { width: 100%; }
+
+.ed-icon-btn {
+  appearance: none; flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(245, 232, 212, 0.05); border: 1px solid var(--line);
+  color: var(--text-muted); cursor: pointer; transition: all .15s;
+}
+.ed-icon-btn:hover { color: var(--text); background: rgba(245, 232, 212, 0.1); border-color: var(--line-strong); }
+
+.ed-spinner {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(232, 169, 59, 0.25); border-top-color: var(--accent);
+  animation: spin .8s linear infinite;
+}
+.ed-btn--primary .ed-spinner { border-color: rgba(21, 16, 10, 0.25); border-top-color: #15100a; }
+
+/* ── Окно редактора ── */
+.ed-modal-bg {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(8, 5, 3, 0.72);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: edFade .18s ease;
+}
+.ed-modal {
+  position: relative;
+  width: 100%; max-width: 620px; max-height: min(90vh, 920px);
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgba(232, 169, 59, 0.07), transparent 60%),
+    var(--ed-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 22px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(232, 169, 59, 0.06) inset;
+  animation: edRise .22s cubic-bezier(.2, .8, .2, 1);
+  overflow: hidden;
+}
+.ed-modal--sm { max-width: 440px; }
+.ed-modal--lg { max-width: 820px; }
+.ed-modal-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 24px 24px 18px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.ed-modal-titles { min-width: 0; }
+.ed-eyebrow {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+}
+.ed-title {
+  font-family: var(--font-display); font-style: italic; font-weight: 500;
+  font-size: 30px; line-height: 1.1; margin: 0; color: var(--text);
+}
+.ed-subtitle { margin: 8px 0 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.5; }
+.ed-modal-body { padding: 22px 28px 26px; overflow-y: auto; overscroll-behavior: contain; flex: 1; }
+.ed-modal-body::-webkit-scrollbar { width: 10px; }
+.ed-modal-body::-webkit-scrollbar-thumb { background: rgba(245, 232, 212, 0.12); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+.ed-modal-foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  padding: 14px 24px 16px 28px;
+  border-top: 1px solid var(--line);
+  background: rgba(10, 7, 4, 0.35);
+}
+.ed-foot-hint { margin-right: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); letter-spacing: .04em; }
+.ed-dialog .ed-title { font-size: 24px; }
+.ed-dialog-msg { margin: 0 0 14px; color: var(--text-muted); font-size: 14px; line-height: 1.55; white-space: pre-line; }
+.ed-dialog .ed-modal-body:empty { display: none; }
+
+@keyframes edFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes edRise { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+
+/* ── Форма ── */
+.ed-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
+.ed-form > * { grid-column: 1 / -1; }
+.ed-form > .ed-field--half { grid-column: auto; }
+.ed-form-group {
+  margin-top: 6px; padding-top: 14px; border-top: 1px dashed var(--line-strong);
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+}
+.ed-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.ed-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; color: var(--text-muted); }
+.ed-req { color: var(--accent); margin-left: 3px; }
+.ed-hint { font-size: 12px; color: var(--text-dim); line-height: 1.45; }
+
+.ed-input, .ed-modal .login-field > input, .ed-modal .login-field select, .ed-modal .login-field textarea {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; min-width: 0;
+  background: var(--ed-field);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--ed-r);
+  color: var(--text);
+  padding: 11px 14px;
+  font-family: var(--font-body); font-size: 14px; line-height: 1.4;
+  outline: none;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.ed-input:hover { background: var(--ed-field-hover); }
+.ed-input:focus { border-color: var(--accent); box-shadow: var(--ed-ring); background: var(--ed-field-hover); }
+.ed-input::placeholder { color: var(--text-dim); }
+.ed-input[type="date"], .ed-input[type="datetime-local"] { color-scheme: dark; font-family: var(--font-mono); font-size: 13px; }
+.ed-textarea { resize: vertical; min-height: 86px; }
+.ed-select {
+  padding-right: 38px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b0a187' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.ed-select option { background: #241b12; color: var(--text); }
+.ed-input--num { width: 78px; text-align: center; font-family: var(--font-mono); padding: 9px 8px; -moz-appearance: textfield; }
+.ed-input--num::-webkit-inner-spin-button, .ed-input--num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.ed-input-wrap { position: relative; display: flex; align-items: center; }
+.ed-input-wrap > .ed-ico { position: absolute; left: 13px; color: var(--text-dim); pointer-events: none; }
+.ed-input--icon { padding-left: 36px; }
+.ed-mono { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
+.ed-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ed-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ed-row--between { justify-content: space-between; }
+.ed-stack { display: flex; flex-direction: column; gap: 10px; }
+
+/* Переключатель вариантов */
+.ed-seg {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 4px; border-radius: 14px;
+  background: rgba(0, 0, 0, 0.22); border: 1px solid var(--line);
+}
+.ed-seg > button {
+  appearance: none; flex: 1 1 auto;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 34px; padding: 6px 12px; border-radius: 10px;
+  background: transparent; border: 1px solid transparent;
+  color: var(--text-muted); font-family: var(--font-body); font-size: 13px;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ed-seg > button:hover { color: var(--text); background: rgba(245, 232, 212, 0.05); }
+.ed-seg > button.on {
+  color: #15100a; font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  box-shadow: 0 4px 12px rgba(232, 169, 59, 0.25);
+}
+.ed-seg--sm > button { min-height: 28px; font-size: 12px; padding: 4px 10px; }
+.ed-seg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+
+/* Ползунок */
+.ed-range { display: flex; align-items: center; gap: 14px; }
+.ed-range input[type="range"] {
+  -webkit-appearance: none; appearance: none; flex: 1; height: 6px; border-radius: 6px; outline: none; cursor: pointer;
+  background: linear-gradient(90deg, var(--accent) var(--p, 0%), rgba(245, 232, 212, 0.1) var(--p, 0%));
+}
+.ed-range input.ed-range-hue {
+  background: linear-gradient(90deg, hsl(0 55% 50%), hsl(60 55% 50%), hsl(120 55% 50%), hsl(180 55% 50%), hsl(240 55% 50%), hsl(300 55% 50%), hsl(360 55% 50%));
+}
+.ed-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff6e6; border: 3px solid var(--accent); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.ed-range input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff6e6; border: 3px solid var(--accent); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.ed-range-num { display: flex; align-items: center; gap: 8px; }
+.ed-unit { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+.ed-swatch { width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); flex-shrink: 0; }
+
+/* Загрузка файла */
+.ed-drop {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  min-height: 92px; padding: 18px;
+  border: 1.5px dashed rgba(232, 169, 59, 0.35);
+  border-radius: 16px;
+  background: rgba(232, 169, 59, 0.035);
+  color: var(--accent);
+  cursor: pointer; text-align: left;
+  transition: all .15s;
+}
+.ed-drop:hover, .ed-drop:focus-visible { outline: none; border-color: var(--accent); background: rgba(232, 169, 59, 0.08); }
+.ed-drop.over { border-style: solid; border-color: var(--accent); background: rgba(232, 169, 59, 0.14); transform: scale(1.01); }
+.ed-drop.busy { cursor: progress; opacity: .8; }
+.ed-drop-text { display: flex; flex-direction: column; gap: 3px; }
+.ed-drop-label { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; }
+.ed-drop-hint { font-size: 12px; color: var(--text-dim); }
+.ed-drop--compact {
+  min-height: 30px; height: 30px; padding: 0 12px; gap: 6px; border-radius: 999px;
+  border-width: 1px; border-style: dashed;
+}
+.ed-drop--compact .ed-drop-label { font-size: 10px; }
+
+/* Превью медиа */
+.ed-thumb {
+  position: relative; overflow: hidden;
+  border-radius: 10px; background: #0f0b07;
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim);
+}
+.ed-thumb > img, .ed-thumb > video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ed-thumb--empty { background: repeating-linear-gradient(135deg, rgba(245,232,212,.03) 0 8px, transparent 8px 16px), #120d08; }
+.ed-thumb-badge {
+  position: absolute; left: 6px; bottom: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 6px;
+  background: rgba(10, 7, 4, 0.75); color: var(--accent-soft);
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+.ed-image-input { display: flex; flex-direction: column; gap: 10px; }
+.ed-image-card {
+  display: flex; gap: 14px; align-items: center;
+  padding: 10px; border-radius: 14px; background: var(--ed-field); border: 1px solid var(--line);
+}
+.ed-image-card-thumb { width: 96px; height: 72px; flex-shrink: 0; }
+.ed-image-card-meta { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
+
+/* Секции внутри окна */
+.ed-section + .ed-section { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.ed-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.ed-section-title {
+  margin: 0; font-family: var(--font-mono); font-weight: 500;
+  font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+}
+.ed-section-hint { margin: -4px 0 12px; font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+.ed-count {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 999px; background: rgba(232, 169, 59, 0.14); color: var(--accent);
+  font-family: var(--font-mono); font-size: 10.5px; margin-left: 8px; letter-spacing: 0;
+}
+
+/* Сетка слайдов / медиа */
+.ed-media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.ed-media-card {
+  position: relative; border-radius: 14px; overflow: hidden;
+  background: var(--ed-field); border: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  transition: border-color .15s, transform .15s;
+}
+.ed-media-card:hover { border-color: var(--line-strong); }
+.ed-media-card.active { border-color: var(--accent); box-shadow: var(--ed-ring); }
+.ed-media-card .ed-thumb { border: 0; border-radius: 0; aspect-ratio: 16 / 10; }
+.ed-media-card--tall .ed-thumb { aspect-ratio: 3 / 4; }
+.ed-media-num {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(10, 7, 4, 0.75); color: var(--accent-soft);
+  font-family: var(--font-mono); font-size: 10.5px; backdrop-filter: blur(4px);
+}
+.ed-media-card .ed-tools { position: absolute; top: 6px; right: 6px; z-index: 3; }
+.ed-media-foot { display: flex; align-items: center; gap: 6px; padding: 8px 10px; min-height: 40px; }
+.ed-media-foot .ed-mono { flex: 1; font-size: 10.5px; }
+.ed-media-add {
+  min-height: 0; aspect-ratio: auto; flex-direction: column; text-align: center; gap: 8px;
+}
+
+/* Подсказки и предупреждения */
+.ed-alert {
+  padding: 11px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5;
+  background: rgba(232, 169, 59, 0.08); border: 1px solid rgba(232, 169, 59, 0.25); color: var(--accent-soft);
+}
+.ed-alert--error { background: var(--ed-danger-bg); border-color: rgba(255, 122, 144, 0.35); color: #ffc2cd; font-family: var(--font-mono); font-size: 12px; }
+.ed-autosave {
+  display: inline-flex; align-items: center; gap: 6px; margin-right: auto;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); letter-spacing: .04em;
+}
+.ed-autosave::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+
+/* ── Кнопки на карточках (изменить / удалить) ── */
+.ed-tools {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 3px; border-radius: 999px;
+  background: rgba(16, 11, 7, 0.78);
+  border: 1px solid rgba(245, 232, 212, 0.14);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  z-index: 6;
+}
+.ed-tool {
+  appearance: none; width: 28px; height: 28px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; color: var(--text-muted); cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.ed-tool:hover { background: rgba(232, 169, 59, 0.16); color: var(--accent); }
+.ed-tool--danger:hover { background: rgba(255, 107, 142, 0.18); color: var(--ed-danger); }
+.ed-tool.on { color: var(--accent); }
+.ed-tools--sm .ed-tool { width: 22px; height: 22px; }
+.ed-tools--sm { padding: 2px; }
+
+/* ── Текст, который правится прямо на странице ── */
+.ed-inline {
+  cursor: text; border-radius: 5px;
+  outline: 1px dashed rgba(232, 169, 59, 0.32); outline-offset: 3px;
+  transition: outline-color .15s, background .15s;
+}
+.ed-inline:hover { outline-color: var(--accent); background: rgba(232, 169, 59, 0.07); }
+.inline-input {
+  font: inherit; color: inherit;
+  background: rgba(232, 169, 59, 0.1);
+  border: 1px solid var(--accent); border-radius: 6px;
+  box-shadow: var(--ed-ring);
+  padding: 2px 8px; outline: none; width: 100%;
+}
+.inline-input--num { width: 84px; display: inline-block; font-family: var(--font-mono); }
+
+/* ── Ручка перетаскивания ── */
+.drag-handle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 30px; padding: 0; border-radius: 6px;
+  font-size: 0; color: rgba(245, 232, 212, 0.3);
+  transition: color .15s, background .15s;
+}
+.drag-handle:hover { color: var(--accent); background: rgba(232, 169, 59, 0.1); }
+.drag-over { outline: 2px dashed var(--accent); outline-offset: 3px; }
+
+/* ── Старые классы приведены к общему виду ── */
+.admin-btn {
+  appearance: none;
+  min-width: 30px; width: auto; height: 30px; padding: 0 10px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(16, 11, 7, 0.7);
+  color: var(--text-muted);
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  line-height: 1; cursor: pointer; white-space: nowrap;
+  backdrop-filter: blur(6px);
+  transition: all .15s;
+}
+.admin-btn:hover { color: var(--accent); border-color: rgba(232, 169, 59, 0.5); background: rgba(232, 169, 59, 0.1); }
+.admin-btn.danger:hover { color: var(--ed-danger); border-color: rgba(255, 122, 144, 0.5); background: var(--ed-danger-bg); }
+
+.add-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; margin-top: 10px; padding: 16px;
+  border: 1.5px dashed rgba(232, 169, 59, 0.35); border-radius: var(--radius-card);
+  background: rgba(232, 169, 59, 0.03);
+  color: var(--accent);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  cursor: pointer; transition: all .15s;
+}
+.add-btn:hover { border-color: var(--accent); background: rgba(232, 169, 59, 0.08); color: var(--accent-soft); }
+
+/* ── Панель режима редактирования ── */
+.ed-bar {
+  position: relative; z-index: 19;
+  display: flex; align-items: center; gap: 14px;
+  padding: 8px 24px;
+  background: rgba(26, 19, 12, 0.92);
+  backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(232, 169, 59, 0.22);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.ed-bar-pill {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+  height: 28px; padding: 0 12px; border-radius: 999px;
+  background: rgba(232, 169, 59, 0.12); border: 1px solid rgba(232, 169, 59, 0.35);
+  color: var(--accent);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+}
+.ed-bar-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: lamp-pulse 2s ease-in-out infinite; }
+.ed-bar-info { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.ed-bar-email { font-family: var(--font-mono); font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-bar-hint { font-size: 11.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-bar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.ed-bar-sep { width: 1px; height: 22px; background: var(--line-strong); margin: 0 4px; }
+.ed-bar .ed-btn { height: 32px; padding: 0 12px; font-size: 10px; }
+
+/* Значок сайта — превью вкладки браузера */
+.ed-tab-preview {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 12px 12px 0 0;
+  background: #2a2018; border: 1px solid var(--line-strong); border-bottom: 0;
+  max-width: 300px;
+}
+.ed-tab-preview img { width: 16px; height: 16px; object-fit: cover; border-radius: 3px; }
+.ed-tab-preview span { font-size: 12.5px; color: var(--text); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ed-tab-strip { height: 8px; background: #2a2018; border: 1px solid var(--line-strong); border-top: 0; border-radius: 0 0 12px 12px; margin-bottom: 4px; }
+
+/* Список строк (контакты и т.п.) */
+.ed-list { display: flex; flex-direction: column; gap: 6px; }
+.ed-list-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 10px 10px 14px; border-radius: 12px;
+  background: var(--ed-field); border: 1px solid var(--line);
+}
+.ed-list-row:hover { border-color: var(--line-strong); }
+.ed-list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ed-list-title { font-size: 14px; color: var(--text); }
+.ed-panel {
+  padding: 16px; border-radius: 16px;
+  background: rgba(232, 169, 59, 0.05); border: 1px solid rgba(232, 169, 59, 0.28);
+}
+
+@media (max-width: 640px) {
+  .ed-modal-bg { padding: 0; align-items: flex-end; }
+  .ed-modal { max-width: none !important; max-height: 94vh; border-radius: 22px 22px 0 0; animation: edSheet .26s cubic-bezier(.2, .8, .2, 1); }
+  .ed-modal-head { padding: 20px 18px 14px 20px; }
+  .ed-modal-body { padding: 18px 20px 22px; }
+  .ed-modal-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); flex-wrap: wrap; }
+  .ed-foot-hint { display: none; }
+  .ed-modal-foot .ed-btn { flex: 1; }
+  .ed-title { font-size: 26px; }
+  .ed-form { grid-template-columns: 1fr; }
+  .ed-form > .ed-field--half { grid-column: 1 / -1; }
+  .ed-bar { padding: 8px 12px; gap: 10px; }
+  .ed-bar-info { display: none; }
+  .ed-bar-actions { overflow-x: auto; scrollbar-width: none; margin-left: 0; flex: 1; justify-content: flex-end; }
+  .ed-bar-actions::-webkit-scrollbar { display: none; }
+  .ed-bar .ed-btn > span { display: none; }
+  .ed-bar .ed-btn { width: 32px; padding: 0; }
+  .ed-media-grid { grid-template-columns: repeat(2, 1fr); }
+  /* На телефоне наведения нет — кнопки на карточках всегда видны */
+}
+@keyframes edSheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ── Редактор: места в разделах ── */
+/* Соцсети на главной */
+.hero-soc-tools { position: absolute; top: -12px; right: -14px; z-index: 3; }
+.hero-soc-add { border: 1.5px dashed rgba(232, 169, 59, 0.45) !important; color: var(--accent); cursor: pointer; background: rgba(232, 169, 59, 0.05) !important; }
+.hero-soc-add:hover { border-color: var(--accent) !important; background: rgba(232, 169, 59, 0.12) !important; }
+.hero-soc-add-text { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+
+/* Очередь */
+.q-tools { position: absolute; bottom: 8px; right: 10px; opacity: .8; transition: opacity .15s; }
+.q-row:hover .q-tools, .done-row:hover .q-tools { opacity: 1; }
+
+/* Портфолио: галерея */
+.pf-admin-toolbar {
+  max-width: 1100px; margin: 16px auto 0;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; border-radius: 16px;
+  background: rgba(28, 21, 14, 0.85); border: 1px solid rgba(232, 169, 59, 0.25);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.pf-drop-tile { aspect-ratio: 4 / 5; flex-direction: column; text-align: center; border-radius: 14px; }
+.pf-drop-empty { min-height: 260px; flex-direction: column; text-align: center; }
+.pf-img-tools { opacity: .9; }
+
+/* Калькулятор */
+.calc2-chip-admin { display: inline-flex; vertical-align: middle; align-self: flex-end; width: auto; margin-top: 4px; }
+.calc2-tab-add {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-style: dashed !important; border-color: rgba(232, 169, 59, 0.45) !important;
+  color: var(--accent) !important; background: rgba(232, 169, 59, 0.04) !important;
+}
+.calc2-tab-add:hover { border-color: var(--accent) !important; background: rgba(232, 169, 59, 0.1) !important; }
+.calc2-tab-grip { display: inline-flex; align-items: center; color: rgba(245, 232, 212, 0.35); margin-right: 2px; cursor: grab; }
+.calc2-tab-del, .calc2-subtab-del { display: inline-flex; align-items: center; justify-content: center; }
+
+/* Долги */
+.debt-countdown-edit { margin-top: 14px; }
+.debt-countdown-head .ed-btn { margin-left: auto; }
+
+@media (max-width: 640px) {
+  .pf-admin-toolbar .ed-bar-pill { display: none; }
+  .pf-admin-toolbar .ed-btn { flex: 1; }
+  .hero-soc-tools { top: -14px; right: -10px; }
+}
+/* Кнопки у иконок соцсетей — по наведению (на телефоне видны всегда) */
+@media (hover: hover) {
+  .hero-soc-h .hero-soc-tools { opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity .15s, transform .15s; }
+  .hero-soc-h:hover .hero-soc-tools, .hero-soc-h:focus-within .hero-soc-tools { opacity: 1; pointer-events: auto; transform: none; }
+}
+/* Очередь: кнопки редактора справа по центру строки, контент сдвигается и не перекрывается */
+.q-row:has(> .q-tools), .done-row:has(> .q-tools) { padding-right: 92px; }
+.q-tools { top: 50%; bottom: auto; right: 14px; transform: translateY(-50%); }
+@media (max-width: 640px) {
+  /* На телефоне кнопки редактора — под строкой, чтобы не съедать место у процентов */
+  .q-row:has(> .q-tools), .done-row:has(> .q-tools) { padding-right: 0; padding-bottom: 42px; }
+  .q-tools { top: auto; bottom: 8px; right: 10px; transform: none; opacity: 1; }
+}
+@media (max-width: 640px) {
+  /* В режиме редактора слева место под ручку перетаскивания — ужимаем колонки, чтобы процент влез */
+  .q-row:has(> .q-tools) { grid-template-columns: 30px 1fr 84px; }
+}
 </style></head>
 <body>
   <div id="root"></div>
@@ -5013,6 +5489,16 @@ try {
   localStorage.removeItem('milaria:milaria:banner');
 } catch(e) {}
 
+// Только на localhost: адрес с ?preview-admin показывает интерфейс админки без
+// входа — чтобы смотреть редактор при доработке. Сохранить в таком режиме
+// ничего нельзя: без входа база отклоняет любую запись (RLS).
+const PREVIEW_ADMIN = (function () {
+  try {
+    return /^(localhost|127\.0\.0\.1)$/.test(location.hostname) &&
+      /[?&]preview-admin(?:[=&]|$)/.test(location.search);
+  } catch (e) { return false; }
+})();
+
 function useAuth() {
   const [session, setSession] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -5039,8 +5525,8 @@ function useAuth() {
   return {
     session,
     loading,
-    isAdmin: !!session,
-    email: session?.user?.email,
+    isAdmin: !!session || PREVIEW_ADMIN,
+    email: session?.user?.email || (PREVIEW_ADMIN ? 'просмотр без входа' : undefined),
     async signIn(email, password) {
       if (!_sbc) return { ok: false, error: { message: 'Supabase SDK not loaded' } };
       try {
@@ -5215,7 +5701,7 @@ function useResource(table, defaults = [], opts = {}) {
         const hint = error.message.includes('does not exist') || error.code === '42P01'
           ? '\n\nТаблица ' + table + ' не найдена. Запусти SQL-скрипт.'
           : error.message.includes('violates') ? '\n\nПроверь данные — возможно дублирующийся ID.' : '';
-        alert('Ошибка добавления [' + table + ']: ' + error.message + hint);
+        _edAlert('Ошибка добавления [' + table + ']: ' + error.message + hint);
         setItems((prev) => prev.filter((x) => x.id !== tempId));
         return null;
       }
@@ -5245,7 +5731,7 @@ function useResource(table, defaults = [], opts = {}) {
       console.error(`[${table}] update:`, error.message);
       // Rollback optimistic change
       if (prevItem) setItems(prev => prev.map(x => x.id === id ? prevItem : x));
-      alert('Не удалось сохранить: ' + error.message);
+      _edAlert('Не удалось сохранить: ' + error.message);
       return null;
     }
     setItems((prev) => prev.map((x) => x.id === id ? data : x));
@@ -5366,6 +5852,19 @@ function useSetting(key, defaultValue) {
   }
 
   return [value, save, loaded];
+}
+
+// Сообщение об ошибке: окно в стиле сайта, если редактор уже загружен,
+// иначе обычный alert. Первая строка — заголовок, остальное — пояснение.
+function _edAlert(msg) {
+  const text = String(msg || '');
+  if (typeof window.edNotice === 'function') {
+    const i = text.indexOf('\n');
+    if (i > 0) window.edNotice(text.slice(0, i).replace(/[.:]$/, ''), text.slice(i + 1).trim(), { eyebrow: 'не получилось' });
+    else window.edNotice(text, '', { eyebrow: 'не получилось' });
+  } else {
+    alert(text);
+  }
 }
 
 // ── Supabase Storage upload (proper: file + CDN, not base64) ──
@@ -5499,7 +5998,7 @@ async function uploadToStorage(file) {
     // Canvas would flatten a GIF to its first frame and cannot read video at all.
     if (kind === 'gif' || kind === 'video') {
       if (file.size > 45 * 1024 * 1024) {
-        alert('Файл слишком большой (' + Math.round(file.size / 1048576) + ' МБ). Максимум ~45 МБ.');
+        _edAlert('Файл слишком большой (' + Math.round(file.size / 1048576) + ' МБ). Максимум ~45 МБ.');
         return null;
       }
       const ext = kind === 'gif'
@@ -5513,7 +6012,7 @@ async function uploadToStorage(file) {
         console.error('[storage] upload failed', up.error);
         // Показываем НАСТОЯЩИЙ ответ сервера, а не догадку: раньше здесь висело
         // "проверь bucket", хотя bucket очевидно на месте.
-        alert(storageErrorText(up.error) +
+        _edAlert(storageErrorText(up.error) +
           '\n\nРазмер файла: ' + Math.round(file.size / 1048576 * 10) / 10 + ' МБ');
         return null;
       }
@@ -5523,7 +6022,7 @@ async function uploadToStorage(file) {
 
     const full = await resizeToBlob(file, 1600, 0.85);   // full view
     const thumb = await resizeToBlob(file, 500, 0.78);    // grid thumbnail
-    if (!full) { alert('Не удалось обработать картинку'); return null; }
+    if (!full) { _edAlert('Не удалось обработать картинку'); return null; }
     const base = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const fullPath = `full/${base}.${full.ext}`;
     const thumbPath = thumb ? `thumb/${base}.${thumb.ext}` : null;
@@ -5531,7 +6030,7 @@ async function uploadToStorage(file) {
     const up1 = await putToStorage(fullPath, full);
     if (up1.error) {
       console.error('[storage] full upload failed', up1.error);
-      alert(storageErrorText(up1.error));
+      _edAlert(storageErrorText(up1.error));
       return null;
     }
     const finalFullPath = up1.path;
@@ -5588,7 +6087,7 @@ async function uploadIconToStorage(fileOrSrc, opts) {
   try {
     const src = typeof fileOrSrc === 'string' ? fileOrSrc : await _fileToDataUrl(fileOrSrc);
     const png = src && await _imageToBlob(src, 64, 'image/png');
-    if (!png) { if (!quiet) alert('Не удалось обработать картинку'); return null; }
+    if (!png) { if (!quiet) _edAlert('Не удалось обработать картинку'); return null; }
     let path = _storageName('site', 'png');
     let up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, png, { contentType: 'image/png', upsert: false });
     // Bucket может не принимать png — тогда jpeg, значку это не страшно.
@@ -5601,7 +6100,7 @@ async function uploadIconToStorage(fileOrSrc, opts) {
     }
     if (up.error) {
       console.error('[storage] icon upload failed', up.error);
-      if (!quiet) alert(storageErrorText(up.error));
+      if (!quiet) _edAlert(storageErrorText(up.error));
       return null;
     }
     return { url: storagePublicUrl(path) };
@@ -5802,7 +6301,302 @@ function PageHead({ eyebrow, title, subtitle, children }) {
 
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  Редактор (админка): общие детали интерфейса
+//  Всё, что видит админ, собирается из этих кусков — окна, поля,
+//  переключатели, загрузка файлов, подтверждения. Так редактор во всех
+//  разделах выглядит одинаково и в цветах сайта.
+// ════════════════════════════════════════════════════════════════════
+
+const ED_ICON_PATHS = {
+  edit:    <><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></>,
+  trash:   <><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></>,
+  plus:    <><path d="M12 5v14M5 12h14" /></>,
+  close:   <><path d="M18 6 6 18M6 6l12 12" /></>,
+  check:   <><path d="M20 6 9 17l-5-5" /></>,
+  upload:  <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m17 8-5-5-5 5" /><path d="M12 3v12" /></>,
+  image:   <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></>,
+  video:   <><rect x="2" y="5" width="15" height="14" rx="2" /><path d="m17 10 5-3v10l-5-3" /></>,
+  link:    <><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></>,
+  grip:    <><circle cx="9" cy="6" r="1.2" /><circle cx="15" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" /><circle cx="15" cy="18" r="1.2" /></>,
+  target:  <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /><path d="M12 1v4M12 19v4M1 12h4M19 12h4" /></>,
+  star:    <><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z" /></>,
+  download:<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /><path d="M12 15V3" /></>,
+  chart:   <><path d="M3 3v18h18" /><path d="M7 15l4-4 3 3 5-6" /></>,
+  refresh: <><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></>,
+  logout:  <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></>,
+  sparkle: <><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" /></>,
+  clock:   <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  layers:  <><path d="m12 2 10 5-10 5L2 7Z" /><path d="m2 17 10 5 10-5M2 12l10 5 10-5" /></>,
+  center:  <><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" /><circle cx="12" cy="12" r="2" /></>,
+  sort:    <><path d="M7 4v16M3 16l4 4 4-4" /><path d="M17 20V4M13 8l4-4 4 4" /></>,
+};
+
+function EdIcon({ name, size = 16, className }) {
+  return (
+    <svg className={`ed-ico ${className || ''}`} width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      {ED_ICON_PATHS[name] || null}
+    </svg>
+  );
+}
+
+// ── Окно редактора ──
+// Шапка (надзаголовок + заголовок), прокручиваемое тело и закреплённый низ
+// с кнопками. Esc закрывает только самое верхнее окно.
+const _edStack = [];
+function useEdTopmost(active, onClose) {
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!active) return;
+    const id = Math.random().toString(36).slice(2);
+    _edStack.push(id);
+    const onKey = (e) => {
+      if (e.key === 'Escape' && _edStack[_edStack.length - 1] === id) {
+        e.stopPropagation();
+        closeRef.current && closeRef.current();
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('keydown', onKey, true);
+      const i = _edStack.indexOf(id);
+      if (i >= 0) _edStack.splice(i, 1);
+    };
+  }, [active]);
+}
+
+function EditorModal({ open = true, onClose, eyebrow, title, subtitle, children, footer, size = 'md', className }) {
+  useEdTopmost(open, onClose);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+  if (!open) return null;
+  return ReactDOM.createPortal(
+    <div className="ed-modal-bg" onMouseDown={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}>
+      <div className={`ed-modal ed-modal--${size} ${className || ''}`} role="dialog" aria-modal="true">
+        <header className="ed-modal-head">
+          <div className="ed-modal-titles">
+            {eyebrow && <div className="ed-eyebrow">✦ {eyebrow}</div>}
+            {title && <h2 className="ed-title">{title}</h2>}
+            {subtitle && <p className="ed-subtitle">{subtitle}</p>}
+          </div>
+          {onClose && (
+            <button type="button" className="ed-icon-btn" onClick={onClose} aria-label="Закрыть" title="Закрыть (Esc)">
+              <EdIcon name="close" size={18} />
+            </button>
+          )}
+        </header>
+        <div className="ed-modal-body">{children}</div>
+        {footer && <footer className="ed-modal-foot">{footer}</footer>}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ── Поля формы ──
+// Простое поле (input/textarea/select) оборачиваем в <label>, чтобы клик по
+// подписи ставил курсор. Сложные (переключатели, картинки) — в <div>: иначе
+// клик по подписи «нажимает» первую кнопку внутри.
+function EdField({ label, hint, half, children, plain, className }) {
+  const Tag = plain ? 'div' : 'label';
+  return (
+    <Tag className={`ed-field ${half ? 'ed-field--half' : ''} ${className || ''}`}>
+      {label && <span className="ed-label">{label}</span>}
+      {children}
+      {hint && <span className="ed-hint">{hint}</span>}
+    </Tag>
+  );
+}
+
+function EdSection({ title, hint, children, aside }) {
+  return (
+    <section className="ed-section">
+      {(title || aside) && (
+        <div className="ed-section-head">
+          {title && <h3 className="ed-section-title">{title}</h3>}
+          {aside}
+        </div>
+      )}
+      {hint && <p className="ed-section-hint">{hint}</p>}
+      {children}
+    </section>
+  );
+}
+
+// Переключатель на несколько вариантов вместо выпадающего списка.
+function EdSegment({ value, options, onChange, size }) {
+  return (
+    <div className={`ed-seg ${size === 'sm' ? 'ed-seg--sm' : ''}`} role="radiogroup">
+      {options.map(o => (
+        <button key={String(o.value)} type="button" role="radio"
+          aria-checked={String(value) === String(o.value)}
+          className={String(value) === String(o.value) ? 'on' : ''}
+          onClick={() => onChange(o.value)}>
+          {o.dot && <span className="ed-seg-dot" style={{ background: o.dot }} />}
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Поле «перетащи файл сюда или нажми». Отдаёт массив File.
+function EdDropzone({ onFiles, accept = 'image/*', multiple, busy, label, hint, compact, className, style }) {
+  const [over, setOver] = useState(false);
+  const inputRef = useRef(null);
+  function pick(list) {
+    const files = Array.from(list || []);
+    if (files.length) onFiles(multiple ? files : [files[0]]);
+  }
+  return (
+    <div className={`ed-drop ${over ? 'over' : ''} ${busy ? 'busy' : ''} ${compact ? 'ed-drop--compact' : ''} ${className || ''}`}
+      style={style}
+      role="button" tabIndex={0}
+      onClick={(e) => { e.stopPropagation(); if (!busy) inputRef.current?.click(); }}
+      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !busy) { e.preventDefault(); inputRef.current?.click(); } }}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!over) setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setOver(false); if (!busy) pick(e.dataTransfer.files); }}>
+      <input ref={inputRef} type="file" accept={accept} multiple={multiple} style={{ display: 'none' }}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => { pick(e.target.files); e.target.value = ''; }} />
+      {busy ? <span className="ed-spinner" /> : <EdIcon name="upload" size={compact ? 16 : 22} />}
+      <span className="ed-drop-text">
+        <span className="ed-drop-label">{busy ? 'Загружаю…' : (label || 'Перетащи файл сюда или нажми')}</span>
+        {hint && !busy && <span className="ed-drop-hint">{hint}</span>}
+      </span>
+    </div>
+  );
+}
+
+// Кнопки «изменить / удалить» на карточках. Удаление всегда переспрашивает.
+function ItemTools({ onEdit, onDelete, deleteText, extra, className, style, size = 'md' }) {
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const ico = size === 'sm' ? 12 : 14;
+  return (
+    <div className={`ed-tools ed-tools--${size} ${className || ''}`} style={style}
+      onClick={stop} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+      {extra}
+      {onEdit && (
+        <button type="button" className="ed-tool" title="Изменить" aria-label="Изменить"
+          onClick={(e) => { stop(e); onEdit(); }}>
+          <EdIcon name="edit" size={ico} />
+        </button>
+      )}
+      {onDelete && (
+        <button type="button" className="ed-tool ed-tool--danger" title="Удалить" aria-label="Удалить"
+          onClick={async (e) => {
+            stop(e);
+            if (await askConfirm(deleteText || 'Удалить этот элемент?', { danger: true, okText: 'Удалить' })) onDelete();
+          }}>
+          <EdIcon name="trash" size={ico} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Ручка для перетаскивания карточек.
+function DragHandle({ style }) {
+  return <span className="drag-handle" style={style} title="Перетащи, чтобы поменять порядок"><EdIcon name="grip" size={14} /></span>;
+}
+
+// ── Окна подтверждения и ввода — вместо системных confirm()/prompt()/alert() ──
+let _edDialogPush = null;
+function EdDialogHost() {
+  const [queue, setQueue] = useState([]);
+  const [text, setText] = useState('');
+  useEffect(() => {
+    _edDialogPush = (d) => setQueue(q => [...q, d]);
+    return () => { _edDialogPush = null; };
+  }, []);
+  const top = queue[0];
+  useEffect(() => { if (top) setText(top.initial || ''); }, [top]);
+  if (!top) return null;
+  const finish = (v) => { top.resolve(v); setQueue(q => q.slice(1)); };
+  const cancelValue = top.kind === 'text' ? null : false;
+  const ok = () => finish(top.kind === 'text' ? text : true);
+  const eyebrow = top.eyebrow || (top.kind === 'text' ? 'ввод' : top.kind === 'notice' ? 'готово' : top.danger ? 'подтверждение' : 'вопрос');
+  return (
+    <EditorModal open={true} size="sm" className="ed-dialog" onClose={() => finish(cancelValue)}
+      eyebrow={eyebrow} title={top.title}
+      footer={top.kind === 'notice'
+        ? <button type="button" className="ed-btn ed-btn--primary" autoFocus onClick={ok}>{top.okText || 'Понятно'}</button>
+        : <>
+            <button type="button" className="ed-btn ed-btn--ghost" onClick={() => finish(cancelValue)}>{top.cancelText || 'Отмена'}</button>
+            <button type="button" className={`ed-btn ${top.danger ? 'ed-btn--danger' : 'ed-btn--primary'}`}
+              autoFocus={top.kind !== 'text'} onClick={ok}>{top.okText || 'OK'}</button>
+          </>}>
+      {top.message && <p className="ed-dialog-msg">{top.message}</p>}
+      {top.kind === 'text' && (
+        <input className="ed-input" autoFocus value={text} placeholder={top.placeholder || ''}
+          inputMode={top.inputMode}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') ok(); }} />
+      )}
+    </EditorModal>
+  );
+}
+
+function askConfirm(message, opts = {}) {
+  if (!_edDialogPush) return Promise.resolve(window.confirm(message));
+  return new Promise(resolve => _edDialogPush({
+    kind: 'confirm', ...opts, title: opts.title || message, message: opts.title ? message : null, resolve,
+  }));
+}
+function askText(title, opts = {}) {
+  if (!_edDialogPush) return Promise.resolve(window.prompt(title, opts.initial || ''));
+  return new Promise(resolve => _edDialogPush({ kind: 'text', ...opts, title, resolve }));
+}
+function edNotice(title, message, opts = {}) {
+  if (!_edDialogPush) { window.alert(message ? title + '\n\n' + message : title); return Promise.resolve(true); }
+  return new Promise(resolve => _edDialogPush({ kind: 'notice', ...opts, title, message, resolve }));
+}
+
+// Превью медиа по ссылке: картинка, видео или обложка YouTube.
+function edMediaKind(src) {
+  const s = String(src || '').toLowerCase();
+  if (s.includes('youtube.com') || s.includes('youtu.be')) return 'youtube';
+  if (/\.(mp4|webm|mov|m4v)(\?|$)/.test(s)) return 'video';
+  if (/\.gif(\?|$)/.test(s)) return 'gif';
+  return 'image';
+}
+function edYtThumb(src) {
+  const id = (String(src).match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]+)/) || [])[1];
+  return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : '';
+}
+function EdThumb({ src, className, style, focal }) {
+  const kind = edMediaKind(src);
+  if (!src) return <div className={`ed-thumb ed-thumb--empty ${className || ''}`} style={style}><EdIcon name="image" size={20} /></div>;
+  if (kind === 'video') {
+    return (
+      <div className={`ed-thumb ${className || ''}`} style={style}>
+        <video src={src} muted playsInline preload="metadata" />
+        <span className="ed-thumb-badge"><EdIcon name="video" size={11} /> видео</span>
+      </div>
+    );
+  }
+  const img = kind === 'youtube' ? edYtThumb(src) : src;
+  return (
+    <div className={`ed-thumb ${className || ''}`} style={style}>
+      <img src={img} alt="" loading="lazy" style={focal ? { objectPosition: focal } : undefined}
+        onError={(e) => { e.currentTarget.style.opacity = 0; }} />
+      {kind === 'youtube' && <span className="ed-thumb-badge">YouTube</span>}
+      {kind === 'gif' && <span className="ed-thumb-badge">GIF</span>}
+    </div>
+  );
+}
+
 // ──────────────── inline-редактируемое поле ────────────────
+// В режиме редактора текст подсвечивается при наведении; клик — поле ввода.
+// Enter — сохранить, Esc — отменить.
 function Editable({ value, onSave, admin, multiline, className, placeholder }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -5824,22 +6618,20 @@ function Editable({ value, onSave, admin, multiline, className, placeholder }) {
         ref={ref}
         className={`inline-input ${className || ''}`}
         value={draft}
+        onClick={(e) => e.stopPropagation()}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {setEditing(false);if (draft !== value) onSave(draft);}}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {setEditing(false);if (draft !== value) onSave(draft);}
           if (e.key === 'Escape') {setEditing(false);setDraft(value);}
         }} />);
-
-
   }
   return (
     <span
-      className={className}
-      onClick={() => setEditing(true)}
-      style={{ cursor: 'text', outline: '1px dashed rgba(236,106,167,.25)', outlineOffset: '2px', borderRadius: 4 }}>
+      className={`${className || ''} ed-inline`}
+      title="Нажми, чтобы изменить"
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(true); }}>
       {value || placeholder || '—'}</span>);
-
 }
 
 // ──────────────── editable number ────────────────
@@ -5848,7 +6640,7 @@ function EditableNumber({ value, onSave, admin, className, suffix }) {
   const [draft, setDraft] = useState(String(value));
   const ref = useRef(null);
   useEffect(() => {setDraft(String(value));}, [value]);
-  useEffect(() => {if (editing) ref.current?.focus();}, [editing]);
+  useEffect(() => {if (editing) { ref.current?.focus(); ref.current?.select?.(); }}, [editing]);
 
   if (!admin) return <span className={className}>{value}{suffix}</span>;
   if (editing) {
@@ -5856,25 +6648,22 @@ function EditableNumber({ value, onSave, admin, className, suffix }) {
       <input
         ref={ref}
         type="number"
-        className={`inline-input ${className || ''}`}
+        className={`inline-input inline-input--num ${className || ''}`}
         value={draft}
-        style={{ width: 80, display: 'inline-block' }}
+        onClick={(e) => e.stopPropagation()}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {setEditing(false);const n = parseInt(draft, 10) || 0;if (n !== value) onSave(n);}}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {setEditing(false);const n = parseInt(draft, 10) || 0;if (n !== value) onSave(n);}
           if (e.key === 'Escape') {setEditing(false);setDraft(String(value));}
         }} />);
-
-
   }
   return (
     <span
-      className={className}
-      onClick={() => setEditing(true)}
-      style={{ cursor: 'text', outline: '1px dashed rgba(236,106,167,.25)', outlineOffset: '2px', borderRadius: 4 }}>
+      className={`${className || ''} ed-inline`}
+      title="Нажми, чтобы изменить"
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(true); }}>
       {value}{suffix}</span>);
-
 }
 
 // ──────────────── модалка ────────────────
@@ -5927,6 +6716,7 @@ function LoginModal({ open, onClose, auth, lang }) {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const ru = lang === 'ru';
 
   async function submit(e) {
     e.preventDefault();
@@ -5944,35 +6734,28 @@ function LoginModal({ open, onClose, auth, lang }) {
 
   if (!open) return null;
   return (
-    <Modal open={true} onClose={onClose}>
-      <div style={{ paddingRight: 40, maxWidth: 420 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8 }}>
-          ✦ {lang === 'ru' ? 'админ' : 'admin'}
-        </div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 38, margin: '0 0 24px', fontWeight: 500 }}>
-          {lang === 'ru' ? 'Вход в редактор' : 'Sign in to edit'}
-        </h2>
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <label className="login-field">
-            <span>Email</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
-          </label>
-          <label className="login-field">
-            <span>{lang === 'ru' ? 'Пароль' : 'Password'}</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </label>
-          {err && <div className="login-err">{err}</div>}
-          <button type="submit" className="btn btn-primary" disabled={busy} style={{ marginTop: 6, justifyContent: 'center' }}>
-            {busy ? (lang === 'ru' ? 'Входим…' : 'Signing in…') : (lang === 'ru' ? 'Войти' : 'Sign in')}
-          </button>
-        </form>
-        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 18, fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
-          {lang === 'ru'
-            ? 'Зрители могут читать сайт без логина. Редактирование — только для админа.'
-            : 'Viewers can read without login. Editing is admin-only.'}
-        </p>
-      </div>
-    </Modal>
+    <EditorModal open={true} onClose={onClose} size="sm"
+      eyebrow={ru ? 'админ' : 'admin'}
+      title={ru ? 'Вход в редактор' : 'Sign in to edit'}
+      subtitle={ru
+        ? 'Зрители видят сайт без входа. Редактировать может только админ.'
+        : 'Viewers can read without login. Editing is admin-only.'}
+      footer={
+        <button type="submit" form="ed-login-form" className="ed-btn ed-btn--primary ed-btn--wide" disabled={busy}>
+          {busy ? <span className="ed-spinner" /> : null}
+          {busy ? (ru ? 'Входим…' : 'Signing in…') : (ru ? 'Войти' : 'Sign in')}
+        </button>
+      }>
+      <form id="ed-login-form" onSubmit={submit} className="ed-form">
+        <EdField label="Email">
+          <input className="ed-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" />
+        </EdField>
+        <EdField label={ru ? 'Пароль' : 'Password'}>
+          <input className="ed-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+        </EdField>
+        {err && <div className="ed-alert ed-alert--error">{err}</div>}
+      </form>
+    </EditorModal>
   );
 }
 
@@ -5999,16 +6782,20 @@ function ImageUploader({ onUpload, label, multiple, icon }) {
     if (inputRef.current) inputRef.current.value = '';
   }
 
+  // Подписи вида «📷 Загрузить файл» остались от старой версии — эмодзи меняем на иконку.
+  const text = String(label || '').replace(/📷/g, '').trim();
   return (
-    <button className="upload-btn" onClick={() => inputRef.current?.click()} disabled={busy}>
+    <button type="button" className={`ed-btn ed-btn--sm ${text ? '' : 'ed-btn--icon'}`}
+      title={text || 'Загрузить картинку'}
+      onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }} disabled={busy}>
       <input ref={inputRef} type="file" accept="image/*" multiple={multiple}
-        style={{ display: 'none' }} onChange={handleFiles} />
-      {busy ? '⏳…' : (label || '📷')}
+        style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} onChange={handleFiles} />
+      {busy ? <span className="ed-spinner" /> : <EdIcon name="upload" size={14} />}
+      {text && <span>{text}</span>}
     </button>
   );
 }
 
-// ──────────────── universal edit/add modal ────────────────
 // ─── Drag-to-reorder hook ───
 function useDragReorder(items, resource) {
   const [dragId, setDragId] = useState(null);
@@ -6054,8 +6841,139 @@ function useDragReorder(items, resource) {
   return { getHandlers, dragId, overId };
 }
 
+// ──────────────── universal edit/add modal ────────────────
+// Одна форма на все разделы. Описание полей приходит из раздела:
+//   { key, label, type: text|number|date|select|image|textarea, default,
+//     required, min, max, options, placeholder,
+//     half — поле в полстроки, hint — подсказка под полем,
+//     group — подзаголовок перед полем }
+// Список из нескольких коротких вариантов показывается переключателем,
+// число с границами — ползунком, картинка — превью с загрузкой.
+function edUseSegment(f) {
+  const opts = f.options || [];
+  if (f.segment === false) return false;
+  if (f.segment === true) return true;
+  const total = opts.reduce((s, o) => s + String(o.label).length, 0);
+  return opts.length <= 5 && total <= 46;
+}
+
+function EdImageInput({ value, onChange }) {
+  const [busy, setBusy] = useState(false);
+  async function upload(files) {
+    setBusy(true);
+    const up = await window.uploadToStorage(files[0]);
+    setBusy(false);
+    if (up && up.url) onChange(up.url);
+  }
+  const name = value ? String(value).split('/').pop().split('?')[0] : '';
+  return (
+    <div className="ed-image-input">
+      {value ? (
+        <div className="ed-image-card">
+          <EdThumb src={value} className="ed-image-card-thumb" />
+          <div className="ed-image-card-meta">
+            <span className="ed-mono ed-ellipsis" title={value}>{name.length > 60 ? 'картинка' : name}</span>
+            <div className="ed-row">
+              <EdDropzone compact onFiles={upload} busy={busy} label="Заменить" />
+              <button type="button" className="ed-btn ed-btn--ghost ed-btn--sm" onClick={() => onChange('')}>
+                <EdIcon name="close" size={13} /> Убрать
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <EdDropzone onFiles={upload} busy={busy} hint="JPG, PNG, WEBP или GIF" />
+      )}
+      <div className="ed-input-wrap">
+        <EdIcon name="link" size={14} />
+        <input className="ed-input ed-input--icon" type="text" value={value || ''}
+          placeholder="…или вставь ссылку на картинку"
+          onChange={(e) => onChange(e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
+function EdFormControl({ f, value, onChange }) {
+  const label = <>{f.label}{f.required && <span className="ed-req" title="Обязательное поле">*</span>}</>;
+
+  if (f.type === 'select') {
+    const opts = f.options || [];
+    if (edUseSegment(f)) {
+      return (
+        <EdField plain label={label} hint={f.hint} half={f.half}>
+          <EdSegment value={value ?? ''} options={opts} onChange={onChange} />
+        </EdField>
+      );
+    }
+    return (
+      <EdField label={label} hint={f.hint} half={f.half}>
+        <select className="ed-input ed-select" value={value ?? ''} onChange={e => onChange(e.target.value)}>
+          {opts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </EdField>
+    );
+  }
+
+  if (f.type === 'image') {
+    return (
+      <EdField plain label={label} hint={f.hint} half={f.half}>
+        <EdImageInput value={value} onChange={onChange} />
+      </EdField>
+    );
+  }
+
+  if (f.type === 'textarea') {
+    return (
+      <EdField label={label} hint={f.hint} half={f.half}>
+        <textarea className="ed-input ed-textarea" value={value || ''} rows={f.rows || 3}
+          placeholder={f.placeholder || ''} onChange={e => onChange(e.target.value)} />
+      </EdField>
+    );
+  }
+
+  // Число с границами (прогресс 0–100, оттенок 0–360) — ползунок + поле.
+  if (f.type === 'number' && f.min != null && f.max != null && f.max <= 360) {
+    const n = Number(value) || 0;
+    const pct = Math.max(0, Math.min(100, ((n - f.min) / (f.max - f.min)) * 100));
+    const isHue = f.key === 'hue';
+    return (
+      <EdField plain label={label} hint={f.hint} half={f.half}>
+        <div className="ed-range">
+          <input type="range" min={f.min} max={f.max} step={f.step || 1} value={n}
+            className={isHue ? 'ed-range-hue' : ''}
+            style={{ '--p': pct + '%' }}
+            onChange={e => onChange(parseInt(e.target.value) || 0)} />
+          <div className="ed-range-num">
+            {isHue && <span className="ed-swatch" style={{ background: `hsl(${n} 55% 50%)` }} />}
+            <input type="number" className="ed-input ed-input--num" min={f.min} max={f.max} value={value ?? ''}
+              onChange={e => onChange(parseInt(e.target.value) || 0)} />
+            {f.max === 100 && !isHue && <span className="ed-unit">%</span>}
+          </div>
+        </div>
+      </EdField>
+    );
+  }
+
+  return (
+    <EdField label={label} hint={f.hint} half={f.half}>
+      <input
+        className="ed-input"
+        type={f.type || 'text'}
+        value={value ?? ''}
+        min={f.min}
+        max={f.max}
+        required={f.required}
+        placeholder={f.placeholder || ''}
+        onChange={e => onChange(f.type === 'number' ? (parseInt(e.target.value) || 0) : e.target.value)}
+      />
+    </EdField>
+  );
+}
+
 function EditItemModal({ open, onClose, onSave, fields, values, title, lang }) {
   const [draft, setDraft] = useState({});
+  const ru = lang !== 'en';
 
   useEffect(() => {
     if (open) {
@@ -6067,7 +6985,10 @@ function EditItemModal({ open, onClose, onSave, fields, values, title, lang }) {
     }
   }, [open]);
 
+  const missing = fields.filter(f => f.required && !String(draft[f.key] ?? '').trim());
+
   function handleSave() {
+    if (missing.length) return;
     onSave({ ...draft });
     onClose();
   }
@@ -6075,78 +6996,37 @@ function EditItemModal({ open, onClose, onSave, fields, values, title, lang }) {
   if (!open) return null;
 
   return (
-    <Modal open={true} onClose={onClose}>
-      <div style={{ maxWidth: 480, minWidth: 320 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8 }}>
-          ✦ {values ? (lang === 'ru' ? 'редактировать' : 'edit') : (lang === 'ru' ? 'добавить' : 'add')}
-        </div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 32, margin: '0 0 20px', fontWeight: 500 }}>
-          {title}
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {fields.map(f => (
-            <label key={f.key} className="login-field">
-              <span>{f.label}</span>
-              {f.type === 'select' ? (
-                <select
-                  value={draft[f.key] || ''}
-                  onChange={e => setDraft(prev => ({...prev, [f.key]: e.target.value}))}
-                  style={{ padding: '10px 14px', borderRadius: 'var(--r)', background: 'rgba(40,34,28,0.98)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 14 }}>
-                  {f.options.map(o => <option key={o.value} value={o.value} style={{ background: '#23201b', color: '#f0e9df' }}>{o.label}</option>)}
-                </select>
-              ) : f.type === 'image' ? (
-                <div>
-                  {draft[f.key] && (
-                    <div style={{ marginBottom: 8, position: 'relative', display: 'inline-block' }}>
-                      <img src={draft[f.key]} style={{ maxWidth: 120, maxHeight: 90, borderRadius: 8, objectFit: 'cover' }} alt="" />
-                      <button className="admin-btn danger" style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, fontSize: 12 }}
-                        onClick={() => setDraft(prev => ({ ...prev, [f.key]: '' }))}>×</button>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input type="text" value={draft[f.key] || ''} placeholder="URL картинки..."
-                      onChange={e => setDraft(prev => ({ ...prev, [f.key]: e.target.value }))}
-                      style={{ flex: 1 }} />
-                    <ImageUploader label="📷" onUpload={url => setDraft(prev => ({ ...prev, [f.key]: url }))} />
-                  </div>
-                </div>
-              ) : f.type === 'textarea' ? (
-                <textarea
-                  value={draft[f.key] || ''}
-                  rows={3}
-                  onChange={e => setDraft(prev => ({...prev, [f.key]: e.target.value}))}
-                  style={{ padding: '10px 14px', borderRadius: 'var(--r)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: 14, resize: 'vertical' }}
-                />
-              ) : (
-                <input
-                  type={f.type || 'text'}
-                  value={draft[f.key] ?? ''}
-                  min={f.min}
-                  max={f.max}
-                  required={f.required}
-                  placeholder={f.placeholder || ''}
-                  onChange={e => {
-                    const val = f.type === 'number' ? (parseInt(e.target.value) || 0) : e.target.value;
-                    setDraft(prev => ({...prev, [f.key]: val}));
-                  }}
-                />
-              )}
-            </label>
-          ))}
-          <button className="btn btn-primary" onClick={handleSave} style={{ marginTop: 8, justifyContent: 'center' }}>
-            {values
-              ? (lang === 'ru' ? 'Сохранить' : 'Save')
-              : (lang === 'ru' ? 'Добавить' : 'Add')}
-          </button>
-        </div>
+    <EditorModal open={true} onClose={onClose}
+      eyebrow={values ? (ru ? 'редактирование' : 'edit') : (ru ? 'новая запись' : 'new')}
+      title={title}
+      footer={<>
+        <span className="ed-foot-hint">{ru ? 'Ctrl + Enter — сохранить' : 'Ctrl + Enter to save'}</span>
+        <button type="button" className="ed-btn ed-btn--ghost" onClick={onClose}>{ru ? 'Отмена' : 'Cancel'}</button>
+        <button type="button" className="ed-btn ed-btn--primary" onClick={handleSave} disabled={missing.length > 0}
+          title={missing.length ? (ru ? 'Заполни поля со звёздочкой' : 'Fill in required fields') : ''}>
+          <EdIcon name="check" size={15} />
+          {values ? (ru ? 'Сохранить' : 'Save') : (ru ? 'Добавить' : 'Add')}
+        </button>
+      </>}>
+      <div className="ed-form"
+        onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); handleSave(); } }}>
+        {fields.map(f => (
+          <React.Fragment key={f.key}>
+            {f.group && <div className="ed-form-group">{f.group}</div>}
+            <EdFormControl f={f} value={draft[f.key]}
+              onChange={v => setDraft(prev => ({ ...prev, [f.key]: v }))} />
+          </React.Fragment>
+        ))}
       </div>
-    </Modal>
+    </EditorModal>
   );
 }
 
 Object.assign(window, {
   RatLogo, BackgroundLayer, TopNav, PageHead,
   Editable, EditableNumber, Modal, FootOrnament, LoginModal, EditItemModal, ImageUploader, useDragReorder,
+  EdIcon, EditorModal, EdField, EdSection, EdSegment, EdDropzone, ItemTools, DragHandle, EdThumb,
+  EdDialogHost, askConfirm, askText, edNotice, edMediaKind,
 });
   </script>
 
@@ -6294,19 +7174,22 @@ function HeroSocials({ links, admin, linksRes, lang }) {
   const [chooseLink, setChooseLink] = homeState(null); // ссылка с двумя каналами → меню выбора
 
   const linkFields = React.useMemo(() => [
-    { key: 'label', label: lang === 'ru' ? 'Название' : 'Label', type: 'text', required: true, default: '' },
-    { key: 'handle', label: 'Handle / @', type: 'text', default: '' },
-    { key: 'url', label: 'URL', type: 'text', required: true, default: 'https://' },
+    { key: 'label', label: lang === 'ru' ? 'Название' : 'Label', type: 'text', required: true, default: '', half: true, placeholder: 'Telegram' },
+    { key: 'handle', label: lang === 'ru' ? 'Ник / @' : 'Handle / @', type: 'text', default: '', half: true, placeholder: '@milaria' },
+    { key: 'url', label: lang === 'ru' ? 'Ссылка' : 'URL', type: 'text', required: true, default: 'https://' },
     // Иконка по умолчанию определяется по ссылке автоматически; выбор здесь —
     // только если хочется переопределить вручную.
     { key: 'icon', label: lang === 'ru' ? 'Иконка' : 'Icon', type: 'select', default: '',
+      hint: lang === 'ru' ? 'Обычно определяется по ссылке сама — выбирай, только если хочется другую.' : 'Detected from the URL automatically.',
       options: [{ value: '', label: lang === 'ru' ? 'Авто (по ссылке)' : 'Auto (by URL)' }]
         .concat(SOCIAL_ICON_OPTIONS.map(k => ({ value: k, label: SOCIAL_ICONS[k].label }))) },
     // Два канала на одной иконке: если заполнить — клик открывает меню выбора.
     // Название первого варианта берётся из «Название» выше, ссылка — из «URL».
     // Второй канал: если заполнить, клик по иконке откроет меню выбора.
-    { key: 'label2', label: lang === 'ru' ? '2-й канал: название' : '2nd: name', type: 'text', default: '' },
-    { key: 'url2', label: lang === 'ru' ? '2-й канал: ссылка' : '2nd: URL', type: 'text', default: '' },
+    { key: 'label2', label: lang === 'ru' ? 'Название' : 'Name', type: 'text', default: '', half: true,
+      group: lang === 'ru' ? 'Второй канал — необязательно' : 'Second channel — optional' },
+    { key: 'url2', label: lang === 'ru' ? 'Ссылка' : 'URL', type: 'text', default: '', half: true,
+      hint: lang === 'ru' ? 'Если заполнить, клик по иконке откроет меню выбора из двух каналов.' : 'If set, the icon opens a chooser.' },
   ], [lang]);
 
   function handleSave(draft) {
@@ -6337,20 +7220,18 @@ function HeroSocials({ links, admin, linksRes, lang }) {
              }}>
             <span className="hero-soc-h-icon"><SocialGlyph name={iconName} /></span>
             {admin && (
-              <span className="hero-soc-admin">
-                <button className="admin-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditLink({ item: l, isNew: false }); }}>✎</button>
-                <button className="admin-btn danger" onClick={(e) => { e.preventDefault(); e.stopPropagation(); linksRes.remove(l.id); }}>×</button>
-              </span>
+              <ItemTools size="sm" className="hero-soc-tools"
+                onEdit={() => setEditLink({ item: l, isNew: false })}
+                onDelete={() => linksRes.remove(l.id)}
+                deleteText={`Удалить ссылку «${l.label}»?`} />
             )}
           </a>);
       })}
       {admin && (
-        <button className="hero-soc-h" style={{ cursor: 'pointer', border: '1px dashed rgba(255,255,255,0.15)' }}
+        <button className="hero-soc-h hero-soc-add" title={lang === 'ru' ? 'Добавить ссылку' : 'Add link'}
           onClick={() => setEditLink({ item: null, isNew: true })}>
-          <span className="hero-soc-h-icon" style={{ fontSize: 18, lineHeight: 1 }}>+</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em' }}>
-            {lang === 'ru' ? 'Добавить' : 'Add'}
-          </span>
+          <span className="hero-soc-h-icon"><EdIcon name="plus" size={16} /></span>
+          <span className="hero-soc-add-text">{lang === 'ru' ? 'Добавить' : 'Add'}</span>
         </button>
       )}
 
@@ -6466,127 +7347,129 @@ function CommissionBanner({ t, lang, onGoTo, admin }) {
         </button>
         <span className="banner-deco">✦ ✦ ✦</span>
         {admin && (
-          <button className="admin-btn" style={{ position: 'absolute', top: 8, right: 8 }}
-            onClick={() => setBannerEdit(true)}>✎</button>
+          <button className="ed-btn ed-btn--accent ed-btn--sm" style={{ position: 'absolute', top: 12, right: 12 }}
+            onClick={() => setBannerEdit(true)}><EdIcon name="edit" size={13} /> {lang === 'ru' ? 'Изменить' : 'Edit'}</button>
         )}
       </div>
       {admin && editBanner && (
-        <Modal open={true} onClose={() => setBannerEdit(false)}>
-          <div style={{ maxWidth: 520, minWidth: 320 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8 }}>✦ баннер</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 32, margin: '0 0 20px', fontWeight: 500 }}>
-              {lang === 'ru' ? 'Настройки баннера' : 'Banner settings'}
-            </h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <label className="login-field">
-                <span>Месяц — рус. (напр. Май)</span>
-                <input type="text" value={bannerCfg.banner_month || ''} onChange={e => {
-                  const upd = {...bannerCfg, banner_month: e.target.value};
-                  saveBannerCfg(upd);
-                }} />
-              </label>
-
-              <label className="login-field">
-                <span>Month — eng. (e.g. May)</span>
-                <input type="text" value={bannerCfg.banner_month_en || ''} placeholder="May" onChange={e => {
-                  const upd = {...bannerCfg, banner_month_en: e.target.value};
-                  saveBannerCfg(upd);
-                }} />
-              </label>
-
-              <label className="login-field">
-                <span>{lang === 'ru' ? 'Статус' : 'Status'}</span>
-                <select value={bannerCfg.banner_status || 'open'} onChange={e => {
-                  const upd = {...bannerCfg, banner_status: e.target.value};
-                  saveBannerCfg(upd);
-                }}>
-                  <option value="open">{lang === 'ru' ? '🟢 Открыты' : '🟢 Open'}</option>
-                  <option value="closed">{lang === 'ru' ? '🔴 Закрыты' : '🔴 Closed'}</option>
-                  <option value="waitlist">{lang === 'ru' ? '🟡 Лист ожидания' : '🟡 Waitlist'}</option>
-                </select>
-              </label>
-
-              <label className="login-field">
-                <span>YouTube (URL)</span>
-                <input type="text" value={bannerCfg.banner_video || ''} placeholder="https://youtube.com/watch?v=..." onChange={e => {
-                  const upd = {...bannerCfg, banner_video: e.target.value};
-                  saveBannerCfg(upd);
-                }} />
-              </label>
-
-              <div>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
-                  {lang === 'ru' ? `Слоты баннера (${bannerSlots.length}) — картинка или YouTube` : `Banner slots (${bannerSlots.length}) — image or YouTube`}
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {bannerSlots.map((slot, i) => {
-                    const slotYT = slot && (slot.includes('youtube.com') || slot.includes('youtu.be'))
-                      ? slot.match(/(?:v=|youtu\.be\/|embed\/)([\w-]+)/)?.[1] : null;
-                    const thumb = slotYT ? `https://img.youtube.com/vi/${slotYT}/mqdefault.jpg` : slot;
-                    return (
-                      <div key={i} style={{
-                        position: 'relative', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden',
-                        background: slot ? 'none' : `linear-gradient(135deg, hsl(${30+i*18},50%,30%), hsl(${48+i*18},45%,20%))`,
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}>
-                        {thumb && <img src={thumb} style={{ width:'100%',height:'100%',objectFit:'cover' }} alt="" />}
-                        <div style={{ position:'absolute',top:4,left:4,fontFamily:'var(--font-mono)',fontSize:10,color:'rgba(255,255,255,.5)' }}>#{i+1}</div>
-                        <div style={{ position:'absolute',bottom:4,right:4,display:'flex',gap:3 }}>
-                          <ImageUploader label="📷" onUpload={(url) => {
-                            const slots = [...bannerSlots]; slots[i] = url;
-                            const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd);
-                          }} />
-                          {slot && <button className="admin-btn danger" style={{width:24,height:24,fontSize:11}} onClick={() => {
-                            const slots = bannerSlots.filter((_, idx) => idx !== i);
-                            const upd = {...bannerCfg, banner_slots: slots};
-                            saveBannerCfg(upd);
-                          }}>×</button>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {/* Add new slot card */}
-                  <button onClick={() => {
-                    const slots = [...bannerSlots, ''];
-                    const upd = {...bannerCfg, banner_slots: slots};
-                    saveBannerCfg(upd);
-                  }} style={{
-                    aspectRatio: '16/9', borderRadius: 8,
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1.5px dashed rgba(255,255,255,0.18)',
-                    color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)', fontSize: 14,
-                  }}>+ {lang === 'ru' ? 'Добавить слот' : 'Add slot'}</button>
-                </div>
-                <label className="login-field" style={{ marginTop: 8 }}>
-                  <span>{lang === 'ru' ? 'Вставить YouTube URL → создаст новый слот' : 'Paste YouTube URL → creates new slot'}</span>
-                  <div style={{ display:'flex', gap:6 }}>
-                    <input type="text" placeholder="https://youtube.com/watch?v=..." style={{flex:1}} id="yt-new-url" />
-                    <button className="btn btn-primary" style={{fontSize:12,padding:'6px 14px'}} onClick={() => {
-                      const url = document.getElementById('yt-new-url').value.trim();
-                      if (url) {
-                        const slots = [...bannerSlots, url];
-                        const upd = {...bannerCfg, banner_slots: slots};
-                        saveBannerCfg(upd);
-                        document.getElementById('yt-new-url').value = '';
-                      }
-                    }}>+ {lang === 'ru' ? 'Добавить' : 'Add'}</button>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <button className="btn btn-primary" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}
-              onClick={() => setBannerEdit(false)}>
-              {lang === 'ru' ? 'Готово' : 'Done'}
-            </button>
-          </div>
-        </Modal>
+        <BannerEditor cfg={bannerCfg} save={saveBannerCfg} slots={bannerSlots} lang={lang}
+          autoMonth={autoMonth} onClose={() => setBannerEdit(false)} />
       )}
     </div>);
 
+}
+
+// ── Редактор баннера «Открыты заказы на …» ──
+// Каждое изменение сохраняется сразу, как и раньше; «Готово» просто закрывает окно.
+function BannerEditor({ cfg, save, slots, lang, autoMonth, onClose }) {
+  const ru = lang === 'ru';
+  const [ytUrl, setYtUrl] = homeState('');
+  const [busy, setBusy] = homeState(false);
+  const set = (patch) => save({ ...cfg, ...patch });
+  const setSlots = (next) => set({ banner_slots: next });
+
+  async function uploadFiles(files) {
+    setBusy(true);
+    const urls = [];
+    for (const f of files) {
+      const up = await window.uploadToStorage(f);
+      if (up && up.url) urls.push(up.url);
+    }
+    setBusy(false);
+    if (urls.length) setSlots([...slots.filter(Boolean), ...urls]);
+  }
+  async function replaceSlot(i, files) {
+    setBusy(true);
+    const up = await window.uploadToStorage(files[0]);
+    setBusy(false);
+    if (up && up.url) { const next = [...slots]; next[i] = up.url; setSlots(next); }
+  }
+  function moveSlot(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= slots.length) return;
+    const next = [...slots];
+    [next[i], next[j]] = [next[j], next[i]];
+    setSlots(next);
+  }
+  function addYt() {
+    const url = ytUrl.trim();
+    if (!url) return;
+    setSlots([...slots, url]);
+    setYtUrl('');
+  }
+
+  const statusOptions = [
+    { value: 'open', label: ru ? 'Открыты' : 'Open', dot: '#4ade80' },
+    { value: 'waitlist', label: ru ? 'Лист ожидания' : 'Waitlist', dot: '#eab308' },
+    { value: 'closed', label: ru ? 'Закрыты' : 'Closed', dot: '#ef4444' },
+  ];
+
+  return (
+    <EditorModal onClose={onClose} size="lg"
+      eyebrow={ru ? 'главная · баннер' : 'home · banner'}
+      title={ru ? 'Баннер заказов' : 'Commission banner'}
+      subtitle={ru ? 'Изменения сохраняются сразу — закрыть окно можно в любой момент.' : 'Changes save instantly.'}
+      footer={<>
+        <span className="ed-autosave">{ru ? 'Сохраняется автоматически' : 'Saved automatically'}</span>
+        <button className="ed-btn ed-btn--primary" onClick={onClose}><EdIcon name="check" size={15} /> {ru ? 'Готово' : 'Done'}</button>
+      </>}>
+
+      <EdSection title={ru ? 'Статус и месяц' : 'Status & month'}>
+        <div className="ed-form">
+          <EdField plain label={ru ? 'Статус заказов' : 'Status'}>
+            <EdSegment value={cfg.banner_status || 'open'} options={statusOptions}
+              onChange={v => set({ banner_status: v })} />
+          </EdField>
+          <EdField half label={ru ? 'Месяц по-русски' : 'Month (RU)'} hint={ru ? `Пусто — подставится текущий: «${autoMonth}»` : ''}>
+            <input className="ed-input" value={cfg.banner_month || ''} placeholder={ru ? 'Май' : 'May'}
+              onChange={e => set({ banner_month: e.target.value })} />
+          </EdField>
+          <EdField half label={ru ? 'Месяц по-английски' : 'Month (EN)'}>
+            <input className="ed-input" value={cfg.banner_month_en || ''} placeholder="May"
+              onChange={e => set({ banner_month_en: e.target.value })} />
+          </EdField>
+          <EdField label="YouTube" hint={ru ? 'Необязательно. Ссылка на ролик для баннера.' : 'Optional video link.'}>
+            <input className="ed-input" value={cfg.banner_video || ''} placeholder="https://youtube.com/watch?v=..."
+              onChange={e => set({ banner_video: e.target.value })} />
+          </EdField>
+        </div>
+      </EdSection>
+
+      <EdSection
+        title={<>{ru ? 'Слайды' : 'Slides'}<span className="ed-count">{slots.filter(Boolean).length}</span></>}
+        hint={ru ? 'Картинки сменяют друг друга при наведении на баннер. Порядок — стрелками.' : 'Images rotate on hover.'}>
+        <div className="ed-media-grid">
+          {slots.map((slot, i) => (
+            <div key={i} className="ed-media-card">
+              <span className="ed-media-num">{i + 1}</span>
+              <ItemTools size="sm"
+                extra={<>
+                  {i > 0 && <button type="button" className="ed-tool" title={ru ? 'Левее' : 'Move left'} onClick={(e) => { e.stopPropagation(); moveSlot(i, -1); }}>‹</button>}
+                  {i < slots.length - 1 && <button type="button" className="ed-tool" title={ru ? 'Правее' : 'Move right'} onClick={(e) => { e.stopPropagation(); moveSlot(i, 1); }}>›</button>}
+                </>}
+                onDelete={() => setSlots(slots.filter((_, idx) => idx !== i))}
+                deleteText={ru ? `Убрать слайд №${i + 1} из баннера?` : 'Remove this slide?'} />
+              <EdThumb src={slot} />
+              <div className="ed-media-foot">
+                <EdDropzone compact onFiles={(f) => replaceSlot(i, f)} busy={busy}
+                  label={slot ? (ru ? 'Заменить' : 'Replace') : (ru ? 'Загрузить' : 'Upload')} />
+              </div>
+            </div>
+          ))}
+          <EdDropzone className="ed-media-add" multiple onFiles={uploadFiles} busy={busy}
+            label={ru ? 'Добавить слайды' : 'Add slides'} hint={ru ? 'можно несколько сразу' : 'several at once'} />
+        </div>
+        <div className="ed-row" style={{ marginTop: 12 }}>
+          <div className="ed-input-wrap" style={{ flex: 1, minWidth: 220 }}>
+            <EdIcon name="video" size={14} />
+            <input className="ed-input ed-input--icon" value={ytUrl} placeholder={ru ? 'Или вставь ссылку на YouTube — станет слайдом' : 'Or paste a YouTube link'}
+              onChange={e => setYtUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addYt(); }} />
+          </div>
+          <button className="ed-btn" onClick={addYt} disabled={!ytUrl.trim()}><EdIcon name="plus" size={14} /> {ru ? 'Добавить' : 'Add'}</button>
+        </div>
+      </EdSection>
+    </EditorModal>
+  );
 }
 
 // ─── Recent Works: 4 editable tiles, each with multiple image slots ───
@@ -6766,9 +7649,9 @@ function FocalPicker({ src, focal, onChange }) {
             backgroundPosition: pos.x + '% ' + pos.y + '%',
             backgroundColor: '#111',
           }} />
-          <button className="admin-btn" style={{ fontSize: 10 }}
+          <button type="button" className="ed-btn ed-btn--ghost ed-btn--sm"
             onClick={() => { posRef.current = { x: 50, y: 50 }; paint(50, 50); setPos({ x: 50, y: 50 }); onChange('50% 50%'); }}>
-            ⟳ по центру
+            <EdIcon name="center" size={13} /> по центру
           </button>
         </div>
       </div>
@@ -6939,6 +7822,7 @@ function RecentTile({ tileData, lang, onClick }) {
 }
 
 function RecentTileEditor({ tile, onSave, onClose, lang }) {
+  const ru = lang === 'ru';
   const [draft, setDraft] = homeState(() => ({
     ...tile,
     slots: (tile.slots || []).map(localSupaUrl),
@@ -6946,7 +7830,7 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
   }));
   const [urlInput, setUrlInput] = homeState('');
   const [focalSlot, setFocalSlot] = homeState(null); // index of slot being edited
-  const fileRef = homeRef(null);
+  const [busy, setBusy] = homeState(false);
 
   // Autosave: keep refs fresh so a flush never writes with a stale closure
   const draftRef = homeRef(draft);   draftRef.current = draft;
@@ -6979,6 +7863,18 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
     });
     if (focalSlot === i) setFocalSlot(null);
   }
+  function moveSlot(i, dir) {
+    setDraft(d => {
+      const j = i + dir;
+      if (j < 0 || j >= d.slots.length) return d;
+      const slots = [...d.slots];
+      const focal = [...(d.focal || d.slots.map(() => '50% 50%'))];
+      [slots[i], slots[j]] = [slots[j], slots[i]];
+      [focal[i], focal[j]] = [focal[j], focal[i]];
+      return { ...d, slots, focal };
+    });
+    setFocalSlot(null);
+  }
   function setFocal(i, val) {
     setDraft(d => {
       const focal = [...(d.focal || d.slots.map(() => '50% 50%'))];
@@ -6986,99 +7882,92 @@ function RecentTileEditor({ tile, onSave, onClose, lang }) {
       return { ...d, focal };
     });
   }
-  async function handleFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const up = await window.uploadToStorage(file);
-    if (up) {
-      setDraft(d => ({ ...d, slots: [...d.slots, up.url], focal: [...(d.focal || []), '50% 50%'] }));
+  async function handleFiles(files) {
+    setBusy(true);
+    for (const file of files) {
+      const up = await window.uploadToStorage(file);
+      if (up) {
+        setDraft(d => ({ ...d, slots: [...d.slots, up.url], focal: [...(d.focal || []), '50% 50%'] }));
+      }
     }
-    if (fileRef.current) fileRef.current.value = '';
+    setBusy(false);
   }
 
+  const slots = draft.slots || [];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <label className="login-field">
-          <span>Название (RU)</span>
-          <input value={draft.label || ''} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
-        </label>
-        <label className="login-field">
-          <span>Label (EN)</span>
-          <input value={draft.label_en || ''} onChange={e => setDraft(d => ({ ...d, label_en: e.target.value }))} />
-        </label>
+    <>
+      <EdSection title={ru ? 'Подпись на плашке' : 'Tile label'}>
+        <div className="ed-form">
+          <EdField half label={ru ? 'По-русски' : 'Russian'}>
+            <input className="ed-input" value={draft.label || ''} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
+          </EdField>
+          <EdField half label={ru ? 'По-английски' : 'English'}>
+            <input className="ed-input" value={draft.label_en || ''} onChange={e => setDraft(d => ({ ...d, label_en: e.target.value }))} />
+          </EdField>
+        </div>
+      </EdSection>
 
-        <div>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-dim)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
-            {lang === 'ru' ? 'Медиафайлы — картинки, видео (mp4), гиф' : 'Media — images, video (mp4), gif'}
-          </span>
-
-          {/* Slot list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-            {(draft.slots || []).map((s, i) => {
-              const type = detectMedia(s);
-              const focal = (draft.focal || [])[i] || '50% 50%';
-              const isEditing = focalSlot === i;
-              return (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 8 }}>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    {type === 'video' ? (
-                      <div style={{ width: 48, height: 36, borderRadius: 4, background: '#111', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                        <span style={{ fontSize: 18 }}>🎬</span>
-                      </div>
-                    ) : type === 'gif' ? (
-                      <img src={s} style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 4 }} alt="" />
-                    ) : (
-                      <img src={s} style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 4 }} alt=""
-                        onError={e => e.target.style.display='none'} />
-                    )}
-                    <span style={{ flex: 1, fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {type === 'video' ? '🎬 ' : type === 'gif' ? '🎞 ' : ''}{s.split('/').pop().split('?')[0]}
-                    </span>
-                    {type !== 'video' && (
-                      <button className="admin-btn" style={{ fontSize: 11, whiteSpace: 'nowrap' }}
-                        onClick={() => setFocalSlot(isEditing ? null : i)}
-                        title="Выбрать кадр">
-                        {isEditing ? '✓' : '🎯'}
-                      </button>
-                    )}
-                    <button className="admin-btn danger" style={{ width: 24, height: 24, fontSize: 11, flexShrink: 0 }}
-                      onClick={() => removeSlot(i)}>×</button>
-                  </div>
-                  {/* Focal picker expanded */}
-                  {isEditing && type !== 'video' && (
-                    <FocalPicker src={s} focal={focal}
-                      onChange={val => setFocal(i, val)} />
+      <EdSection
+        title={<>{ru ? 'Работы на плашке' : 'Media'}<span className="ed-count">{slots.length}</span></>}
+        hint={ru ? 'Картинки, гифки и видео mp4 сменяют друг друга. У картинки можно выбрать кадр — какую часть показывать в узкой плашке.' : 'Images, GIFs and mp4 rotate. Pick the visible area of an image.'}>
+        <div className="ed-media-grid">
+          {slots.map((s, i) => {
+            const type = detectMedia(s);
+            const isEditing = focalSlot === i;
+            const focal = (draft.focal || [])[i] || '50% 50%';
+            return (
+              <div key={i} className={`ed-media-card ed-media-card--tall ${isEditing ? 'active' : ''}`}>
+                <span className="ed-media-num">{i + 1}</span>
+                <ItemTools size="sm"
+                  extra={<>
+                    {i > 0 && <button type="button" className="ed-tool" title={ru ? 'Раньше' : 'Earlier'} onClick={(e) => { e.stopPropagation(); moveSlot(i, -1); }}>‹</button>}
+                    {i < slots.length - 1 && <button type="button" className="ed-tool" title={ru ? 'Позже' : 'Later'} onClick={(e) => { e.stopPropagation(); moveSlot(i, 1); }}>›</button>}
+                  </>}
+                  onDelete={() => removeSlot(i)}
+                  deleteText={ru ? `Убрать работу №${i + 1} с плашки?` : 'Remove this item?'} />
+                <EdThumb src={s} focal={type !== 'video' ? focal : undefined} />
+                <div className="ed-media-foot">
+                  <span className="ed-mono ed-ellipsis" title={s}>{type === 'video' ? (ru ? 'видео' : 'video') : type === 'gif' ? 'GIF' : (ru ? 'картинка' : 'image')}</span>
+                  {type !== 'video' && (
+                    <button type="button" className={`ed-btn ed-btn--sm ${isEditing ? 'ed-btn--accent' : 'ed-btn--ghost'}`}
+                      onClick={() => setFocalSlot(isEditing ? null : i)} title={ru ? 'Выбрать кадр' : 'Pick area'}>
+                      <EdIcon name={isEditing ? 'check' : 'target'} size={13} />
+                      <span>{isEditing ? (ru ? 'Готово' : 'Done') : (ru ? 'Кадр' : 'Area')}</span>
+                    </button>
                   )}
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Add URL */}
-          <label className="login-field">
-            <span>+ {lang === 'ru' ? 'URL (картинка / mp4 / youtube)' : 'URL (image / mp4 / youtube)'}</span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addUrl()}
-                placeholder="https://..." style={{ flex: 1 }} />
-              <button className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px', flexShrink: 0 }} onClick={addUrl}>+</button>
-            </div>
-          </label>
-
-          {/* Upload file */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button className="btn" style={{ fontSize: 12 }} onClick={() => fileRef.current?.click()}>
-              📷 {lang === 'ru' ? 'Загрузить файл' : 'Upload file'}
-            </button>
-            <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm" style={{ display: 'none' }} onChange={handleFile} />
-          </div>
+              </div>
+            );
+          })}
+          <EdDropzone className="ed-media-add" multiple busy={busy} onFiles={handleFiles}
+            accept="image/*,video/mp4,video/webm"
+            label={ru ? 'Добавить работы' : 'Add media'} hint={ru ? 'картинки, гиф, mp4' : 'images, gif, mp4'} />
         </div>
 
-        <button className="btn btn-primary" style={{ marginTop: 6, justifyContent: 'center' }}
-          onClick={() => { onSaveRef.current(draftRef.current); dirtyRef.current = false; onClose(); }}>
-          {lang === 'ru' ? 'Готово' : 'Done'}
-        </button>
-    </div>
+        {focalSlot !== null && slots[focalSlot] && detectMedia(slots[focalSlot]) !== 'video' && (
+          <div className="ed-panel" style={{ marginTop: 14 }}>
+            <div className="ed-row ed-row--between" style={{ marginBottom: 4 }}>
+              <span className="ed-section-title">{ru ? `Кадр для работы №${focalSlot + 1}` : `Area for #${focalSlot + 1}`}</span>
+              <button type="button" className="ed-icon-btn" style={{ width: 30, height: 30 }} onClick={() => setFocalSlot(null)} aria-label={ru ? 'Закрыть' : 'Close'}>
+                <EdIcon name="close" size={14} />
+              </button>
+            </div>
+            <FocalPicker key={focalSlot} src={slots[focalSlot]} focal={(draft.focal || [])[focalSlot] || '50% 50%'}
+              onChange={val => setFocal(focalSlot, val)} />
+          </div>
+        )}
+
+        <div className="ed-row" style={{ marginTop: 12 }}>
+          <div className="ed-input-wrap" style={{ flex: 1, minWidth: 220 }}>
+            <EdIcon name="link" size={14} />
+            <input className="ed-input ed-input--icon" value={urlInput} onChange={e => setUrlInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addUrl()}
+              placeholder={ru ? 'Или вставь ссылку: картинка, mp4 или YouTube' : 'Or paste a link: image, mp4 or YouTube'} />
+          </div>
+          <button className="ed-btn" onClick={addUrl} disabled={!urlInput.trim()}><EdIcon name="plus" size={14} /> {ru ? 'Добавить' : 'Add'}</button>
+        </div>
+      </EdSection>
+    </>
   );
 }
 
@@ -7087,6 +7976,7 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
   const tiles = Array.isArray(tilesData) && tilesData.length === 4 ? tilesData : DEFAULT_TILES;
   const [editorOpen, setEditorOpen] = homeState(false);
   const [activeTab, setActiveTab] = homeState(0);
+  const ru = lang === 'ru';
 
   function saveTile(i, updated) {
     const next = tiles.map((tl, idx) => idx === i ? { ...tl, ...updated } : tl);
@@ -7098,9 +7988,8 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
       <div className="home-section-head">
         <h2 className="home-section-title"><em>{t.home.recent}</em></h2>
         {admin && (
-          <button className="btn btn-ghost" style={{ fontSize: 12, padding: '6px 14px' }}
-            onClick={() => setEditorOpen(true)}>
-            ✎ {lang === 'ru' ? 'Редактировать плашки' : 'Edit tiles'}
+          <button className="ed-btn ed-btn--accent" onClick={() => setEditorOpen(true)}>
+            <EdIcon name="edit" size={14} /> {ru ? 'Изменить плашки' : 'Edit tiles'}
           </button>
         )}
       </div>
@@ -7110,30 +7999,25 @@ function RecentWorks({ t, lang, onGoTo, admin }) {
         ))}
       </div>
       {admin && editorOpen && (
-        <Modal open={true} onClose={() => setEditorOpen(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '86vh', overflowY: 'auto' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>
-              {lang === 'ru' ? 'Плашки последних работ' : 'Recent works tiles'}
-            </h3>
-            {/* Разделы — по одной вкладке на плашку */}
-            <div style={{ display: 'flex', gap: 6 }}>
-              {tiles.map((tile, i) => (
-                <button key={i} onClick={() => setActiveTab(i)}
-                  className={activeTab === i ? 'btn btn-primary' : 'btn'}
-                  style={{ flex: 1, fontSize: 11, padding: '8px 4px', justifyContent: 'center' }}>
-                  {tile.label || `#${i + 1}`}
-                </button>
-              ))}
-            </div>
-            <RecentTileEditor
-              key={activeTab}
-              tile={tiles[activeTab]}
-              lang={lang}
-              onSave={updated => saveTile(activeTab, updated)}
-              onClose={() => setEditorOpen(false)}
-            />
+        <EditorModal onClose={() => setEditorOpen(false)} size="lg"
+          eyebrow={ru ? 'главная · последние работы' : 'home · recent works'}
+          title={ru ? 'Плашки последних работ' : 'Recent works tiles'}
+          footer={<>
+            <span className="ed-autosave">{ru ? 'Сохраняется автоматически' : 'Saved automatically'}</span>
+            <button className="ed-btn ed-btn--primary" onClick={() => setEditorOpen(false)}><EdIcon name="check" size={15} /> {ru ? 'Готово' : 'Done'}</button>
+          </>}>
+          <div style={{ marginBottom: 20 }}>
+            <EdSegment value={activeTab} onChange={setActiveTab}
+              options={tiles.map((tile, i) => ({ value: i, label: (ru ? tile.label : (tile.label_en || tile.label)) || `#${i + 1}` }))} />
           </div>
-        </Modal>
+          <RecentTileEditor
+            key={activeTab}
+            tile={tiles[activeTab]}
+            lang={lang}
+            onSave={updated => saveTile(activeTab, updated)}
+            onClose={() => setEditorOpen(false)}
+          />
+        </EditorModal>
       )}
     </div>
   );
@@ -7311,7 +8195,7 @@ function QueueRow({ item, idx, t, lang, admin, onUpdate, onDelete, onEdit, barSt
       draggable={dh.draggable}
       onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
       onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-      {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+      {admin && <DragHandle />}
       <div className="q-row-fill" data-style={barStyle} style={{ '--p': `${item.progress}%` }}></div>
       {item.tag && <span className={`q-tag ${item.tag}`}>{t.queue[item.tag]}</span>}
       {/* Приоритет показываем точкой у номера: высокий — красная, низкий — приглушённая */}
@@ -7351,10 +8235,10 @@ function QueueRow({ item, idx, t, lang, admin, onUpdate, onDelete, onEdit, barSt
         <span className="q-progress-label">{t.queue.progress}</span>
       </div>
       {admin && (
-        <div className="admin-actions" style={{ position: 'absolute', bottom: 4, right: 8 }}>
-          <button className="admin-btn" onClick={() => onEdit && onEdit(item)} title="Edit">✎</button>
-          <button className="admin-btn danger" onClick={() => onDelete(item.id)}>×</button>
-        </div>
+        <ItemTools className="q-tools"
+          onEdit={onEdit ? () => onEdit(item) : null}
+          onDelete={() => onDelete(item.id)}
+          deleteText={`Удалить заказ «${item.title || 'без названия'}»?`} />
       )}
     </div>
   );
@@ -7368,7 +8252,7 @@ function SecretRow({ idx, t, admin, onDelete, onEdit, item, dragHandlers }) {
       draggable={dh.draggable}
       onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
       onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-      {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+      {admin && <DragHandle />}
       <div className="q-row-fill" style={{ '--p': item ? `${item.progress || 0}%` : '100%', background: 'rgba(212, 168, 90, 0.06)' }}></div>
       <div className="q-num">{idx + 1}</div>
 
@@ -7394,10 +8278,10 @@ function SecretRow({ idx, t, admin, onDelete, onEdit, item, dragHandlers }) {
       )}
 
       {admin && item && (
-        <div className="admin-actions" style={{ position: 'absolute', bottom: 4, right: 8, zIndex: 5 }}>
-          {onEdit && <button className="admin-btn" onClick={() => onEdit(item)}>✎</button>}
-          <button className="admin-btn danger" onClick={() => onDelete(item.id)}>×</button>
-        </div>
+        <ItemTools className="q-tools" style={{ zIndex: 5 }}
+          onEdit={onEdit ? () => onEdit(item) : null}
+          onDelete={() => onDelete(item.id)}
+          deleteText={`Удалить секретный заказ «${item.title || 'без названия'}»?`} />
       )}
     </div>
   );
@@ -7413,7 +8297,7 @@ function DoneRow({ item, idx, t, admin, onDelete, onEdit, dragHandlers }) {
       draggable={dh.draggable}
       onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
       onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-      {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+      {admin && <DragHandle />}
       <div className="q-row-fill"></div>
       {item.tag && <span className={`q-tag ${item.tag}`}>{t.queue[item.tag]}</span>}
       <div className="q-num">
@@ -7436,10 +8320,10 @@ function DoneRow({ item, idx, t, admin, onDelete, onEdit, dragHandlers }) {
         <span className="q-progress-label">{t.queue.ready}</span>
       </div>
       {admin && (
-        <div className="admin-actions" style={{ position: 'absolute', bottom: 4, right: 8 }}>
-          {onEdit && <button className="admin-btn" onClick={() => onEdit(item)}>✎</button>}
-          <button className="admin-btn danger" onClick={() => onDelete(item.id)}>×</button>
-        </div>
+        <ItemTools className="q-tools"
+          onEdit={onEdit ? () => onEdit(item) : null}
+          onDelete={() => onDelete(item.id)}
+          deleteText={`Удалить выполненный заказ «${item.title || 'без названия'}»?`} />
       )}
     </div>
   );
@@ -7587,9 +8471,11 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
   const queueFields = qMemo(() => [
     { key: 'title', label: lang === 'ru' ? 'Название' : 'Title', type: 'text', required: true, default: '' },
     { key: 'progress', label: lang === 'ru' ? 'Прогресс (%)' : 'Progress (%)', type: 'number', min: 0, max: 100, default: 0 },
-    { key: 'deadline_start', label: lang === 'ru' ? 'Дедлайн: начало' : 'Deadline: start', type: 'date', default: '' },
-    { key: 'deadline_end', label: lang === 'ru' ? 'Дедлайн: конец' : 'Deadline: end', type: 'date', default: '' },
-    { key: 'image', label: lang === 'ru' ? 'Картинка (для выполненных)' : 'Image (for completed)', type: 'image', default: '' },
+    { key: 'deadline_start', label: lang === 'ru' ? 'Срок: с' : 'Deadline: from', type: 'date', default: '', half: true },
+    { key: 'deadline_end', label: lang === 'ru' ? 'Срок: по' : 'Deadline: to', type: 'date', default: '', half: true,
+      hint: lang === 'ru' ? 'По этой дате считается «осталось N дней» и сортировка.' : 'Used for “N days left” and sorting.' },
+    { key: 'image', label: lang === 'ru' ? 'Картинка' : 'Image', type: 'image', default: '',
+      hint: lang === 'ru' ? 'Показывается у выполненных заказов.' : 'Shown for completed orders.' },
     { key: 'tag', label: lang === 'ru' ? 'Тип' : 'Type', type: 'select', default: '', options: [
       { value: '', label: lang === 'ru' ? '— нет —' : '— none —' },
       { value: 'paid', label: lang === 'ru' ? 'Оплачено' : 'Paid' },
@@ -7597,11 +8483,11 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       { value: 'free', label: lang === 'ru' ? 'Бесплатно' : 'Free' },
       { value: 'secret', label: lang === 'ru' ? 'Секрет' : 'Secret' },
     ]},
-    { key: 'kind', label: lang === 'ru' ? 'Статус' : 'Status', type: 'select', default: 'in_progress', options: [
+    { key: 'kind', label: lang === 'ru' ? 'Статус' : 'Status', type: 'select', default: 'in_progress', half: true, options: [
       { value: 'in_progress', label: lang === 'ru' ? 'В работе' : 'In progress' },
       { value: 'completed', label: lang === 'ru' ? 'Готово' : 'Completed' },
     ]},
-    { key: 'priority', label: lang === 'ru' ? 'Приоритет' : 'Priority', type: 'select', default: 'medium',
+    { key: 'priority', label: lang === 'ru' ? 'Приоритет' : 'Priority', type: 'select', default: 'medium', half: true,
       options: PRIORITY_LEVELS.map(p => ({
         value: p, label: lang === 'ru' ? PRIORITY_META[p].ru : PRIORITY_META[p].en,
       })) },
@@ -7731,7 +8617,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       {renderInProgress()}
 
       {admin && (
-        <button className="add-btn" onClick={addInProgress}>+ {t.queue.addNew}</button>
+        <button className="add-btn" onClick={addInProgress}><EdIcon name="plus" size={15} /> {String(t.queue.addNew).replace(/^\+\s*/, '')}</button>
       )}
 
       {admin && editModal && (
@@ -7927,7 +8813,7 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
   async function addUrl() {
     if (!urlInput.trim()) return;
     if (String(category.id).startsWith('def-')) {
-      alert('Категория ещё не загрузилась из базы. Подожди пару секунд и попробуй снова.');
+      edNotice('Категория ещё загружается', 'Подожди пару секунд и попробуй снова.');
       return;
     }
     setUploading(true);
@@ -7939,13 +8825,13 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
     });
     setUploading(false);
     if (result) setUrlInput('');
-    else alert('Не удалось добавить. Проверь URL.');
+    else edNotice('Не удалось добавить', 'Проверь ссылку.');
   }
 
   async function migrateToStorage() {
     const base64imgs = catImages.filter(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:'));
-    if (!base64imgs.length) { alert('Нет старых картинок для переноса'); return; }
-    if (!confirm(`Перенести ${base64imgs.length} картинок в быстрое хранилище? Это займёт несколько секунд.`)) return;
+    if (!base64imgs.length) { edNotice('Нет старых картинок для переноса'); return; }
+    if (!(await askConfirm('Это займёт несколько секунд.', { title: `Перенести ${base64imgs.length} картинок в быстрое хранилище?`, okText: 'Перенести' }))) return;
     setUploading(true);
     let done = 0, failed = 0;
     for (const img of base64imgs) {
@@ -7958,16 +8844,19 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
       } catch (e) { failed++; }
     }
     setUploading(false);
-    alert(`Готово! Перенесено: ${done}${failed ? ', ошибок: ' + failed : ''}`);
+    edNotice('Готово', `Перенесено: ${done}${failed ? ', ошибок: ' + failed : ''}`);
   }
 
-  async function handleUpload(e) {
-    const files = Array.from(e.target.files);
+  function handleUpload(e) {
+    const files = Array.from(e.target.files || []);
+    if (fileRef.current) fileRef.current.value = '';
+    return uploadFiles(files);
+  }
+  async function uploadFiles(files) {
     if (!files.length) return;
     // Sanity check: category must be a real Supabase row (UUID)
     if (String(category.id).startsWith('def-')) {
-      alert('Эта категория ещё не сохранена в базе. Дождись загрузки данных с сервера (несколько секунд) и попробуй снова.');
-      if (fileRef.current) fileRef.current.value = '';
+      edNotice('Категория ещё загружается', 'Дождись загрузки данных с сервера (несколько секунд) и попробуй снова.');
       return;
     }
     setUploading(true);
@@ -7985,12 +8874,11 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
         sort_order: base - 1 - idx,
       });
       if (!result) {
-        alert('Картинка загружена в хранилище, но не удалось записать в базу.');
+        edNotice('Не удалось записать в базу', 'Картинка загружена в хранилище, но в карточку не добавилась.');
         break;
       }
     }
     setUploading(false);
-    if (fileRef.current) fileRef.current.value = '';
   }
 
   function setCover(imgId) {
@@ -8058,60 +8946,46 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
               {sortMode === 'new' ? (lang === 'ru' ? '↓ новые' : '↓ newest') : (lang === 'ru' ? '↑ старые' : '↑ oldest')}
             </button>
           )}
-          {admin && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder={lang === 'ru' ? 'URL картинки или YouTube' : 'Image or YouTube URL'}
+        </div>
+        {admin && (
+          <div className="pf-admin-toolbar">
+            <span className="ed-bar-pill">{lang === 'ru' ? 'редактор галереи' : 'gallery editor'}</span>
+            <div className="ed-input-wrap" style={{ flex: 1, minWidth: 220 }}>
+              <EdIcon name="link" size={14} />
+              <input className="ed-input ed-input--icon"
+                placeholder={lang === 'ru' ? 'Ссылка на картинку или YouTube' : 'Image or YouTube URL'}
                 value={urlInput}
                 onChange={e => setUrlInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') addUrl(); }}
-                style={{
-                  padding: '9px 14px', borderRadius: 22, fontSize: 12,
-                  fontFamily: 'var(--font-mono)', minWidth: 220,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)', color: '#fff',
-                  outline: 'none',
-                }}
-              />
-              <button onClick={addUrl} disabled={uploading || !urlInput.trim()} style={{
-                background: 'var(--accent)', border: 'none', color: '#fff',
-                padding: '10px 18px', borderRadius: 22, fontSize: 12,
-                fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
-                letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
-              }}>
-                {uploading ? '⏳' : '+ URL'}
-              </button>
-              <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)', color: '#fff',
-                padding: '10px 18px', borderRadius: 22, fontSize: 12,
-                fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
-                letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
-              }}>
-                <input ref={fileRef} type="file" accept="image/*,.gif,video/mp4,video/webm" multiple style={{ display: 'none' }} onChange={handleUpload} />
-                {uploading ? '⏳' : '📷'} {lang === 'ru' ? 'Файл' : 'File'}
-              </button>
-              {catImages.some(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:')) && (
-                <button onClick={migrateToStorage} disabled={uploading} title="Перенести старые картинки в быстрое хранилище" style={{
-                  background: 'rgba(232,169,59,0.15)',
-                  border: '1px solid rgba(232,169,59,0.3)', color: 'var(--accent)',
-                  padding: '10px 16px', borderRadius: 22, fontSize: 12,
-                  fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
-                  letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
-                }}>
-                  {uploading ? '⏳' : '⚡ Ускорить'}
-                </button>
-              )}
+                onKeyDown={e => { if (e.key === 'Enter') addUrl(); }} />
             </div>
-          )}
-        </div>
+            <button className="ed-btn" onClick={addUrl} disabled={uploading || !urlInput.trim()}>
+              <EdIcon name="plus" size={14} /> {lang === 'ru' ? 'По ссылке' : 'Add URL'}
+            </button>
+            <button className="ed-btn ed-btn--primary" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              {uploading ? <span className="ed-spinner" /> : <EdIcon name="upload" size={14} />}
+              {lang === 'ru' ? 'Загрузить файлы' : 'Upload files'}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*,.gif,video/mp4,video/webm" multiple style={{ display: 'none' }} onChange={handleUpload} />
+            {catImages.some(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:')) && (
+              <button className="ed-btn ed-btn--accent" onClick={migrateToStorage} disabled={uploading}
+                title="Перенести старые картинки в быстрое хранилище">
+                <EdIcon name="sparkle" size={14} /> {lang === 'ru' ? 'Ускорить' : 'Speed up'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Image grid ── */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px 60px' }}>
         {!imagesRes.loaded && catImages.length === 0 ? (
           <GallerySkeleton />
+        ) : catImages.length === 0 && admin ? (
+          <EdDropzone className="pf-drop-empty" multiple busy={uploading}
+            accept="image/*,.gif,video/mp4,video/webm"
+            onFiles={uploadFiles}
+            label={lang === 'ru' ? 'Карточка пока пустая — добавь первые работы' : 'Empty — add the first works'}
+            hint={lang === 'ru' ? 'Перетащи файлы сюда или нажми. Первая станет обложкой.' : 'Drop files or click. The first becomes the cover.'} />
         ) : catImages.length === 0 ? (
           <div style={{
             textAlign: 'center', padding: '80px 20px',
@@ -8176,7 +9050,7 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                       </div>
                     </div>
                   )}
-                  {admin && <span className="drag-handle" style={{ top: 8, left: 8, transform: 'none', zIndex: 12 }} title="Перетащить">⠿</span>}
+                  {admin && <DragHandle style={{ top: 8, left: 8, transform: 'none', zIndex: 12, background: 'rgba(16,11,7,0.7)' }} />}
 
                   {/* Cover badge */}
                   {isCover && (
@@ -8191,55 +9065,28 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
 
                   {/* Admin controls — always visible */}
                   {admin && (
-                    <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 15, display: 'flex', gap: 6 }}
-                      onClick={e => e.stopPropagation()}>
-                      <button
-                        onClick={e => { e.stopPropagation(); setCover(img.id); }}
-                        title={isCover ? 'Это обложка' : 'Сделать обложкой'}
-                        style={{
-                          width: 30, height: 30, borderRadius: '50%',
-                          background: isCover ? 'var(--accent)' : 'rgba(0,0,0,0.6)',
-                          backdropFilter: 'blur(6px)',
-                          border: '1px solid rgba(255,255,255,0.25)',
-                          color: isCover ? '#1a1410' : '#fff', cursor: 'pointer',
-                          fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        }}>★</button>
-                      <button
-                        onClick={e => { e.stopPropagation(); if (confirm('Удалить из карточки?')) deleteImage(img.id); }}
-                        title="Удалить"
-                        style={{
-                          width: 30, height: 30, borderRadius: '50%',
-                          background: 'rgba(180,30,30,0.75)', backdropFilter: 'blur(6px)',
-                          border: '1px solid rgba(255,120,120,0.4)',
-                          color: '#fff', cursor: 'pointer',
-                          fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        }}>×</button>
-                    </div>
+                    <ItemTools className="pf-img-tools" style={{ position: 'absolute', top: 8, right: 8, zIndex: 15 }}
+                      extra={
+                        <button type="button" className={`ed-tool ${isCover ? 'on' : ''}`}
+                          title={isCover ? 'Это обложка' : 'Сделать обложкой'}
+                          onClick={e => { e.stopPropagation(); setCover(img.id); }}>
+                          <EdIcon name="star" size={14} />
+                        </button>
+                      }
+                      onDelete={() => deleteImage(img.id)}
+                      deleteText={isCover ? 'Удалить работу? Это обложка карточки — обложкой станет следующая.' : 'Удалить работу из карточки?'} />
                   )}
                 </div>
               );
             })}
 
-            {/* Upload placeholder tile */}
+            {/* Плитка загрузки — можно перетащить сюда сразу несколько файлов */}
             {admin && (
-              <div onClick={() => fileRef.current?.click()} style={{
-                aspectRatio: '4/5', borderRadius: 14,
-                border: '2px dashed rgba(255,255,255,0.08)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 12, cursor: 'pointer',
-                transition: 'border-color .2s, background .2s',
-                color: 'rgba(255,255,255,0.25)',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = ''; }}
-              >
-                <span style={{ fontSize: 40, lineHeight: 1 }}>+</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em' }}>
-                  {lang === 'ru' ? 'Загрузить' : 'Upload'}
-                </span>
-              </div>
+              <EdDropzone className="pf-drop-tile" multiple busy={uploading}
+                accept="image/*,.gif,video/mp4,video/webm"
+                onFiles={uploadFiles}
+                label={lang === 'ru' ? 'Добавить работы' : 'Add works'}
+                hint={lang === 'ru' ? 'Перетащи файлы сюда или нажми' : 'Drop files or click'} />
             )}
           </div>
         )}
@@ -8366,11 +9213,10 @@ function CoverflowRow({ catItems, idx, setIdx, openCategory, setOpenCategory, ad
                 <div className="pf-cover-open-hint">{lang === 'ru' ? 'Открыть галерею →' : 'Open gallery →'}</div>
               )}
               {admin && isCenter && (
-                <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 5, zIndex: 20 }}
-                  onClick={e => e.stopPropagation()}>
-                  <button className="admin-btn" onClick={() => setPfEdit({ item, isNew: false })}>✎</button>
-                  <button className="admin-btn danger" onClick={() => pfRes.remove(item.id)}>×</button>
-                </div>
+                <ItemTools style={{ position: 'absolute', top: 10, right: 10, zIndex: 20 }}
+                  onEdit={() => setPfEdit({ item, isNew: false })}
+                  onDelete={() => pfRes.remove(item.id)}
+                  deleteText={`Удалить категорию «${t.portfolio.categories[item.key] || item.key}»? Работы внутри перестанут показываться.`} />
               )}
             </div>
           );
@@ -8416,13 +9262,15 @@ function PortfolioSection({ t, admin, lang }) {
 
   const pfFields = pfMemo(() => [
     { key: 'key', label: lang === 'ru' ? 'Название' : 'Name', type: 'text', required: true, default: '' },
-    { key: 'emoji', label: lang === 'ru' ? 'Эмодзи (при наведении)' : 'Emoji (on hover)', type: 'text', default: '' },
-    { key: 'kind', label: lang === 'ru' ? 'Вид' : 'Kind', type: 'select', default: 'model', options: [
+    { key: 'emoji', label: lang === 'ru' ? 'Эмодзи' : 'Emoji', type: 'text', default: '', half: true, placeholder: '✨',
+      hint: lang === 'ru' ? 'Появляется при наведении на карточку.' : 'Shown on hover.' },
+    { key: 'kind', label: lang === 'ru' ? 'Вид' : 'Kind', type: 'select', default: 'model', half: true, options: [
       { value: 'model', label: lang === 'ru' ? 'Модель' : 'Model' },
       { value: 'illustration', label: lang === 'ru' ? 'Иллюстрация' : 'Illustration' },
     ]},
-    { key: 'hue', label: lang === 'ru' ? 'Оттенок (0-360)' : 'Hue', type: 'number', min: 0, max: 360, default: 40 },
-    { key: 'video_url', label: 'YouTube', type: 'text', default: '' },
+    { key: 'hue', label: lang === 'ru' ? 'Оттенок карточки' : 'Card hue', type: 'number', min: 0, max: 360, default: 40,
+      hint: lang === 'ru' ? 'Цвет подложки, пока обложка не загрузилась.' : 'Background tint while the cover loads.' },
+    { key: 'video_url', label: 'YouTube', type: 'text', default: '', placeholder: 'https://youtube.com/watch?v=...' },
   ], [lang]);
 
   function handleSavePf(draft) {
@@ -8497,7 +9345,7 @@ function PortfolioSection({ t, admin, lang }) {
 
       {admin && (
         <button className="add-btn" onClick={() => setPfEdit({ item: null, isNew: true })}>
-          + {lang === 'ru' ? 'Добавить категорию' : 'Add category'}
+          <EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить категорию' : 'Add category'}
         </button>
       )}
 
@@ -8567,10 +9415,10 @@ function CalcChip({ row, lang, state, onToggle, onQty }) {
         </div>
       )}
       {row._admin && (
-        <div className="calc2-chip-admin" onClick={(e) => e.stopPropagation()} style={{ display:'flex', gap:3, marginLeft:4 }}>
-          <button className="admin-btn" style={{width:20,height:20,fontSize:10}} onClick={() => row._onEdit(row)}>✎</button>
-          <button className="admin-btn danger" style={{width:20,height:20,fontSize:10}} onClick={() => row._onDelete(row.id)}>×</button>
-        </div>
+        <ItemTools size="sm" className="calc2-chip-admin"
+          onEdit={() => row._onEdit(row)}
+          onDelete={() => row._onDelete(row.id)}
+          deleteText={`Удалить опцию «${row.ru || row.label_ru || row.en || ''}»?`} />
       )}
     </div>
   );
@@ -8633,7 +9481,7 @@ function CalculatorSection({ t, lang, admin }) {
   const [dragSec, setDragSec] = calcState(null);
 
   async function deleteSection(key) {
-    if (!confirm(`Удалить раздел «${t.calculator.cats[key] || key}» со всеми опциями?`)) return;
+    if (!(await askConfirm('Все опции этого раздела тоже удалятся.', { title: `Удалить раздел «${t.calculator.cats[key] || key}»?`, danger: true, okText: 'Удалить' }))) return;
     const toDelete = (calcRes.items || []).filter(i => i.category === key);
     for (const row of toDelete) { await calcRes.remove(row.id); }
     saveSectionOrder(sectionOrder.filter(k => k !== key));
@@ -8653,10 +9501,14 @@ function CalculatorSection({ t, lang, admin }) {
   }
 
   async function addSubsection() {
-    const name = prompt(lang === 'ru' ? 'Название подраздела:' : 'Subsection name:');
+    const name = await askText(lang === 'ru' ? 'Новый подраздел' : 'New subsection', {
+      eyebrow: lang === 'ru' ? 'калькулятор' : 'calculator',
+      message: lang === 'ru' ? 'Например: «PNG», «Арт + риг». В нём сразу появится одна опция — её можно переименовать.' : 'A starter option is created inside.',
+      placeholder: lang === 'ru' ? 'Название подраздела' : 'Subsection name', okText: lang === 'ru' ? 'Создать' : 'Create',
+    });
     if (!name || !name.trim()) return;
     const key = name.trim();
-    if (cat.variants[key]) { alert('Такой подраздел уже есть'); return; }
+    if (cat.variants[key]) { edNotice('Такой подраздел уже есть'); return; }
     const id = 'sub-' + Date.now().toString(36);
     await calcRes.add({
       id, category: activeTab, variant: key, group_type: 'base',
@@ -8667,16 +9519,21 @@ function CalculatorSection({ t, lang, admin }) {
   }
 
   async function deleteSubsection(key) {
-    if (!confirm(lang === 'ru' ? `Удалить подраздел «${key}» со всеми опциями?` : `Delete subsection "${key}"?`)) return;
+    if (!(await askConfirm(lang === 'ru' ? 'Все опции подраздела тоже удалятся.' : 'All its options are deleted too.',
+      { title: lang === 'ru' ? `Удалить подраздел «${key}»?` : `Delete subsection "${key}"?`, danger: true, okText: lang === 'ru' ? 'Удалить' : 'Delete' }))) return;
     const toDelete = (calcRes.items || []).filter(i => i.category === activeTab && i.variant === key);
     for (const row of toDelete) { await calcRes.remove(row.id); }
   }
 
   async function addSection() {
-    const name = prompt(lang === 'ru' ? 'Название нового раздела:' : 'New section name:');
+    const name = await askText(lang === 'ru' ? 'Новый раздел' : 'New section', {
+      eyebrow: lang === 'ru' ? 'калькулятор' : 'calculator',
+      message: lang === 'ru' ? 'Появится новой вкладкой. Внутри сразу будет одна опция — её можно переименовать.' : 'Appears as a new tab with a starter option.',
+      placeholder: lang === 'ru' ? 'Название раздела' : 'Section name', okText: lang === 'ru' ? 'Создать' : 'Create',
+    });
     if (!name || !name.trim()) return;
     const key = name.trim();
-    if (calcData[key]) { alert('Такой раздел уже есть'); return; }
+    if (calcData[key]) { edNotice('Такой раздел уже есть'); return; }
     // Create the section with a starter option so it appears as a tab
     const id = 'sec-' + Date.now().toString(36);
     await calcRes.add({
@@ -8697,21 +9554,24 @@ function CalculatorSection({ t, lang, admin }) {
   const variant = (cat.variants[variantKey]) || { base: [], addon: [] };
 
   const calcOptionFields = calcMemo(() => [
-    { key: 'label_ru', label: 'Название (RU)', type: 'text', required: true, default: '' },
-    { key: 'label_en', label: 'Label (EN)', type: 'text', default: '' },
-    { key: 'rub', label: 'Цена ₽ (рус. версия)', type: 'number', min: 0, default: 0 },
-    { key: 'usd', label: 'Цена $ (англ. версия)', type: 'number', min: 0, default: 0 },
-    { key: 'has_qty', label: lang === 'ru' ? 'Есть количество?' : 'Has quantity?', type: 'select', default: 'false', options: [
+    { key: 'label_ru', label: lang === 'ru' ? 'Название по-русски' : 'Name (RU)', type: 'text', required: true, default: '', half: true },
+    { key: 'label_en', label: lang === 'ru' ? 'Название по-английски' : 'Name (EN)', type: 'text', default: '', half: true },
+    { key: 'rub', label: lang === 'ru' ? 'Цена, ₽' : 'Price, ₽', type: 'number', min: 0, default: 0, half: true,
+      hint: lang === 'ru' ? 'Для русской версии сайта.' : 'Russian site.' },
+    { key: 'usd', label: lang === 'ru' ? 'Цена, $' : 'Price, $', type: 'number', min: 0, default: 0, half: true,
+      hint: lang === 'ru' ? 'Для английской версии.' : 'English site.' },
+    { key: 'has_qty', label: lang === 'ru' ? 'Можно выбрать количество' : 'Has quantity', type: 'select', default: 'false', half: true, options: [
       { value: 'false', label: lang === 'ru' ? 'Нет' : 'No' },
       { value: 'true', label: lang === 'ru' ? 'Да' : 'Yes' },
     ]},
-    { key: 'group_type', label: lang === 'ru' ? 'Группа' : 'Group', type: 'select', default: 'base', options: [
+    { key: 'group_type', label: lang === 'ru' ? 'Группа' : 'Group', type: 'select', default: 'base', half: true, options: [
       { value: 'base', label: lang === 'ru' ? 'Базовая' : 'Base' },
       { value: 'addon', label: lang === 'ru' ? 'Доп. опция' : 'Addon' },
     ]},
-    { key: 'category', label: lang === 'ru' ? 'Раздел' : 'Section', type: 'select', default: activeTab,
+    { key: 'category', label: lang === 'ru' ? 'Раздел' : 'Section', type: 'select', default: activeTab, half: true, segment: false,
+      group: lang === 'ru' ? 'Где показывать' : 'Placement',
       options: tabKeys.map(k => ({ value: k, label: t.calculator.cats[k] || k })) },
-    { key: 'variant', label: lang === 'ru' ? 'Подраздел' : 'Subsection', type: 'select', default: variantKey, options: [
+    { key: 'variant', label: lang === 'ru' ? 'Подраздел' : 'Subsection', type: 'select', default: variantKey, half: true, segment: false, options: [
       { value: 'default', label: lang === 'ru' ? 'Основной' : 'Main' },
       { value: 'basic', label: 'PNG' },
       { value: 'plus', label: 'PNG+' },
@@ -8817,20 +9677,18 @@ function CalculatorSection({ t, lang, admin }) {
               className={`calc2-tab ${activeTab === key ? 'active' : ''}`}
               onClick={() => setActiveTab(key)}
             >
-              {admin && <span className="calc2-tab-grip" title="Перетащить">⠿</span>}
+              {admin && <span className="calc2-tab-grip" title="Перетащи, чтобы поменять порядок"><EdIcon name="grip" size={12} /></span>}
               {t.calculator.cats[key] || key}
             </button>
             {admin && (
               <button className="calc2-tab-del" title="Удалить раздел"
-                onClick={(e) => { e.stopPropagation(); deleteSection(key); }}>×</button>
+                onClick={(e) => { e.stopPropagation(); deleteSection(key); }}><EdIcon name="close" size={11} /></button>
             )}
           </div>
         ))}
         {admin && (
-          <button className="calc2-tab" onClick={addSection}
-            style={{ borderStyle: 'dashed', opacity: 0.8 }}
-            title="Добавить новый раздел">
-            + {lang === 'ru' ? 'Раздел' : 'Section'}
+          <button className="calc2-tab calc2-tab-add" onClick={addSection} title="Добавить новый раздел">
+            <EdIcon name="plus" size={13} /> {lang === 'ru' ? 'Раздел' : 'Section'}
           </button>
         )}
       </div>
@@ -8841,7 +9699,7 @@ function CalculatorSection({ t, lang, admin }) {
           {admin && (
             <div style={{ marginTop: 16 }}>
               <button className="add-btn" onClick={() => setCalcEdit({ item: { category: 'vtuber', variant: 'art', group_type: 'base' }, isNew: true })}>
-                {lang === 'ru' ? '+ Добавить первую опцию' : '+ Add first option'}
+                <EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить первую опцию' : 'Add first option'}
               </button>
             </div>
           )}
@@ -8858,14 +9716,13 @@ function CalculatorSection({ t, lang, admin }) {
               >{lang === 'ru' ? v.ru : v.en}</button>
               {admin && variantEntries.length > 1 && (
                 <button className="calc2-subtab-del" title="Удалить подраздел"
-                  onClick={() => deleteSubsection(key)}>×</button>
+                  onClick={() => deleteSubsection(key)}><EdIcon name="close" size={10} /></button>
               )}
             </span>
           ))}
           {admin && (
-            <button className="calc2-subtab" style={{ borderStyle: 'dashed', opacity: 0.8 }}
-              onClick={addSubsection} title="Добавить подраздел">
-              + {lang === 'ru' ? 'Подраздел' : 'Subsection'}
+            <button className="calc2-subtab calc2-tab-add" onClick={addSubsection} title="Добавить подраздел">
+              <EdIcon name="plus" size={12} /> {lang === 'ru' ? 'Подраздел' : 'Subsection'}
             </button>
           )}
         </div>
@@ -8888,7 +9745,7 @@ function CalculatorSection({ t, lang, admin }) {
           {admin && (
             <div style={{ marginTop: 14 }}>
               <button className="add-btn" onClick={() => setCalcEdit({ item: { category: activeTab, variant: variantKey, group_type: 'addon' }, isNew: true })}>
-                + {lang === 'ru' ? 'Добавить опцию' : 'Add option'}
+                <EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить опцию' : 'Add option'}
               </button>
             </div>
           )}
@@ -9043,9 +9900,9 @@ function ContactModal({ open, onClose, lang, admin }) {
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>✦ {lang === 'ru' ? 'связаться' : 'contact'}</span>
           {admin && (
-            <button className="admin-btn" style={{ fontSize: 11 }}
-              onClick={() => setEditing(e => !e)}>
-              {editing ? '✓ Готово' : '✎ Редактировать'}
+            <button className={`ed-btn ed-btn--sm ${editing ? 'ed-btn--primary' : 'ed-btn--accent'}`}
+              onClick={() => { setEditing(e => !e); setEditDraft(null); }}>
+              <EdIcon name={editing ? 'check' : 'edit'} size={13} /> {editing ? (lang === 'ru' ? 'Готово' : 'Done') : (lang === 'ru' ? 'Изменить контакты' : 'Edit contacts')}
             </button>
           )}
         </div>
@@ -9061,44 +9918,52 @@ function ContactModal({ open, onClose, lang, admin }) {
 
         {/* Admin editor */}
         {admin && editing && (
-          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {linksRes.items.map(l => (
-              <div key={l.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span style={{ flex: 1, fontSize: 13 }}>{l.label}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', flex: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.handle || l.url}</span>
-                <button className="admin-btn" style={{ fontSize: 10, padding: '4px 8px' }} onClick={() => startEdit(l)}>✎</button>
-                <button className="admin-btn danger" style={{ fontSize: 10, padding: '4px 8px' }} onClick={() => linksRes.remove(l.id)}>×</button>
-              </div>
-            ))}
-            <button className="btn" style={{ fontSize: 12, padding: '8px 14px', justifyContent: 'center' }}
-              onClick={() => startEdit({ _isNew: true, label: '', handle: '', url: '', kind: 'social' })}>
-              + {lang === 'ru' ? 'Добавить' : 'Add'}
-            </button>
-          </div>
-        )}
-
-        {/* Edit form */}
-        {admin && editDraft && (
-          <div style={{ marginBottom: 20, padding: 16, borderRadius: 12, border: '1px solid var(--accent)', background: 'rgba(232,169,59,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)' }}>
-              {editDraft._isNew ? (lang === 'ru' ? 'Новый контакт' : 'New contact') : (lang === 'ru' ? 'Редактировать' : 'Edit')}
+          <div className="ed-panel" style={{ marginBottom: 22 }}>
+            <div className="ed-section-head">
+              <span className="ed-section-title">{lang === 'ru' ? 'Все ссылки' : 'All links'}<span className="ed-count">{linksRes.items.length}</span></span>
+              <button className="ed-btn ed-btn--sm" onClick={() => startEdit({ _isNew: true, label: '', handle: '', url: '', kind: 'social' })}>
+                <EdIcon name="plus" size={13} /> {lang === 'ru' ? 'Добавить' : 'Add'}
+              </button>
             </div>
-            {[
-              { key: 'label', placeholder: 'Telegram, Twitter...' },
-              { key: 'handle', placeholder: '@username' },
-              { key: 'url', placeholder: 'https://...' },
-            ].map(f => (
-              <input key={f.key} value={editDraft[f.key] || ''} placeholder={f.placeholder}
-                onChange={e => setEditDraft(d => ({ ...d, [f.key]: e.target.value }))}
-                style={{ padding: '8px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 12, width: '100%' }} />
-            ))}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }} onClick={saveEdit}>
-                {lang === 'ru' ? 'Сохранить' : 'Save'}
-              </button>
-              <button className="btn" style={{ fontSize: 12, padding: '8px 14px' }} onClick={() => setEditDraft(null)}>
-                {lang === 'ru' ? 'Отмена' : 'Cancel'}
-              </button>
+            <p className="ed-section-hint">{lang === 'ru' ? 'Здесь показываются соцсети и почта — те же ссылки, что и на главной.' : 'Same links as on the home page.'}</p>
+
+            {editDraft && (
+              <div className="ed-panel" style={{ background: 'var(--ed-surface-2)', marginBottom: 12 }}>
+                <div className="ed-form">
+                  <div className="ed-form-group" style={{ marginTop: 0, paddingTop: 0, borderTop: 0 }}>
+                    {editDraft._isNew ? (lang === 'ru' ? 'Новый контакт' : 'New contact') : (lang === 'ru' ? 'Изменить контакт' : 'Edit contact')}
+                  </div>
+                  <EdField half label={lang === 'ru' ? 'Название' : 'Label'}>
+                    <input className="ed-input" value={editDraft.label || ''} placeholder="Telegram, Twitter..."
+                      onChange={e => setEditDraft(d => ({ ...d, label: e.target.value }))} />
+                  </EdField>
+                  <EdField half label={lang === 'ru' ? 'Ник / адрес' : 'Handle'}>
+                    <input className="ed-input" value={editDraft.handle || ''} placeholder="@username"
+                      onChange={e => setEditDraft(d => ({ ...d, handle: e.target.value }))} />
+                  </EdField>
+                  <EdField label={lang === 'ru' ? 'Ссылка' : 'URL'}>
+                    <input className="ed-input" value={editDraft.url || ''} placeholder="https://..."
+                      onChange={e => setEditDraft(d => ({ ...d, url: e.target.value }))} />
+                  </EdField>
+                  <div className="ed-row" style={{ justifyContent: 'flex-end' }}>
+                    <button className="ed-btn ed-btn--ghost" onClick={() => setEditDraft(null)}>{lang === 'ru' ? 'Отмена' : 'Cancel'}</button>
+                    <button className="ed-btn ed-btn--primary" onClick={saveEdit}><EdIcon name="check" size={14} /> {lang === 'ru' ? 'Сохранить' : 'Save'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="ed-list">
+              {linksRes.items.map(l => (
+                <div key={l.id} className="ed-list-row">
+                  <span className="ed-list-main">
+                    <span className="ed-list-title">{l.label}</span>
+                    <span className="ed-mono ed-ellipsis">{l.handle || l.url}</span>
+                  </span>
+                  <ItemTools onEdit={() => startEdit(l)} onDelete={() => linksRes.remove(l.id)}
+                    deleteText={`Удалить контакт «${l.label}»? Он пропадёт и с главной.`} />
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -9187,8 +10052,9 @@ function DebtCountdown({ admin, lang }) {
       <div className="debt-countdown-head">
         <span className="debt-countdown-label">⏳ {label}</span>
         {admin && (
-          <button className="admin-btn" style={{ fontSize: 11 }} onClick={() => setEditing(e => !e)}>
-            {editing ? '✓' : '✎'}
+          <button className={`ed-btn ed-btn--sm ${editing ? 'ed-btn--primary' : 'ed-btn--accent'}`} onClick={() => setEditing(e => !e)}>
+            <EdIcon name={editing ? 'check' : 'clock'} size={13} />
+            {editing ? (lang === 'ru' ? 'Готово' : 'Done') : (lang === 'ru' ? 'Настроить таймер' : 'Set timer')}
           </button>
         )}
       </div>
@@ -9212,17 +10078,25 @@ function DebtCountdown({ admin, lang }) {
       )}
 
       {admin && editing && (
-        <div className="debt-countdown-edit">
-          <label className="login-field">
-            <span>{lang === 'ru' ? 'Название' : 'Label'}</span>
-            <input value={cfg.label || ''} placeholder={lang === 'ru' ? 'До дедлайна' : 'Until deadline'}
-              onChange={e => saveCfg({ ...cfg, label: e.target.value })} />
-          </label>
-          <label className="login-field">
-            <span>{lang === 'ru' ? 'Дата и время' : 'Date & time'}</span>
-            <input type="datetime-local" value={cfg.date || ''}
-              onChange={e => saveCfg({ ...cfg, date: e.target.value })} />
-          </label>
+        <div className="ed-panel debt-countdown-edit">
+          <div className="ed-form">
+            <EdField half label={lang === 'ru' ? 'Подпись' : 'Label'}>
+              <input className="ed-input" value={cfg.label || ''} placeholder={lang === 'ru' ? 'До дедлайна' : 'Until deadline'}
+                onChange={e => saveCfg({ ...cfg, label: e.target.value })} />
+            </EdField>
+            <EdField half label={lang === 'ru' ? 'Дата и время' : 'Date & time'}
+              hint={lang === 'ru' ? 'Пусто — таймер не показывается зрителям.' : 'Empty hides the timer.'}>
+              <input className="ed-input" type="datetime-local" value={cfg.date || ''}
+                onChange={e => saveCfg({ ...cfg, date: e.target.value })} />
+            </EdField>
+          </div>
+          {cfg.date && (
+            <div className="ed-row" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
+              <button className="ed-btn ed-btn--ghost ed-btn--sm" onClick={() => saveCfg({ ...cfg, date: '' })}>
+                <EdIcon name="close" size={12} /> {lang === 'ru' ? 'Убрать таймер' : 'Remove timer'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -9252,8 +10126,8 @@ function DebtsSection({ t, admin, lang }) {
 
   const debtFields = React.useMemo(() => [
     { key: 'title', label: lang === 'ru' ? 'Название' : 'Title', type: 'text', required: true, default: '' },
-    { key: 'stream_date', label: lang === 'ru' ? 'Дата стрима' : 'Stream date', type: 'date', default: new Date().toISOString().slice(0, 10) },
-    { key: 'reason', label: lang === 'ru' ? 'Причина' : 'Reason', type: 'text', default: '' },
+    { key: 'stream_date', label: lang === 'ru' ? 'Дата стрима' : 'Stream date', type: 'date', default: new Date().toISOString().slice(0, 10), half: true },
+    { key: 'reason', label: lang === 'ru' ? 'Причина' : 'Reason', type: 'text', default: '', half: true, placeholder: lang === 'ru' ? 'проиграла спор' : 'lost a bet' },
     { key: 'status', label: lang === 'ru' ? 'Статус' : 'Status', type: 'select', default: 'open', options: [
       { value: 'open', label: t.debts.status.open },
       { value: 'waiting', label: lang === 'ru' ? 'Ожидание' : 'Waiting' },
@@ -9323,7 +10197,7 @@ function DebtsSection({ t, admin, lang }) {
         draggable={dh.draggable}
         onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
         onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-        {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+        {admin && <DragHandle />}
         <div className="debt-icon">
           {d.status === 'done' ? '✓' : d.status === 'inProgress' ? '◐' : d.status === 'waiting' ? '⏳' : '○'}
         </div>
@@ -9342,15 +10216,17 @@ function DebtsSection({ t, admin, lang }) {
           <span className="debt-pct">
             <EditableNumber value={pct} onSave={(v) => updateDebt(d.id, { progress: Math.max(0, Math.min(100, v)) })} admin={admin} suffix="%" />
           </span>
-          <span className="debt-status" onClick={() => admin && cycleStatus(d.id)} style={{ cursor: admin ? 'pointer' : 'default' }}>
+          <span className={`debt-status ${admin ? 'ed-inline' : ''}`} onClick={() => admin && cycleStatus(d.id)}
+            title={admin ? (lang === 'ru' ? 'Нажми, чтобы сменить статус' : 'Click to change status') : undefined}
+            style={{ cursor: admin ? 'pointer' : 'default' }}>
             {statusLabel}
           </span>
         </div>
         {admin && (
-          <div className="admin-actions" style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
-            <button className="admin-btn" onClick={() => editDebt(d)} title="Edit">✎</button>
-            <button className="admin-btn danger" onClick={() => deleteDebt(d.id)}>×</button>
-          </div>
+          <ItemTools style={{ position: 'absolute', top: 8, right: 8 }}
+            onEdit={() => editDebt(d)}
+            onDelete={() => deleteDebt(d.id)}
+            deleteText={`Удалить долг «${d.title || 'без названия'}»?`} />
         )}
       </div>
     );
@@ -9392,7 +10268,7 @@ function DebtsSection({ t, admin, lang }) {
       )}
 
       {admin && (
-        <button className="add-btn" onClick={addDebt}>+ {lang === 'ru' ? 'Добавить долг' : 'Add debt'}</button>
+        <button className="add-btn" onClick={addDebt}><EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить долг' : 'Add debt'}</button>
       )}
 
       {admin && (
@@ -9485,10 +10361,8 @@ function LinksSection({ t, admin }) {
                 </span>
               </div>
               {admin && (
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button className="admin-btn" onClick={(e) => { e.preventDefault(); editLink(l); }} title="Edit">✎</button>
-                  <button className="admin-btn danger" onClick={(e) => { e.preventDefault(); deleteLink(l.id); }}>×</button>
-                </div>
+                <ItemTools onEdit={() => editLink(l)} onDelete={() => deleteLink(l.id)}
+                  deleteText={`Удалить ссылку «${l.label}»?`} />
               )}
             </a>
           );
@@ -9496,7 +10370,7 @@ function LinksSection({ t, admin }) {
       </div>
 
       {admin && (
-        <button className="add-btn" onClick={addLink}>+ {t.links.title === 'Ссылки' ? 'Добавить ссылку' : 'Add link'}</button>
+        <button className="add-btn" onClick={addLink}><EdIcon name="plus" size={15} /> {t.links.title === 'Ссылки' ? 'Добавить ссылку' : 'Add link'}</button>
       )}
 
       {admin && (
@@ -9708,6 +10582,7 @@ function SiteFavicon({ admin }) {
   const [favicon, saveFavicon] = useSetting('site_favicon', '');
   const [open, setOpen] = React.useState(false);
   const [input, setInput] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
     if (!favicon) return;
@@ -9722,37 +10597,50 @@ function SiteFavicon({ admin }) {
 
   if (!admin) return null;
 
+  async function upload(files) {
+    setBusy(true);
+    const up = await window.uploadIconToStorage(files[0]);
+    setBusy(false);
+    if (up && up.url) setInput(up.url);
+  }
+
   return (
     <>
-      <button className="admin-btn" onClick={() => { setInput(favicon || ''); setOpen(true); }}
-        title="Значок сайта" style={{ marginRight: 8 }}>🖼</button>
+      <button className="ed-btn ed-btn--ghost" onClick={() => { setInput(favicon || ''); setOpen(true); }}
+        title="Значок сайта во вкладке браузера">
+        {favicon ? <img src={favicon} alt="" style={{ width: 14, height: 14, borderRadius: 3, objectFit: 'cover' }} /> : <EdIcon name="image" size={14} />}
+        <span>Значок</span>
+      </button>
       {open && (
-        <Modal open={true} onClose={() => setOpen(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>Значок сайта (favicon)</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              Значок во вкладке браузера. PNG/SVG/ICO, лучше квадратный (например 64×64).
-            </p>
-            {input && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src={input} style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', background: 'rgba(255,255,255,0.05)' }} alt="" />
-                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Превью</span>
-              </div>
+        <EditorModal onClose={() => setOpen(false)} size="sm"
+          eyebrow="настройки сайта" title="Значок сайта"
+          subtitle="Картинка во вкладке браузера и в закладках. Лучше квадратная — при загрузке она ужимается до 64 px."
+          footer={<>
+            {favicon && (
+              <button className="ed-btn ed-btn--ghost" style={{ marginRight: 'auto' }}
+                onClick={() => { saveFavicon(''); setInput(''); setOpen(false); }}>Сбросить</button>
             )}
-            <label className="login-field">
-              <span>URL значка</span>
-              <input value={input} onChange={e => setInput(e.target.value)} placeholder="https://... или data:image/..." />
-            </label>
-            <ImageUploader icon label="📷 Загрузить файл" onUpload={url => setInput(url)} />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => { saveFavicon(input); setOpen(false); }}>Сохранить</button>
-              {favicon && (
-                <button className="btn" onClick={() => { saveFavicon(''); setInput(''); setOpen(false); }}>Сбросить</button>
-              )}
+            <button className="ed-btn ed-btn--ghost" onClick={() => setOpen(false)}>Отмена</button>
+            <button className="ed-btn ed-btn--primary" onClick={() => { saveFavicon(input); setOpen(false); }}>
+              <EdIcon name="check" size={15} /> Сохранить
+            </button>
+          </>}>
+          <div className="ed-stack">
+            <div>
+              <div className="ed-tab-preview">
+                {input ? <img src={input} alt="" /> : <EdIcon name="image" size={16} />}
+                <span>Milaria — VTuber-художник</span>
+              </div>
+              <div className="ed-tab-strip" />
+            </div>
+            <EdDropzone onFiles={upload} busy={busy} label="Загрузить картинку" hint="PNG, JPG, SVG или ICO" />
+            <div className="ed-input-wrap">
+              <EdIcon name="link" size={14} />
+              <input className="ed-input ed-input--icon" value={input} onChange={e => setInput(e.target.value)}
+                placeholder="…или вставь ссылку на значок" />
             </div>
           </div>
-        </Modal>
+        </EditorModal>
       )}
     </>
   );
@@ -9774,9 +10662,8 @@ function InlineImagesMigrator() {
   if (!info || !info.count) return null;
 
   async function run() {
-    if (!confirm(`Перенести ${info.count} картинок (${info.kb} КБ) из базы в хранилище файлов?\n\n` +
-      'Баннер и значок останутся теми же, но сайт станет легче для каждого посетителя.\n' +
-      'Если хочешь подстраховаться — сначала нажми «💾 Бэкап».')) return;
+    if (!(await askConfirm('Баннер и значок останутся теми же, но сайт станет легче для каждого посетителя.\nЕсли хочешь подстраховаться — сначала нажми «Бэкап».',
+      { title: `Перенести ${info.count} картинок (${info.kb} КБ) в хранилище?`, okText: 'Перенести' }))) return;
     setBusy(true);
     try {
       const r = await window.migrateInlineImages();
@@ -9784,21 +10671,21 @@ function InlineImagesMigrator() {
         ['banner', 'site_favicon'].forEach(k => localStorage.removeItem('milaria:setting:' + k));
         localStorage.removeItem('milaria:milaria:banner');
       } catch (e) {}
-      alert(r.failed
-        ? `Перенесено: ${r.moved}, не получилось: ${r.failed}.\n\n${r.errors.join('\n')}\n\nНеперенесённые остались как были.`
-        : `✓ Перенесено картинок: ${r.moved}. Страница перезагрузится.`);
+      await edNotice(r.failed ? `Перенесено: ${r.moved}, не получилось: ${r.failed}` : `Перенесено картинок: ${r.moved}`,
+        r.failed ? `${r.errors.join('\n')}\n\nНеперенесённые остались как были.` : 'Страница перезагрузится.');
       location.reload();
     } catch (e) {
-      alert('Не получилось: ' + (e && e.message || e) + '\n\nНичего не сломано, картинки остались в базе.');
+      await edNotice('Не получилось', (e && e.message || e) + '\n\nНичего не сломано, картинки остались в базе.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <button className="admin-btn" onClick={run} disabled={busy} style={{ marginRight: 8 }}
+    <button className="ed-btn ed-btn--accent" onClick={run} disabled={busy}
       title="Баннер и значок лежат в базе и утяжеляют каждую страницу">
-      {busy ? '⏳ переношу…' : `⇪ Картинки в хранилище (${info.kb} КБ)`}
+      {busy ? <span className="ed-spinner" /> : <EdIcon name="upload" size={14} />}
+      <span>{busy ? 'Переношу…' : `Картинки в хранилище (${info.kb} КБ)`}</span>
     </button>
   );
 }
@@ -9945,7 +10832,7 @@ function App() {
         dump.tables[t] = data || [];
       }
       if (Object.keys(dump.tables).length === 0) {
-        alert('Не удалось выгрузить ни одной таблицы. Проверь связь с Supabase.');
+        edNotice('Бэкап не получился', 'Не удалось выгрузить ни одной таблицы. Проверь связь с Supabase.');
         return;
       }
       const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
@@ -9956,11 +10843,10 @@ function App() {
       a.click();
       URL.revokeObjectURL(url);
       const rows = Object.values(dump.tables).reduce((s, r) => s + r.length, 0);
-      alert(failed.length
-        ? `Выгружено ${rows} строк. Не удалось: ${failed.join(', ')}`
-        : `Готово: ${rows} строк из ${TABLES.length} таблиц.`);
+      edNotice(failed.length ? `Выгружено ${rows} строк, но не всё` : 'Бэкап скачан',
+        failed.length ? `Не удалось: ${failed.join(', ')}` : `${rows} строк из ${TABLES.length} таблиц — файл ${a.download}`);
     } catch (e) {
-      alert('Бэкап не удался: ' + (e && e.message));
+      edNotice('Бэкап не удался', String(e && e.message));
     } finally {
       setBackupBusy(false);
     }
@@ -9969,29 +10855,26 @@ function App() {
   // Номер счётчика Метрики. Сам счётчик вставляет сервер (до отрисовки),
   // здесь только поле, куда его вписать.
   const [metrikaId, saveMetrikaId] = useSetting('metrika_id', '');
-  function setupMetrika() {
+  async function setupMetrika() {
     const cur = String(metrikaId || '');
-    const v = prompt(
-      'Номер счётчика Яндекс.Метрики (только цифры).\n' +
-      'Взять тут: metrika.yandex.ru → счётчик → Настройка → Номер.\n' +
-      'Оставь поле пустым, чтобы отключить аналитику.',
-      cur
-    );
+    const v = await askText('Яндекс.Метрика', {
+      eyebrow: 'аналитика',
+      message: 'Номер счётчика — только цифры. Взять тут: metrika.yandex.ru → счётчик → Настройка → Номер.\nОставь поле пустым, чтобы отключить аналитику.',
+      initial: cur, placeholder: 'например, 12345678', inputMode: 'numeric', okText: 'Сохранить',
+    });
     if (v === null) return;
     const clean = v.replace(/\D/g, '');
     saveMetrikaId(clean);
-    alert(clean
-      ? `Счётчик ${clean} сохранён.\nПоявится на сайте в течение минуты.`
-      : 'Аналитика отключена.');
+    edNotice(clean ? `Счётчик ${clean} сохранён` : 'Аналитика отключена',
+      clean ? 'Появится на сайте в течение минуты.' : '');
   }
 
 
   function handleAdminToggle() {
     if (admin) {
       // already logged in — offer logout
-      if (confirm(lang === 'ru' ? 'Выйти из режима редактирования?' : 'Sign out of edit mode?')) {
-        auth.signOut();
-      }
+      askConfirm(lang === 'ru' ? 'Выйти из режима редактирования?' : 'Sign out of edit mode?',
+        { okText: lang === 'ru' ? 'Выйти' : 'Sign out' }).then(ok => { if (ok) auth.signOut(); });
     } else {
       setLoginOpen(true);
     }
@@ -10013,26 +10896,32 @@ function App() {
         />
 
         {admin && (
-          <div className="admin-bar">
-            <span>
-              <span className="admin-pill">✦ {i18n.common.adminOn}</span>
-              <span className="admin-bar-info">
-                {auth.email} · {lang === 'ru' ? 'кликай по тексту/числам чтобы редактировать' : 'click text/numbers to edit'}
+          <div className="ed-bar">
+            <span className="ed-bar-pill">{i18n.common.adminOn}</span>
+            <span className="ed-bar-info">
+              <span className="ed-bar-email">{auth.email}</span>
+              <span className="ed-bar-hint">
+                {lang === 'ru' ? 'Текст и числа с пунктирной рамкой меняются по клику' : 'Click dashed text or numbers to edit'}
               </span>
             </span>
-            <span className="admin-bar-actions">
+            <span className="ed-bar-actions">
               <InlineImagesMigrator />
               <SiteFavicon admin={admin} />
-              <button className="admin-btn" onClick={downloadBackup} disabled={backupBusy}
+              <button className="ed-btn ed-btn--ghost" onClick={downloadBackup} disabled={backupBusy}
                 title="Скачать все данные из Supabase одним JSON">
-                {backupBusy ? '⏳…' : '💾 Бэкап'}
+                {backupBusy ? <span className="ed-spinner" /> : <EdIcon name="download" size={14} />}
+                <span>Бэкап</span>
               </button>
-              <button className="admin-btn" onClick={setupMetrika}
+              <button className="ed-btn ed-btn--ghost" onClick={setupMetrika}
                 title="Номер счётчика Яндекс.Метрики">
-                {metrikaId ? '📊 ' + metrikaId : '📊 Аналитика'}
+                <EdIcon name="chart" size={14} />
+                <span>{metrikaId ? 'Метрика ' + metrikaId : 'Аналитика'}</span>
               </button>
-              <button className="admin-btn" onClick={() => {
-                if (confirm('Очистить локальный кеш и перезагрузить страницу? Это засинхронит с сервером.')) {
+              <button className="ed-btn ed-btn--ghost" onClick={async () => {
+                if (await askConfirm('Обновить данные с сервера?', {
+                  message: 'Сбросит то, что браузер запомнил у себя, и перезагрузит страницу. Ничего на сайте не удалится.',
+                  okText: 'Обновить',
+                })) {
                   try {
                     Object.keys(localStorage).forEach(k => {
                       if (k.startsWith('milaria:cache:') || k.startsWith('milaria:setting:')) localStorage.removeItem(k);
@@ -10040,9 +10929,14 @@ function App() {
                   } catch(e) {}
                   location.reload();
                 }
-              }} title="Синхронизировать с сервером" style={{ marginRight: 8 }}>⟳</button>
-              <button className="admin-btn danger" onClick={() => auth.signOut()}>
-                {lang === 'ru' ? 'выйти' : 'sign out'}
+              }} title="Синхронизировать с сервером">
+                <EdIcon name="refresh" size={14} />
+                <span>Обновить</span>
+              </button>
+              <span className="ed-bar-sep" />
+              <button className="ed-btn ed-btn--ghost" onClick={() => auth.signOut()} title={lang === 'ru' ? 'Выйти из редактора' : 'Sign out'}>
+                <EdIcon name="logout" size={14} />
+                <span>{lang === 'ru' ? 'Выйти' : 'Sign out'}</span>
               </button>
             </span>
           </div>
@@ -10065,6 +10959,7 @@ function App() {
       </div>
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} auth={auth} lang={lang} />
+      <EdDialogHost />
 
     </>
   );

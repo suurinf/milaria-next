@@ -37,6 +37,16 @@ try {
   localStorage.removeItem('milaria:milaria:banner');
 } catch(e) {}
 
+// Только на localhost: адрес с ?preview-admin показывает интерфейс админки без
+// входа — чтобы смотреть редактор при доработке. Сохранить в таком режиме
+// ничего нельзя: без входа база отклоняет любую запись (RLS).
+const PREVIEW_ADMIN = (function () {
+  try {
+    return /^(localhost|127\.0\.0\.1)$/.test(location.hostname) &&
+      /[?&]preview-admin(?:[=&]|$)/.test(location.search);
+  } catch (e) { return false; }
+})();
+
 function useAuth() {
   const [session, setSession] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -63,8 +73,8 @@ function useAuth() {
   return {
     session,
     loading,
-    isAdmin: !!session,
-    email: session?.user?.email,
+    isAdmin: !!session || PREVIEW_ADMIN,
+    email: session?.user?.email || (PREVIEW_ADMIN ? 'просмотр без входа' : undefined),
     async signIn(email, password) {
       if (!_sbc) return { ok: false, error: { message: 'Supabase SDK not loaded' } };
       try {
@@ -239,7 +249,7 @@ function useResource(table, defaults = [], opts = {}) {
         const hint = error.message.includes('does not exist') || error.code === '42P01'
           ? '\n\nТаблица ' + table + ' не найдена. Запусти SQL-скрипт.'
           : error.message.includes('violates') ? '\n\nПроверь данные — возможно дублирующийся ID.' : '';
-        alert('Ошибка добавления [' + table + ']: ' + error.message + hint);
+        _edAlert('Ошибка добавления [' + table + ']: ' + error.message + hint);
         setItems((prev) => prev.filter((x) => x.id !== tempId));
         return null;
       }
@@ -269,7 +279,7 @@ function useResource(table, defaults = [], opts = {}) {
       console.error(`[${table}] update:`, error.message);
       // Rollback optimistic change
       if (prevItem) setItems(prev => prev.map(x => x.id === id ? prevItem : x));
-      alert('Не удалось сохранить: ' + error.message);
+      _edAlert('Не удалось сохранить: ' + error.message);
       return null;
     }
     setItems((prev) => prev.map((x) => x.id === id ? data : x));
@@ -390,6 +400,19 @@ function useSetting(key, defaultValue) {
   }
 
   return [value, save, loaded];
+}
+
+// Сообщение об ошибке: окно в стиле сайта, если редактор уже загружен,
+// иначе обычный alert. Первая строка — заголовок, остальное — пояснение.
+function _edAlert(msg) {
+  const text = String(msg || '');
+  if (typeof window.edNotice === 'function') {
+    const i = text.indexOf('\n');
+    if (i > 0) window.edNotice(text.slice(0, i).replace(/[.:]$/, ''), text.slice(i + 1).trim(), { eyebrow: 'не получилось' });
+    else window.edNotice(text, '', { eyebrow: 'не получилось' });
+  } else {
+    alert(text);
+  }
 }
 
 // ── Supabase Storage upload (proper: file + CDN, not base64) ──
@@ -523,7 +546,7 @@ async function uploadToStorage(file) {
     // Canvas would flatten a GIF to its first frame and cannot read video at all.
     if (kind === 'gif' || kind === 'video') {
       if (file.size > 45 * 1024 * 1024) {
-        alert('Файл слишком большой (' + Math.round(file.size / 1048576) + ' МБ). Максимум ~45 МБ.');
+        _edAlert('Файл слишком большой (' + Math.round(file.size / 1048576) + ' МБ). Максимум ~45 МБ.');
         return null;
       }
       const ext = kind === 'gif'
@@ -537,7 +560,7 @@ async function uploadToStorage(file) {
         console.error('[storage] upload failed', up.error);
         // Показываем НАСТОЯЩИЙ ответ сервера, а не догадку: раньше здесь висело
         // "проверь bucket", хотя bucket очевидно на месте.
-        alert(storageErrorText(up.error) +
+        _edAlert(storageErrorText(up.error) +
           '\n\nРазмер файла: ' + Math.round(file.size / 1048576 * 10) / 10 + ' МБ');
         return null;
       }
@@ -547,7 +570,7 @@ async function uploadToStorage(file) {
 
     const full = await resizeToBlob(file, 1600, 0.85);   // full view
     const thumb = await resizeToBlob(file, 500, 0.78);    // grid thumbnail
-    if (!full) { alert('Не удалось обработать картинку'); return null; }
+    if (!full) { _edAlert('Не удалось обработать картинку'); return null; }
     const base = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const fullPath = `full/${base}.${full.ext}`;
     const thumbPath = thumb ? `thumb/${base}.${thumb.ext}` : null;
@@ -555,7 +578,7 @@ async function uploadToStorage(file) {
     const up1 = await putToStorage(fullPath, full);
     if (up1.error) {
       console.error('[storage] full upload failed', up1.error);
-      alert(storageErrorText(up1.error));
+      _edAlert(storageErrorText(up1.error));
       return null;
     }
     const finalFullPath = up1.path;
@@ -612,7 +635,7 @@ async function uploadIconToStorage(fileOrSrc, opts) {
   try {
     const src = typeof fileOrSrc === 'string' ? fileOrSrc : await _fileToDataUrl(fileOrSrc);
     const png = src && await _imageToBlob(src, 64, 'image/png');
-    if (!png) { if (!quiet) alert('Не удалось обработать картинку'); return null; }
+    if (!png) { if (!quiet) _edAlert('Не удалось обработать картинку'); return null; }
     let path = _storageName('site', 'png');
     let up = await _sbc.storage.from(STORAGE_BUCKET).upload(path, png, { contentType: 'image/png', upsert: false });
     // Bucket может не принимать png — тогда jpeg, значку это не страшно.
@@ -625,7 +648,7 @@ async function uploadIconToStorage(fileOrSrc, opts) {
     }
     if (up.error) {
       console.error('[storage] icon upload failed', up.error);
-      if (!quiet) alert(storageErrorText(up.error));
+      if (!quiet) _edAlert(storageErrorText(up.error));
       return null;
     }
     return { url: storagePublicUrl(path) };

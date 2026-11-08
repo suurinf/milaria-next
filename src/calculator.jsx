@@ -43,10 +43,10 @@ function CalcChip({ row, lang, state, onToggle, onQty }) {
         </div>
       )}
       {row._admin && (
-        <div className="calc2-chip-admin" onClick={(e) => e.stopPropagation()} style={{ display:'flex', gap:3, marginLeft:4 }}>
-          <button className="admin-btn" style={{width:20,height:20,fontSize:10}} onClick={() => row._onEdit(row)}>✎</button>
-          <button className="admin-btn danger" style={{width:20,height:20,fontSize:10}} onClick={() => row._onDelete(row.id)}>×</button>
-        </div>
+        <ItemTools size="sm" className="calc2-chip-admin"
+          onEdit={() => row._onEdit(row)}
+          onDelete={() => row._onDelete(row.id)}
+          deleteText={`Удалить опцию «${row.ru || row.label_ru || row.en || ''}»?`} />
       )}
     </div>
   );
@@ -109,7 +109,7 @@ function CalculatorSection({ t, lang, admin }) {
   const [dragSec, setDragSec] = calcState(null);
 
   async function deleteSection(key) {
-    if (!confirm(`Удалить раздел «${t.calculator.cats[key] || key}» со всеми опциями?`)) return;
+    if (!(await askConfirm('Все опции этого раздела тоже удалятся.', { title: `Удалить раздел «${t.calculator.cats[key] || key}»?`, danger: true, okText: 'Удалить' }))) return;
     const toDelete = (calcRes.items || []).filter(i => i.category === key);
     for (const row of toDelete) { await calcRes.remove(row.id); }
     saveSectionOrder(sectionOrder.filter(k => k !== key));
@@ -129,10 +129,14 @@ function CalculatorSection({ t, lang, admin }) {
   }
 
   async function addSubsection() {
-    const name = prompt(lang === 'ru' ? 'Название подраздела:' : 'Subsection name:');
+    const name = await askText(lang === 'ru' ? 'Новый подраздел' : 'New subsection', {
+      eyebrow: lang === 'ru' ? 'калькулятор' : 'calculator',
+      message: lang === 'ru' ? 'Например: «PNG», «Арт + риг». В нём сразу появится одна опция — её можно переименовать.' : 'A starter option is created inside.',
+      placeholder: lang === 'ru' ? 'Название подраздела' : 'Subsection name', okText: lang === 'ru' ? 'Создать' : 'Create',
+    });
     if (!name || !name.trim()) return;
     const key = name.trim();
-    if (cat.variants[key]) { alert('Такой подраздел уже есть'); return; }
+    if (cat.variants[key]) { edNotice('Такой подраздел уже есть'); return; }
     const id = 'sub-' + Date.now().toString(36);
     await calcRes.add({
       id, category: activeTab, variant: key, group_type: 'base',
@@ -143,16 +147,21 @@ function CalculatorSection({ t, lang, admin }) {
   }
 
   async function deleteSubsection(key) {
-    if (!confirm(lang === 'ru' ? `Удалить подраздел «${key}» со всеми опциями?` : `Delete subsection "${key}"?`)) return;
+    if (!(await askConfirm(lang === 'ru' ? 'Все опции подраздела тоже удалятся.' : 'All its options are deleted too.',
+      { title: lang === 'ru' ? `Удалить подраздел «${key}»?` : `Delete subsection "${key}"?`, danger: true, okText: lang === 'ru' ? 'Удалить' : 'Delete' }))) return;
     const toDelete = (calcRes.items || []).filter(i => i.category === activeTab && i.variant === key);
     for (const row of toDelete) { await calcRes.remove(row.id); }
   }
 
   async function addSection() {
-    const name = prompt(lang === 'ru' ? 'Название нового раздела:' : 'New section name:');
+    const name = await askText(lang === 'ru' ? 'Новый раздел' : 'New section', {
+      eyebrow: lang === 'ru' ? 'калькулятор' : 'calculator',
+      message: lang === 'ru' ? 'Появится новой вкладкой. Внутри сразу будет одна опция — её можно переименовать.' : 'Appears as a new tab with a starter option.',
+      placeholder: lang === 'ru' ? 'Название раздела' : 'Section name', okText: lang === 'ru' ? 'Создать' : 'Create',
+    });
     if (!name || !name.trim()) return;
     const key = name.trim();
-    if (calcData[key]) { alert('Такой раздел уже есть'); return; }
+    if (calcData[key]) { edNotice('Такой раздел уже есть'); return; }
     // Create the section with a starter option so it appears as a tab
     const id = 'sec-' + Date.now().toString(36);
     await calcRes.add({
@@ -173,21 +182,24 @@ function CalculatorSection({ t, lang, admin }) {
   const variant = (cat.variants[variantKey]) || { base: [], addon: [] };
 
   const calcOptionFields = calcMemo(() => [
-    { key: 'label_ru', label: 'Название (RU)', type: 'text', required: true, default: '' },
-    { key: 'label_en', label: 'Label (EN)', type: 'text', default: '' },
-    { key: 'rub', label: 'Цена ₽ (рус. версия)', type: 'number', min: 0, default: 0 },
-    { key: 'usd', label: 'Цена $ (англ. версия)', type: 'number', min: 0, default: 0 },
-    { key: 'has_qty', label: lang === 'ru' ? 'Есть количество?' : 'Has quantity?', type: 'select', default: 'false', options: [
+    { key: 'label_ru', label: lang === 'ru' ? 'Название по-русски' : 'Name (RU)', type: 'text', required: true, default: '', half: true },
+    { key: 'label_en', label: lang === 'ru' ? 'Название по-английски' : 'Name (EN)', type: 'text', default: '', half: true },
+    { key: 'rub', label: lang === 'ru' ? 'Цена, ₽' : 'Price, ₽', type: 'number', min: 0, default: 0, half: true,
+      hint: lang === 'ru' ? 'Для русской версии сайта.' : 'Russian site.' },
+    { key: 'usd', label: lang === 'ru' ? 'Цена, $' : 'Price, $', type: 'number', min: 0, default: 0, half: true,
+      hint: lang === 'ru' ? 'Для английской версии.' : 'English site.' },
+    { key: 'has_qty', label: lang === 'ru' ? 'Можно выбрать количество' : 'Has quantity', type: 'select', default: 'false', half: true, options: [
       { value: 'false', label: lang === 'ru' ? 'Нет' : 'No' },
       { value: 'true', label: lang === 'ru' ? 'Да' : 'Yes' },
     ]},
-    { key: 'group_type', label: lang === 'ru' ? 'Группа' : 'Group', type: 'select', default: 'base', options: [
+    { key: 'group_type', label: lang === 'ru' ? 'Группа' : 'Group', type: 'select', default: 'base', half: true, options: [
       { value: 'base', label: lang === 'ru' ? 'Базовая' : 'Base' },
       { value: 'addon', label: lang === 'ru' ? 'Доп. опция' : 'Addon' },
     ]},
-    { key: 'category', label: lang === 'ru' ? 'Раздел' : 'Section', type: 'select', default: activeTab,
+    { key: 'category', label: lang === 'ru' ? 'Раздел' : 'Section', type: 'select', default: activeTab, half: true, segment: false,
+      group: lang === 'ru' ? 'Где показывать' : 'Placement',
       options: tabKeys.map(k => ({ value: k, label: t.calculator.cats[k] || k })) },
-    { key: 'variant', label: lang === 'ru' ? 'Подраздел' : 'Subsection', type: 'select', default: variantKey, options: [
+    { key: 'variant', label: lang === 'ru' ? 'Подраздел' : 'Subsection', type: 'select', default: variantKey, half: true, segment: false, options: [
       { value: 'default', label: lang === 'ru' ? 'Основной' : 'Main' },
       { value: 'basic', label: 'PNG' },
       { value: 'plus', label: 'PNG+' },
@@ -293,20 +305,18 @@ function CalculatorSection({ t, lang, admin }) {
               className={`calc2-tab ${activeTab === key ? 'active' : ''}`}
               onClick={() => setActiveTab(key)}
             >
-              {admin && <span className="calc2-tab-grip" title="Перетащить">⠿</span>}
+              {admin && <span className="calc2-tab-grip" title="Перетащи, чтобы поменять порядок"><EdIcon name="grip" size={12} /></span>}
               {t.calculator.cats[key] || key}
             </button>
             {admin && (
               <button className="calc2-tab-del" title="Удалить раздел"
-                onClick={(e) => { e.stopPropagation(); deleteSection(key); }}>×</button>
+                onClick={(e) => { e.stopPropagation(); deleteSection(key); }}><EdIcon name="close" size={11} /></button>
             )}
           </div>
         ))}
         {admin && (
-          <button className="calc2-tab" onClick={addSection}
-            style={{ borderStyle: 'dashed', opacity: 0.8 }}
-            title="Добавить новый раздел">
-            + {lang === 'ru' ? 'Раздел' : 'Section'}
+          <button className="calc2-tab calc2-tab-add" onClick={addSection} title="Добавить новый раздел">
+            <EdIcon name="plus" size={13} /> {lang === 'ru' ? 'Раздел' : 'Section'}
           </button>
         )}
       </div>
@@ -317,7 +327,7 @@ function CalculatorSection({ t, lang, admin }) {
           {admin && (
             <div style={{ marginTop: 16 }}>
               <button className="add-btn" onClick={() => setCalcEdit({ item: { category: 'vtuber', variant: 'art', group_type: 'base' }, isNew: true })}>
-                {lang === 'ru' ? '+ Добавить первую опцию' : '+ Add first option'}
+                <EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить первую опцию' : 'Add first option'}
               </button>
             </div>
           )}
@@ -334,14 +344,13 @@ function CalculatorSection({ t, lang, admin }) {
               >{lang === 'ru' ? v.ru : v.en}</button>
               {admin && variantEntries.length > 1 && (
                 <button className="calc2-subtab-del" title="Удалить подраздел"
-                  onClick={() => deleteSubsection(key)}>×</button>
+                  onClick={() => deleteSubsection(key)}><EdIcon name="close" size={10} /></button>
               )}
             </span>
           ))}
           {admin && (
-            <button className="calc2-subtab" style={{ borderStyle: 'dashed', opacity: 0.8 }}
-              onClick={addSubsection} title="Добавить подраздел">
-              + {lang === 'ru' ? 'Подраздел' : 'Subsection'}
+            <button className="calc2-subtab calc2-tab-add" onClick={addSubsection} title="Добавить подраздел">
+              <EdIcon name="plus" size={12} /> {lang === 'ru' ? 'Подраздел' : 'Subsection'}
             </button>
           )}
         </div>
@@ -364,7 +373,7 @@ function CalculatorSection({ t, lang, admin }) {
           {admin && (
             <div style={{ marginTop: 14 }}>
               <button className="add-btn" onClick={() => setCalcEdit({ item: { category: activeTab, variant: variantKey, group_type: 'addon' }, isNew: true })}>
-                + {lang === 'ru' ? 'Добавить опцию' : 'Add option'}
+                <EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить опцию' : 'Add option'}
               </button>
             </div>
           )}
@@ -519,9 +528,9 @@ function ContactModal({ open, onClose, lang, admin }) {
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em', color: 'var(--accent)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>✦ {lang === 'ru' ? 'связаться' : 'contact'}</span>
           {admin && (
-            <button className="admin-btn" style={{ fontSize: 11 }}
-              onClick={() => setEditing(e => !e)}>
-              {editing ? '✓ Готово' : '✎ Редактировать'}
+            <button className={`ed-btn ed-btn--sm ${editing ? 'ed-btn--primary' : 'ed-btn--accent'}`}
+              onClick={() => { setEditing(e => !e); setEditDraft(null); }}>
+              <EdIcon name={editing ? 'check' : 'edit'} size={13} /> {editing ? (lang === 'ru' ? 'Готово' : 'Done') : (lang === 'ru' ? 'Изменить контакты' : 'Edit contacts')}
             </button>
           )}
         </div>
@@ -537,44 +546,52 @@ function ContactModal({ open, onClose, lang, admin }) {
 
         {/* Admin editor */}
         {admin && editing && (
-          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {linksRes.items.map(l => (
-              <div key={l.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span style={{ flex: 1, fontSize: 13 }}>{l.label}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', flex: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.handle || l.url}</span>
-                <button className="admin-btn" style={{ fontSize: 10, padding: '4px 8px' }} onClick={() => startEdit(l)}>✎</button>
-                <button className="admin-btn danger" style={{ fontSize: 10, padding: '4px 8px' }} onClick={() => linksRes.remove(l.id)}>×</button>
-              </div>
-            ))}
-            <button className="btn" style={{ fontSize: 12, padding: '8px 14px', justifyContent: 'center' }}
-              onClick={() => startEdit({ _isNew: true, label: '', handle: '', url: '', kind: 'social' })}>
-              + {lang === 'ru' ? 'Добавить' : 'Add'}
-            </button>
-          </div>
-        )}
-
-        {/* Edit form */}
-        {admin && editDraft && (
-          <div style={{ marginBottom: 20, padding: 16, borderRadius: 12, border: '1px solid var(--accent)', background: 'rgba(232,169,59,0.06)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)' }}>
-              {editDraft._isNew ? (lang === 'ru' ? 'Новый контакт' : 'New contact') : (lang === 'ru' ? 'Редактировать' : 'Edit')}
+          <div className="ed-panel" style={{ marginBottom: 22 }}>
+            <div className="ed-section-head">
+              <span className="ed-section-title">{lang === 'ru' ? 'Все ссылки' : 'All links'}<span className="ed-count">{linksRes.items.length}</span></span>
+              <button className="ed-btn ed-btn--sm" onClick={() => startEdit({ _isNew: true, label: '', handle: '', url: '', kind: 'social' })}>
+                <EdIcon name="plus" size={13} /> {lang === 'ru' ? 'Добавить' : 'Add'}
+              </button>
             </div>
-            {[
-              { key: 'label', placeholder: 'Telegram, Twitter...' },
-              { key: 'handle', placeholder: '@username' },
-              { key: 'url', placeholder: 'https://...' },
-            ].map(f => (
-              <input key={f.key} value={editDraft[f.key] || ''} placeholder={f.placeholder}
-                onChange={e => setEditDraft(d => ({ ...d, [f.key]: e.target.value }))}
-                style={{ padding: '8px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 12, width: '100%' }} />
-            ))}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }} onClick={saveEdit}>
-                {lang === 'ru' ? 'Сохранить' : 'Save'}
-              </button>
-              <button className="btn" style={{ fontSize: 12, padding: '8px 14px' }} onClick={() => setEditDraft(null)}>
-                {lang === 'ru' ? 'Отмена' : 'Cancel'}
-              </button>
+            <p className="ed-section-hint">{lang === 'ru' ? 'Здесь показываются соцсети и почта — те же ссылки, что и на главной.' : 'Same links as on the home page.'}</p>
+
+            {editDraft && (
+              <div className="ed-panel" style={{ background: 'var(--ed-surface-2)', marginBottom: 12 }}>
+                <div className="ed-form">
+                  <div className="ed-form-group" style={{ marginTop: 0, paddingTop: 0, borderTop: 0 }}>
+                    {editDraft._isNew ? (lang === 'ru' ? 'Новый контакт' : 'New contact') : (lang === 'ru' ? 'Изменить контакт' : 'Edit contact')}
+                  </div>
+                  <EdField half label={lang === 'ru' ? 'Название' : 'Label'}>
+                    <input className="ed-input" value={editDraft.label || ''} placeholder="Telegram, Twitter..."
+                      onChange={e => setEditDraft(d => ({ ...d, label: e.target.value }))} />
+                  </EdField>
+                  <EdField half label={lang === 'ru' ? 'Ник / адрес' : 'Handle'}>
+                    <input className="ed-input" value={editDraft.handle || ''} placeholder="@username"
+                      onChange={e => setEditDraft(d => ({ ...d, handle: e.target.value }))} />
+                  </EdField>
+                  <EdField label={lang === 'ru' ? 'Ссылка' : 'URL'}>
+                    <input className="ed-input" value={editDraft.url || ''} placeholder="https://..."
+                      onChange={e => setEditDraft(d => ({ ...d, url: e.target.value }))} />
+                  </EdField>
+                  <div className="ed-row" style={{ justifyContent: 'flex-end' }}>
+                    <button className="ed-btn ed-btn--ghost" onClick={() => setEditDraft(null)}>{lang === 'ru' ? 'Отмена' : 'Cancel'}</button>
+                    <button className="ed-btn ed-btn--primary" onClick={saveEdit}><EdIcon name="check" size={14} /> {lang === 'ru' ? 'Сохранить' : 'Save'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="ed-list">
+              {linksRes.items.map(l => (
+                <div key={l.id} className="ed-list-row">
+                  <span className="ed-list-main">
+                    <span className="ed-list-title">{l.label}</span>
+                    <span className="ed-mono ed-ellipsis">{l.handle || l.url}</span>
+                  </span>
+                  <ItemTools onEdit={() => startEdit(l)} onDelete={() => linksRes.remove(l.id)}
+                    deleteText={`Удалить контакт «${l.label}»? Он пропадёт и с главной.`} />
+                </div>
+              ))}
             </div>
           </div>
         )}

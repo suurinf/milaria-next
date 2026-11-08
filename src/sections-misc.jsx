@@ -55,8 +55,9 @@ function DebtCountdown({ admin, lang }) {
       <div className="debt-countdown-head">
         <span className="debt-countdown-label">⏳ {label}</span>
         {admin && (
-          <button className="admin-btn" style={{ fontSize: 11 }} onClick={() => setEditing(e => !e)}>
-            {editing ? '✓' : '✎'}
+          <button className={`ed-btn ed-btn--sm ${editing ? 'ed-btn--primary' : 'ed-btn--accent'}`} onClick={() => setEditing(e => !e)}>
+            <EdIcon name={editing ? 'check' : 'clock'} size={13} />
+            {editing ? (lang === 'ru' ? 'Готово' : 'Done') : (lang === 'ru' ? 'Настроить таймер' : 'Set timer')}
           </button>
         )}
       </div>
@@ -80,17 +81,25 @@ function DebtCountdown({ admin, lang }) {
       )}
 
       {admin && editing && (
-        <div className="debt-countdown-edit">
-          <label className="login-field">
-            <span>{lang === 'ru' ? 'Название' : 'Label'}</span>
-            <input value={cfg.label || ''} placeholder={lang === 'ru' ? 'До дедлайна' : 'Until deadline'}
-              onChange={e => saveCfg({ ...cfg, label: e.target.value })} />
-          </label>
-          <label className="login-field">
-            <span>{lang === 'ru' ? 'Дата и время' : 'Date & time'}</span>
-            <input type="datetime-local" value={cfg.date || ''}
-              onChange={e => saveCfg({ ...cfg, date: e.target.value })} />
-          </label>
+        <div className="ed-panel debt-countdown-edit">
+          <div className="ed-form">
+            <EdField half label={lang === 'ru' ? 'Подпись' : 'Label'}>
+              <input className="ed-input" value={cfg.label || ''} placeholder={lang === 'ru' ? 'До дедлайна' : 'Until deadline'}
+                onChange={e => saveCfg({ ...cfg, label: e.target.value })} />
+            </EdField>
+            <EdField half label={lang === 'ru' ? 'Дата и время' : 'Date & time'}
+              hint={lang === 'ru' ? 'Пусто — таймер не показывается зрителям.' : 'Empty hides the timer.'}>
+              <input className="ed-input" type="datetime-local" value={cfg.date || ''}
+                onChange={e => saveCfg({ ...cfg, date: e.target.value })} />
+            </EdField>
+          </div>
+          {cfg.date && (
+            <div className="ed-row" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
+              <button className="ed-btn ed-btn--ghost ed-btn--sm" onClick={() => saveCfg({ ...cfg, date: '' })}>
+                <EdIcon name="close" size={12} /> {lang === 'ru' ? 'Убрать таймер' : 'Remove timer'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -120,8 +129,8 @@ function DebtsSection({ t, admin, lang }) {
 
   const debtFields = React.useMemo(() => [
     { key: 'title', label: lang === 'ru' ? 'Название' : 'Title', type: 'text', required: true, default: '' },
-    { key: 'stream_date', label: lang === 'ru' ? 'Дата стрима' : 'Stream date', type: 'date', default: new Date().toISOString().slice(0, 10) },
-    { key: 'reason', label: lang === 'ru' ? 'Причина' : 'Reason', type: 'text', default: '' },
+    { key: 'stream_date', label: lang === 'ru' ? 'Дата стрима' : 'Stream date', type: 'date', default: new Date().toISOString().slice(0, 10), half: true },
+    { key: 'reason', label: lang === 'ru' ? 'Причина' : 'Reason', type: 'text', default: '', half: true, placeholder: lang === 'ru' ? 'проиграла спор' : 'lost a bet' },
     { key: 'status', label: lang === 'ru' ? 'Статус' : 'Status', type: 'select', default: 'open', options: [
       { value: 'open', label: t.debts.status.open },
       { value: 'waiting', label: lang === 'ru' ? 'Ожидание' : 'Waiting' },
@@ -191,7 +200,7 @@ function DebtsSection({ t, admin, lang }) {
         draggable={dh.draggable}
         onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
         onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-        {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+        {admin && <DragHandle />}
         <div className="debt-icon">
           {d.status === 'done' ? '✓' : d.status === 'inProgress' ? '◐' : d.status === 'waiting' ? '⏳' : '○'}
         </div>
@@ -210,15 +219,17 @@ function DebtsSection({ t, admin, lang }) {
           <span className="debt-pct">
             <EditableNumber value={pct} onSave={(v) => updateDebt(d.id, { progress: Math.max(0, Math.min(100, v)) })} admin={admin} suffix="%" />
           </span>
-          <span className="debt-status" onClick={() => admin && cycleStatus(d.id)} style={{ cursor: admin ? 'pointer' : 'default' }}>
+          <span className={`debt-status ${admin ? 'ed-inline' : ''}`} onClick={() => admin && cycleStatus(d.id)}
+            title={admin ? (lang === 'ru' ? 'Нажми, чтобы сменить статус' : 'Click to change status') : undefined}
+            style={{ cursor: admin ? 'pointer' : 'default' }}>
             {statusLabel}
           </span>
         </div>
         {admin && (
-          <div className="admin-actions" style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
-            <button className="admin-btn" onClick={() => editDebt(d)} title="Edit">✎</button>
-            <button className="admin-btn danger" onClick={() => deleteDebt(d.id)}>×</button>
-          </div>
+          <ItemTools style={{ position: 'absolute', top: 8, right: 8 }}
+            onEdit={() => editDebt(d)}
+            onDelete={() => deleteDebt(d.id)}
+            deleteText={`Удалить долг «${d.title || 'без названия'}»?`} />
         )}
       </div>
     );
@@ -260,7 +271,7 @@ function DebtsSection({ t, admin, lang }) {
       )}
 
       {admin && (
-        <button className="add-btn" onClick={addDebt}>+ {lang === 'ru' ? 'Добавить долг' : 'Add debt'}</button>
+        <button className="add-btn" onClick={addDebt}><EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить долг' : 'Add debt'}</button>
       )}
 
       {admin && (
@@ -353,10 +364,8 @@ function LinksSection({ t, admin }) {
                 </span>
               </div>
               {admin && (
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button className="admin-btn" onClick={(e) => { e.preventDefault(); editLink(l); }} title="Edit">✎</button>
-                  <button className="admin-btn danger" onClick={(e) => { e.preventDefault(); deleteLink(l.id); }}>×</button>
-                </div>
+                <ItemTools onEdit={() => editLink(l)} onDelete={() => deleteLink(l.id)}
+                  deleteText={`Удалить ссылку «${l.label}»?`} />
               )}
             </a>
           );
@@ -364,7 +373,7 @@ function LinksSection({ t, admin }) {
       </div>
 
       {admin && (
-        <button className="add-btn" onClick={addLink}>+ {t.links.title === 'Ссылки' ? 'Добавить ссылку' : 'Add link'}</button>
+        <button className="add-btn" onClick={addLink}><EdIcon name="plus" size={15} /> {t.links.title === 'Ссылки' ? 'Добавить ссылку' : 'Add link'}</button>
       )}
 
       {admin && (

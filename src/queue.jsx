@@ -102,7 +102,7 @@ function QueueRow({ item, idx, t, lang, admin, onUpdate, onDelete, onEdit, barSt
       draggable={dh.draggable}
       onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
       onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-      {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+      {admin && <DragHandle />}
       <div className="q-row-fill" data-style={barStyle} style={{ '--p': `${item.progress}%` }}></div>
       {item.tag && <span className={`q-tag ${item.tag}`}>{t.queue[item.tag]}</span>}
       {/* Приоритет показываем точкой у номера: высокий — красная, низкий — приглушённая */}
@@ -142,10 +142,10 @@ function QueueRow({ item, idx, t, lang, admin, onUpdate, onDelete, onEdit, barSt
         <span className="q-progress-label">{t.queue.progress}</span>
       </div>
       {admin && (
-        <div className="admin-actions" style={{ position: 'absolute', bottom: 4, right: 8 }}>
-          <button className="admin-btn" onClick={() => onEdit && onEdit(item)} title="Edit">✎</button>
-          <button className="admin-btn danger" onClick={() => onDelete(item.id)}>×</button>
-        </div>
+        <ItemTools className="q-tools"
+          onEdit={onEdit ? () => onEdit(item) : null}
+          onDelete={() => onDelete(item.id)}
+          deleteText={`Удалить заказ «${item.title || 'без названия'}»?`} />
       )}
     </div>
   );
@@ -159,7 +159,7 @@ function SecretRow({ idx, t, admin, onDelete, onEdit, item, dragHandlers }) {
       draggable={dh.draggable}
       onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
       onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-      {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+      {admin && <DragHandle />}
       <div className="q-row-fill" style={{ '--p': item ? `${item.progress || 0}%` : '100%', background: 'rgba(212, 168, 90, 0.06)' }}></div>
       <div className="q-num">{idx + 1}</div>
 
@@ -185,10 +185,10 @@ function SecretRow({ idx, t, admin, onDelete, onEdit, item, dragHandlers }) {
       )}
 
       {admin && item && (
-        <div className="admin-actions" style={{ position: 'absolute', bottom: 4, right: 8, zIndex: 5 }}>
-          {onEdit && <button className="admin-btn" onClick={() => onEdit(item)}>✎</button>}
-          <button className="admin-btn danger" onClick={() => onDelete(item.id)}>×</button>
-        </div>
+        <ItemTools className="q-tools" style={{ zIndex: 5 }}
+          onEdit={onEdit ? () => onEdit(item) : null}
+          onDelete={() => onDelete(item.id)}
+          deleteText={`Удалить секретный заказ «${item.title || 'без названия'}»?`} />
       )}
     </div>
   );
@@ -204,7 +204,7 @@ function DoneRow({ item, idx, t, admin, onDelete, onEdit, dragHandlers }) {
       draggable={dh.draggable}
       onDragStart={dh.onDragStart} onDragOver={dh.onDragOver}
       onDragLeave={dh.onDragLeave} onDrop={dh.onDrop} onDragEnd={dh.onDragEnd}>
-      {admin && <span className="drag-handle" title="Перетащить">⠿</span>}
+      {admin && <DragHandle />}
       <div className="q-row-fill"></div>
       {item.tag && <span className={`q-tag ${item.tag}`}>{t.queue[item.tag]}</span>}
       <div className="q-num">
@@ -227,10 +227,10 @@ function DoneRow({ item, idx, t, admin, onDelete, onEdit, dragHandlers }) {
         <span className="q-progress-label">{t.queue.ready}</span>
       </div>
       {admin && (
-        <div className="admin-actions" style={{ position: 'absolute', bottom: 4, right: 8 }}>
-          {onEdit && <button className="admin-btn" onClick={() => onEdit(item)}>✎</button>}
-          <button className="admin-btn danger" onClick={() => onDelete(item.id)}>×</button>
-        </div>
+        <ItemTools className="q-tools"
+          onEdit={onEdit ? () => onEdit(item) : null}
+          onDelete={() => onDelete(item.id)}
+          deleteText={`Удалить выполненный заказ «${item.title || 'без названия'}»?`} />
       )}
     </div>
   );
@@ -378,9 +378,11 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
   const queueFields = qMemo(() => [
     { key: 'title', label: lang === 'ru' ? 'Название' : 'Title', type: 'text', required: true, default: '' },
     { key: 'progress', label: lang === 'ru' ? 'Прогресс (%)' : 'Progress (%)', type: 'number', min: 0, max: 100, default: 0 },
-    { key: 'deadline_start', label: lang === 'ru' ? 'Дедлайн: начало' : 'Deadline: start', type: 'date', default: '' },
-    { key: 'deadline_end', label: lang === 'ru' ? 'Дедлайн: конец' : 'Deadline: end', type: 'date', default: '' },
-    { key: 'image', label: lang === 'ru' ? 'Картинка (для выполненных)' : 'Image (for completed)', type: 'image', default: '' },
+    { key: 'deadline_start', label: lang === 'ru' ? 'Срок: с' : 'Deadline: from', type: 'date', default: '', half: true },
+    { key: 'deadline_end', label: lang === 'ru' ? 'Срок: по' : 'Deadline: to', type: 'date', default: '', half: true,
+      hint: lang === 'ru' ? 'По этой дате считается «осталось N дней» и сортировка.' : 'Used for “N days left” and sorting.' },
+    { key: 'image', label: lang === 'ru' ? 'Картинка' : 'Image', type: 'image', default: '',
+      hint: lang === 'ru' ? 'Показывается у выполненных заказов.' : 'Shown for completed orders.' },
     { key: 'tag', label: lang === 'ru' ? 'Тип' : 'Type', type: 'select', default: '', options: [
       { value: '', label: lang === 'ru' ? '— нет —' : '— none —' },
       { value: 'paid', label: lang === 'ru' ? 'Оплачено' : 'Paid' },
@@ -388,11 +390,11 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       { value: 'free', label: lang === 'ru' ? 'Бесплатно' : 'Free' },
       { value: 'secret', label: lang === 'ru' ? 'Секрет' : 'Secret' },
     ]},
-    { key: 'kind', label: lang === 'ru' ? 'Статус' : 'Status', type: 'select', default: 'in_progress', options: [
+    { key: 'kind', label: lang === 'ru' ? 'Статус' : 'Status', type: 'select', default: 'in_progress', half: true, options: [
       { value: 'in_progress', label: lang === 'ru' ? 'В работе' : 'In progress' },
       { value: 'completed', label: lang === 'ru' ? 'Готово' : 'Completed' },
     ]},
-    { key: 'priority', label: lang === 'ru' ? 'Приоритет' : 'Priority', type: 'select', default: 'medium',
+    { key: 'priority', label: lang === 'ru' ? 'Приоритет' : 'Priority', type: 'select', default: 'medium', half: true,
       options: PRIORITY_LEVELS.map(p => ({
         value: p, label: lang === 'ru' ? PRIORITY_META[p].ru : PRIORITY_META[p].en,
       })) },
@@ -522,7 +524,7 @@ function QueueSection({ t, lang, admin, layout, barStyle }) {
       {renderInProgress()}
 
       {admin && (
-        <button className="add-btn" onClick={addInProgress}>+ {t.queue.addNew}</button>
+        <button className="add-btn" onClick={addInProgress}><EdIcon name="plus" size={15} /> {String(t.queue.addNew).replace(/^\+\s*/, '')}</button>
       )}
 
       {admin && editModal && (

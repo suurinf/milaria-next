@@ -51,6 +51,7 @@ function SiteFavicon({ admin }) {
   const [favicon, saveFavicon] = useSetting('site_favicon', '');
   const [open, setOpen] = React.useState(false);
   const [input, setInput] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
     if (!favicon) return;
@@ -65,37 +66,50 @@ function SiteFavicon({ admin }) {
 
   if (!admin) return null;
 
+  async function upload(files) {
+    setBusy(true);
+    const up = await window.uploadIconToStorage(files[0]);
+    setBusy(false);
+    if (up && up.url) setInput(up.url);
+  }
+
   return (
     <>
-      <button className="admin-btn" onClick={() => { setInput(favicon || ''); setOpen(true); }}
-        title="Значок сайта" style={{ marginRight: 8 }}>🖼</button>
+      <button className="ed-btn ed-btn--ghost" onClick={() => { setInput(favicon || ''); setOpen(true); }}
+        title="Значок сайта во вкладке браузера">
+        {favicon ? <img src={favicon} alt="" style={{ width: 14, height: 14, borderRadius: 3, objectFit: 'cover' }} /> : <EdIcon name="image" size={14} />}
+        <span>Значок</span>
+      </button>
       {open && (
-        <Modal open={true} onClose={() => setOpen(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, margin: 0 }}>Значок сайта (favicon)</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              Значок во вкладке браузера. PNG/SVG/ICO, лучше квадратный (например 64×64).
-            </p>
-            {input && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src={input} style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', background: 'rgba(255,255,255,0.05)' }} alt="" />
-                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Превью</span>
-              </div>
+        <EditorModal onClose={() => setOpen(false)} size="sm"
+          eyebrow="настройки сайта" title="Значок сайта"
+          subtitle="Картинка во вкладке браузера и в закладках. Лучше квадратная — при загрузке она ужимается до 64 px."
+          footer={<>
+            {favicon && (
+              <button className="ed-btn ed-btn--ghost" style={{ marginRight: 'auto' }}
+                onClick={() => { saveFavicon(''); setInput(''); setOpen(false); }}>Сбросить</button>
             )}
-            <label className="login-field">
-              <span>URL значка</span>
-              <input value={input} onChange={e => setInput(e.target.value)} placeholder="https://... или data:image/..." />
-            </label>
-            <ImageUploader icon label="📷 Загрузить файл" onUpload={url => setInput(url)} />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => { saveFavicon(input); setOpen(false); }}>Сохранить</button>
-              {favicon && (
-                <button className="btn" onClick={() => { saveFavicon(''); setInput(''); setOpen(false); }}>Сбросить</button>
-              )}
+            <button className="ed-btn ed-btn--ghost" onClick={() => setOpen(false)}>Отмена</button>
+            <button className="ed-btn ed-btn--primary" onClick={() => { saveFavicon(input); setOpen(false); }}>
+              <EdIcon name="check" size={15} /> Сохранить
+            </button>
+          </>}>
+          <div className="ed-stack">
+            <div>
+              <div className="ed-tab-preview">
+                {input ? <img src={input} alt="" /> : <EdIcon name="image" size={16} />}
+                <span>Milaria — VTuber-художник</span>
+              </div>
+              <div className="ed-tab-strip" />
+            </div>
+            <EdDropzone onFiles={upload} busy={busy} label="Загрузить картинку" hint="PNG, JPG, SVG или ICO" />
+            <div className="ed-input-wrap">
+              <EdIcon name="link" size={14} />
+              <input className="ed-input ed-input--icon" value={input} onChange={e => setInput(e.target.value)}
+                placeholder="…или вставь ссылку на значок" />
             </div>
           </div>
-        </Modal>
+        </EditorModal>
       )}
     </>
   );
@@ -117,9 +131,8 @@ function InlineImagesMigrator() {
   if (!info || !info.count) return null;
 
   async function run() {
-    if (!confirm(`Перенести ${info.count} картинок (${info.kb} КБ) из базы в хранилище файлов?\n\n` +
-      'Баннер и значок останутся теми же, но сайт станет легче для каждого посетителя.\n' +
-      'Если хочешь подстраховаться — сначала нажми «💾 Бэкап».')) return;
+    if (!(await askConfirm('Баннер и значок останутся теми же, но сайт станет легче для каждого посетителя.\nЕсли хочешь подстраховаться — сначала нажми «Бэкап».',
+      { title: `Перенести ${info.count} картинок (${info.kb} КБ) в хранилище?`, okText: 'Перенести' }))) return;
     setBusy(true);
     try {
       const r = await window.migrateInlineImages();
@@ -127,21 +140,21 @@ function InlineImagesMigrator() {
         ['banner', 'site_favicon'].forEach(k => localStorage.removeItem('milaria:setting:' + k));
         localStorage.removeItem('milaria:milaria:banner');
       } catch (e) {}
-      alert(r.failed
-        ? `Перенесено: ${r.moved}, не получилось: ${r.failed}.\n\n${r.errors.join('\n')}\n\nНеперенесённые остались как были.`
-        : `✓ Перенесено картинок: ${r.moved}. Страница перезагрузится.`);
+      await edNotice(r.failed ? `Перенесено: ${r.moved}, не получилось: ${r.failed}` : `Перенесено картинок: ${r.moved}`,
+        r.failed ? `${r.errors.join('\n')}\n\nНеперенесённые остались как были.` : 'Страница перезагрузится.');
       location.reload();
     } catch (e) {
-      alert('Не получилось: ' + (e && e.message || e) + '\n\nНичего не сломано, картинки остались в базе.');
+      await edNotice('Не получилось', (e && e.message || e) + '\n\nНичего не сломано, картинки остались в базе.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <button className="admin-btn" onClick={run} disabled={busy} style={{ marginRight: 8 }}
+    <button className="ed-btn ed-btn--accent" onClick={run} disabled={busy}
       title="Баннер и значок лежат в базе и утяжеляют каждую страницу">
-      {busy ? '⏳ переношу…' : `⇪ Картинки в хранилище (${info.kb} КБ)`}
+      {busy ? <span className="ed-spinner" /> : <EdIcon name="upload" size={14} />}
+      <span>{busy ? 'Переношу…' : `Картинки в хранилище (${info.kb} КБ)`}</span>
     </button>
   );
 }
@@ -288,7 +301,7 @@ function App() {
         dump.tables[t] = data || [];
       }
       if (Object.keys(dump.tables).length === 0) {
-        alert('Не удалось выгрузить ни одной таблицы. Проверь связь с Supabase.');
+        edNotice('Бэкап не получился', 'Не удалось выгрузить ни одной таблицы. Проверь связь с Supabase.');
         return;
       }
       const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
@@ -299,11 +312,10 @@ function App() {
       a.click();
       URL.revokeObjectURL(url);
       const rows = Object.values(dump.tables).reduce((s, r) => s + r.length, 0);
-      alert(failed.length
-        ? `Выгружено ${rows} строк. Не удалось: ${failed.join(', ')}`
-        : `Готово: ${rows} строк из ${TABLES.length} таблиц.`);
+      edNotice(failed.length ? `Выгружено ${rows} строк, но не всё` : 'Бэкап скачан',
+        failed.length ? `Не удалось: ${failed.join(', ')}` : `${rows} строк из ${TABLES.length} таблиц — файл ${a.download}`);
     } catch (e) {
-      alert('Бэкап не удался: ' + (e && e.message));
+      edNotice('Бэкап не удался', String(e && e.message));
     } finally {
       setBackupBusy(false);
     }
@@ -312,29 +324,26 @@ function App() {
   // Номер счётчика Метрики. Сам счётчик вставляет сервер (до отрисовки),
   // здесь только поле, куда его вписать.
   const [metrikaId, saveMetrikaId] = useSetting('metrika_id', '');
-  function setupMetrika() {
+  async function setupMetrika() {
     const cur = String(metrikaId || '');
-    const v = prompt(
-      'Номер счётчика Яндекс.Метрики (только цифры).\n' +
-      'Взять тут: metrika.yandex.ru → счётчик → Настройка → Номер.\n' +
-      'Оставь поле пустым, чтобы отключить аналитику.',
-      cur
-    );
+    const v = await askText('Яндекс.Метрика', {
+      eyebrow: 'аналитика',
+      message: 'Номер счётчика — только цифры. Взять тут: metrika.yandex.ru → счётчик → Настройка → Номер.\nОставь поле пустым, чтобы отключить аналитику.',
+      initial: cur, placeholder: 'например, 12345678', inputMode: 'numeric', okText: 'Сохранить',
+    });
     if (v === null) return;
     const clean = v.replace(/\D/g, '');
     saveMetrikaId(clean);
-    alert(clean
-      ? `Счётчик ${clean} сохранён.\nПоявится на сайте в течение минуты.`
-      : 'Аналитика отключена.');
+    edNotice(clean ? `Счётчик ${clean} сохранён` : 'Аналитика отключена',
+      clean ? 'Появится на сайте в течение минуты.' : '');
   }
 
 
   function handleAdminToggle() {
     if (admin) {
       // already logged in — offer logout
-      if (confirm(lang === 'ru' ? 'Выйти из режима редактирования?' : 'Sign out of edit mode?')) {
-        auth.signOut();
-      }
+      askConfirm(lang === 'ru' ? 'Выйти из режима редактирования?' : 'Sign out of edit mode?',
+        { okText: lang === 'ru' ? 'Выйти' : 'Sign out' }).then(ok => { if (ok) auth.signOut(); });
     } else {
       setLoginOpen(true);
     }
@@ -356,26 +365,32 @@ function App() {
         />
 
         {admin && (
-          <div className="admin-bar">
-            <span>
-              <span className="admin-pill">✦ {i18n.common.adminOn}</span>
-              <span className="admin-bar-info">
-                {auth.email} · {lang === 'ru' ? 'кликай по тексту/числам чтобы редактировать' : 'click text/numbers to edit'}
+          <div className="ed-bar">
+            <span className="ed-bar-pill">{i18n.common.adminOn}</span>
+            <span className="ed-bar-info">
+              <span className="ed-bar-email">{auth.email}</span>
+              <span className="ed-bar-hint">
+                {lang === 'ru' ? 'Текст и числа с пунктирной рамкой меняются по клику' : 'Click dashed text or numbers to edit'}
               </span>
             </span>
-            <span className="admin-bar-actions">
+            <span className="ed-bar-actions">
               <InlineImagesMigrator />
               <SiteFavicon admin={admin} />
-              <button className="admin-btn" onClick={downloadBackup} disabled={backupBusy}
+              <button className="ed-btn ed-btn--ghost" onClick={downloadBackup} disabled={backupBusy}
                 title="Скачать все данные из Supabase одним JSON">
-                {backupBusy ? '⏳…' : '💾 Бэкап'}
+                {backupBusy ? <span className="ed-spinner" /> : <EdIcon name="download" size={14} />}
+                <span>Бэкап</span>
               </button>
-              <button className="admin-btn" onClick={setupMetrika}
+              <button className="ed-btn ed-btn--ghost" onClick={setupMetrika}
                 title="Номер счётчика Яндекс.Метрики">
-                {metrikaId ? '📊 ' + metrikaId : '📊 Аналитика'}
+                <EdIcon name="chart" size={14} />
+                <span>{metrikaId ? 'Метрика ' + metrikaId : 'Аналитика'}</span>
               </button>
-              <button className="admin-btn" onClick={() => {
-                if (confirm('Очистить локальный кеш и перезагрузить страницу? Это засинхронит с сервером.')) {
+              <button className="ed-btn ed-btn--ghost" onClick={async () => {
+                if (await askConfirm('Обновить данные с сервера?', {
+                  message: 'Сбросит то, что браузер запомнил у себя, и перезагрузит страницу. Ничего на сайте не удалится.',
+                  okText: 'Обновить',
+                })) {
                   try {
                     Object.keys(localStorage).forEach(k => {
                       if (k.startsWith('milaria:cache:') || k.startsWith('milaria:setting:')) localStorage.removeItem(k);
@@ -383,9 +398,14 @@ function App() {
                   } catch(e) {}
                   location.reload();
                 }
-              }} title="Синхронизировать с сервером" style={{ marginRight: 8 }}>⟳</button>
-              <button className="admin-btn danger" onClick={() => auth.signOut()}>
-                {lang === 'ru' ? 'выйти' : 'sign out'}
+              }} title="Синхронизировать с сервером">
+                <EdIcon name="refresh" size={14} />
+                <span>Обновить</span>
+              </button>
+              <span className="ed-bar-sep" />
+              <button className="ed-btn ed-btn--ghost" onClick={() => auth.signOut()} title={lang === 'ru' ? 'Выйти из редактора' : 'Sign out'}>
+                <EdIcon name="logout" size={14} />
+                <span>{lang === 'ru' ? 'Выйти' : 'Sign out'}</span>
               </button>
             </span>
           </div>
@@ -408,6 +428,7 @@ function App() {
       </div>
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} auth={auth} lang={lang} />
+      <EdDialogHost />
 
     </>
   );

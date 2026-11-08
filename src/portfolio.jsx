@@ -143,7 +143,7 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
   async function addUrl() {
     if (!urlInput.trim()) return;
     if (String(category.id).startsWith('def-')) {
-      alert('Категория ещё не загрузилась из базы. Подожди пару секунд и попробуй снова.');
+      edNotice('Категория ещё загружается', 'Подожди пару секунд и попробуй снова.');
       return;
     }
     setUploading(true);
@@ -155,13 +155,13 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
     });
     setUploading(false);
     if (result) setUrlInput('');
-    else alert('Не удалось добавить. Проверь URL.');
+    else edNotice('Не удалось добавить', 'Проверь ссылку.');
   }
 
   async function migrateToStorage() {
     const base64imgs = catImages.filter(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:'));
-    if (!base64imgs.length) { alert('Нет старых картинок для переноса'); return; }
-    if (!confirm(`Перенести ${base64imgs.length} картинок в быстрое хранилище? Это займёт несколько секунд.`)) return;
+    if (!base64imgs.length) { edNotice('Нет старых картинок для переноса'); return; }
+    if (!(await askConfirm('Это займёт несколько секунд.', { title: `Перенести ${base64imgs.length} картинок в быстрое хранилище?`, okText: 'Перенести' }))) return;
     setUploading(true);
     let done = 0, failed = 0;
     for (const img of base64imgs) {
@@ -174,16 +174,19 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
       } catch (e) { failed++; }
     }
     setUploading(false);
-    alert(`Готово! Перенесено: ${done}${failed ? ', ошибок: ' + failed : ''}`);
+    edNotice('Готово', `Перенесено: ${done}${failed ? ', ошибок: ' + failed : ''}`);
   }
 
-  async function handleUpload(e) {
-    const files = Array.from(e.target.files);
+  function handleUpload(e) {
+    const files = Array.from(e.target.files || []);
+    if (fileRef.current) fileRef.current.value = '';
+    return uploadFiles(files);
+  }
+  async function uploadFiles(files) {
     if (!files.length) return;
     // Sanity check: category must be a real Supabase row (UUID)
     if (String(category.id).startsWith('def-')) {
-      alert('Эта категория ещё не сохранена в базе. Дождись загрузки данных с сервера (несколько секунд) и попробуй снова.');
-      if (fileRef.current) fileRef.current.value = '';
+      edNotice('Категория ещё загружается', 'Дождись загрузки данных с сервера (несколько секунд) и попробуй снова.');
       return;
     }
     setUploading(true);
@@ -201,12 +204,11 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
         sort_order: base - 1 - idx,
       });
       if (!result) {
-        alert('Картинка загружена в хранилище, но не удалось записать в базу.');
+        edNotice('Не удалось записать в базу', 'Картинка загружена в хранилище, но в карточку не добавилась.');
         break;
       }
     }
     setUploading(false);
-    if (fileRef.current) fileRef.current.value = '';
   }
 
   function setCover(imgId) {
@@ -274,60 +276,46 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
               {sortMode === 'new' ? (lang === 'ru' ? '↓ новые' : '↓ newest') : (lang === 'ru' ? '↑ старые' : '↑ oldest')}
             </button>
           )}
-          {admin && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder={lang === 'ru' ? 'URL картинки или YouTube' : 'Image or YouTube URL'}
+        </div>
+        {admin && (
+          <div className="pf-admin-toolbar">
+            <span className="ed-bar-pill">{lang === 'ru' ? 'редактор галереи' : 'gallery editor'}</span>
+            <div className="ed-input-wrap" style={{ flex: 1, minWidth: 220 }}>
+              <EdIcon name="link" size={14} />
+              <input className="ed-input ed-input--icon"
+                placeholder={lang === 'ru' ? 'Ссылка на картинку или YouTube' : 'Image or YouTube URL'}
                 value={urlInput}
                 onChange={e => setUrlInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') addUrl(); }}
-                style={{
-                  padding: '9px 14px', borderRadius: 22, fontSize: 12,
-                  fontFamily: 'var(--font-mono)', minWidth: 220,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)', color: '#fff',
-                  outline: 'none',
-                }}
-              />
-              <button onClick={addUrl} disabled={uploading || !urlInput.trim()} style={{
-                background: 'var(--accent)', border: 'none', color: '#fff',
-                padding: '10px 18px', borderRadius: 22, fontSize: 12,
-                fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
-                letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
-              }}>
-                {uploading ? '⏳' : '+ URL'}
-              </button>
-              <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)', color: '#fff',
-                padding: '10px 18px', borderRadius: 22, fontSize: 12,
-                fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
-                letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
-              }}>
-                <input ref={fileRef} type="file" accept="image/*,.gif,video/mp4,video/webm" multiple style={{ display: 'none' }} onChange={handleUpload} />
-                {uploading ? '⏳' : '📷'} {lang === 'ru' ? 'Файл' : 'File'}
-              </button>
-              {catImages.some(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:')) && (
-                <button onClick={migrateToStorage} disabled={uploading} title="Перенести старые картинки в быстрое хранилище" style={{
-                  background: 'rgba(232,169,59,0.15)',
-                  border: '1px solid rgba(232,169,59,0.3)', color: 'var(--accent)',
-                  padding: '10px 16px', borderRadius: 22, fontSize: 12,
-                  fontFamily: 'var(--font-mono)', cursor: uploading ? 'wait' : 'pointer',
-                  letterSpacing: '0.04em', opacity: uploading ? 0.6 : 1,
-                }}>
-                  {uploading ? '⏳' : '⚡ Ускорить'}
-                </button>
-              )}
+                onKeyDown={e => { if (e.key === 'Enter') addUrl(); }} />
             </div>
-          )}
-        </div>
+            <button className="ed-btn" onClick={addUrl} disabled={uploading || !urlInput.trim()}>
+              <EdIcon name="plus" size={14} /> {lang === 'ru' ? 'По ссылке' : 'Add URL'}
+            </button>
+            <button className="ed-btn ed-btn--primary" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              {uploading ? <span className="ed-spinner" /> : <EdIcon name="upload" size={14} />}
+              {lang === 'ru' ? 'Загрузить файлы' : 'Upload files'}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*,.gif,video/mp4,video/webm" multiple style={{ display: 'none' }} onChange={handleUpload} />
+            {catImages.some(i => typeof i.image_data === 'string' && i.image_data.startsWith('data:')) && (
+              <button className="ed-btn ed-btn--accent" onClick={migrateToStorage} disabled={uploading}
+                title="Перенести старые картинки в быстрое хранилище">
+                <EdIcon name="sparkle" size={14} /> {lang === 'ru' ? 'Ускорить' : 'Speed up'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Image grid ── */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px 60px' }}>
         {!imagesRes.loaded && catImages.length === 0 ? (
           <GallerySkeleton />
+        ) : catImages.length === 0 && admin ? (
+          <EdDropzone className="pf-drop-empty" multiple busy={uploading}
+            accept="image/*,.gif,video/mp4,video/webm"
+            onFiles={uploadFiles}
+            label={lang === 'ru' ? 'Карточка пока пустая — добавь первые работы' : 'Empty — add the first works'}
+            hint={lang === 'ru' ? 'Перетащи файлы сюда или нажми. Первая станет обложкой.' : 'Drop files or click. The first becomes the cover.'} />
         ) : catImages.length === 0 ? (
           <div style={{
             textAlign: 'center', padding: '80px 20px',
@@ -392,7 +380,7 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
                       </div>
                     </div>
                   )}
-                  {admin && <span className="drag-handle" style={{ top: 8, left: 8, transform: 'none', zIndex: 12 }} title="Перетащить">⠿</span>}
+                  {admin && <DragHandle style={{ top: 8, left: 8, transform: 'none', zIndex: 12, background: 'rgba(16,11,7,0.7)' }} />}
 
                   {/* Cover badge */}
                   {isCover && (
@@ -407,55 +395,28 @@ function CategoryGallery({ category, images, imagesRes, t, lang, admin, onClose 
 
                   {/* Admin controls — always visible */}
                   {admin && (
-                    <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 15, display: 'flex', gap: 6 }}
-                      onClick={e => e.stopPropagation()}>
-                      <button
-                        onClick={e => { e.stopPropagation(); setCover(img.id); }}
-                        title={isCover ? 'Это обложка' : 'Сделать обложкой'}
-                        style={{
-                          width: 30, height: 30, borderRadius: '50%',
-                          background: isCover ? 'var(--accent)' : 'rgba(0,0,0,0.6)',
-                          backdropFilter: 'blur(6px)',
-                          border: '1px solid rgba(255,255,255,0.25)',
-                          color: isCover ? '#1a1410' : '#fff', cursor: 'pointer',
-                          fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        }}>★</button>
-                      <button
-                        onClick={e => { e.stopPropagation(); if (confirm('Удалить из карточки?')) deleteImage(img.id); }}
-                        title="Удалить"
-                        style={{
-                          width: 30, height: 30, borderRadius: '50%',
-                          background: 'rgba(180,30,30,0.75)', backdropFilter: 'blur(6px)',
-                          border: '1px solid rgba(255,120,120,0.4)',
-                          color: '#fff', cursor: 'pointer',
-                          fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        }}>×</button>
-                    </div>
+                    <ItemTools className="pf-img-tools" style={{ position: 'absolute', top: 8, right: 8, zIndex: 15 }}
+                      extra={
+                        <button type="button" className={`ed-tool ${isCover ? 'on' : ''}`}
+                          title={isCover ? 'Это обложка' : 'Сделать обложкой'}
+                          onClick={e => { e.stopPropagation(); setCover(img.id); }}>
+                          <EdIcon name="star" size={14} />
+                        </button>
+                      }
+                      onDelete={() => deleteImage(img.id)}
+                      deleteText={isCover ? 'Удалить работу? Это обложка карточки — обложкой станет следующая.' : 'Удалить работу из карточки?'} />
                   )}
                 </div>
               );
             })}
 
-            {/* Upload placeholder tile */}
+            {/* Плитка загрузки — можно перетащить сюда сразу несколько файлов */}
             {admin && (
-              <div onClick={() => fileRef.current?.click()} style={{
-                aspectRatio: '4/5', borderRadius: 14,
-                border: '2px dashed rgba(255,255,255,0.08)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 12, cursor: 'pointer',
-                transition: 'border-color .2s, background .2s',
-                color: 'rgba(255,255,255,0.25)',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = ''; }}
-              >
-                <span style={{ fontSize: 40, lineHeight: 1 }}>+</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em' }}>
-                  {lang === 'ru' ? 'Загрузить' : 'Upload'}
-                </span>
-              </div>
+              <EdDropzone className="pf-drop-tile" multiple busy={uploading}
+                accept="image/*,.gif,video/mp4,video/webm"
+                onFiles={uploadFiles}
+                label={lang === 'ru' ? 'Добавить работы' : 'Add works'}
+                hint={lang === 'ru' ? 'Перетащи файлы сюда или нажми' : 'Drop files or click'} />
             )}
           </div>
         )}
@@ -582,11 +543,10 @@ function CoverflowRow({ catItems, idx, setIdx, openCategory, setOpenCategory, ad
                 <div className="pf-cover-open-hint">{lang === 'ru' ? 'Открыть галерею →' : 'Open gallery →'}</div>
               )}
               {admin && isCenter && (
-                <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 5, zIndex: 20 }}
-                  onClick={e => e.stopPropagation()}>
-                  <button className="admin-btn" onClick={() => setPfEdit({ item, isNew: false })}>✎</button>
-                  <button className="admin-btn danger" onClick={() => pfRes.remove(item.id)}>×</button>
-                </div>
+                <ItemTools style={{ position: 'absolute', top: 10, right: 10, zIndex: 20 }}
+                  onEdit={() => setPfEdit({ item, isNew: false })}
+                  onDelete={() => pfRes.remove(item.id)}
+                  deleteText={`Удалить категорию «${t.portfolio.categories[item.key] || item.key}»? Работы внутри перестанут показываться.`} />
               )}
             </div>
           );
@@ -632,13 +592,15 @@ function PortfolioSection({ t, admin, lang }) {
 
   const pfFields = pfMemo(() => [
     { key: 'key', label: lang === 'ru' ? 'Название' : 'Name', type: 'text', required: true, default: '' },
-    { key: 'emoji', label: lang === 'ru' ? 'Эмодзи (при наведении)' : 'Emoji (on hover)', type: 'text', default: '' },
-    { key: 'kind', label: lang === 'ru' ? 'Вид' : 'Kind', type: 'select', default: 'model', options: [
+    { key: 'emoji', label: lang === 'ru' ? 'Эмодзи' : 'Emoji', type: 'text', default: '', half: true, placeholder: '✨',
+      hint: lang === 'ru' ? 'Появляется при наведении на карточку.' : 'Shown on hover.' },
+    { key: 'kind', label: lang === 'ru' ? 'Вид' : 'Kind', type: 'select', default: 'model', half: true, options: [
       { value: 'model', label: lang === 'ru' ? 'Модель' : 'Model' },
       { value: 'illustration', label: lang === 'ru' ? 'Иллюстрация' : 'Illustration' },
     ]},
-    { key: 'hue', label: lang === 'ru' ? 'Оттенок (0-360)' : 'Hue', type: 'number', min: 0, max: 360, default: 40 },
-    { key: 'video_url', label: 'YouTube', type: 'text', default: '' },
+    { key: 'hue', label: lang === 'ru' ? 'Оттенок карточки' : 'Card hue', type: 'number', min: 0, max: 360, default: 40,
+      hint: lang === 'ru' ? 'Цвет подложки, пока обложка не загрузилась.' : 'Background tint while the cover loads.' },
+    { key: 'video_url', label: 'YouTube', type: 'text', default: '', placeholder: 'https://youtube.com/watch?v=...' },
   ], [lang]);
 
   function handleSavePf(draft) {
@@ -713,7 +675,7 @@ function PortfolioSection({ t, admin, lang }) {
 
       {admin && (
         <button className="add-btn" onClick={() => setPfEdit({ item: null, isNew: true })}>
-          + {lang === 'ru' ? 'Добавить категорию' : 'Add category'}
+          <EdIcon name="plus" size={15} /> {lang === 'ru' ? 'Добавить категорию' : 'Add category'}
         </button>
       )}
 
