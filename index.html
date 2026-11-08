@@ -5009,6 +5009,8 @@ try {
   Object.keys(localStorage).forEach(k => {
     if (k.startsWith('milaria:cache:')) localStorage.removeItem(k);
   });
+  // Старая лишняя копия баннера (~1,5 МБ base64), её больше никто не читает.
+  localStorage.removeItem('milaria:milaria:banner');
 } catch(e) {}
 
 function useAuth() {

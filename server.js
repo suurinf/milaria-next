@@ -72,7 +72,21 @@ function supaFetch(table, orderBy = 'sort_order') {
 // часа жил без снапшота (и без Метрики, которая читается из настроек).
 const RETRY_DELAYS = [2000, 5000, 15000, 45000];
 
+// Обновления кэша могут идти одновременно (несколько правок подряд). Если
+// раньше начатое закончится позже, оно затрёт свежие данные старыми — так
+// 8 ноября после переноса картинок кэш час отдавал старый баннер. Поэтому у
+// каждого обновления есть номер, и результат старше уже применённого выбрасывается.
+let _cacheGen = 0, _appliedGen = 0;
+
+// Правки через админку идут пачками — обновляем кэш один раз после последней.
+let _refreshTimer = null;
+function scheduleRefresh() {
+  clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(() => refreshCache(), 800);
+}
+
 async function refreshCache(attempt = 0) {
+  const gen = ++_cacheGen;
   try {
     log('CACHE', attempt ? `Повтор ${attempt}/${RETRY_DELAYS.length}...` : 'Refreshing from Supabase...');
     // NOTE: portfolio_images NOT fetched here — it's heavy base64/URLs and the client
@@ -120,6 +134,11 @@ async function refreshCache(attempt = 0) {
       settingsArr.forEach(r => { if (r && r.key) settings[r.key] = r.value; });
     }
 
+    if (gen < _appliedGen) {
+      log('CACHE', 'Пропущен устаревший ответ — уже есть данные свежее');
+      return;
+    }
+    _appliedGen = gen;
     cache = { data, settings, updatedAt: new Date().toISOString() };
     log('CACHE', `OK: q=${data.queue.length} cats=${data.portfolioCategories.length} settings=${Object.keys(settings).length}`
       + (failed ? ` (не ответили: ${failed}, взяты прошлые значения)` : ''));
@@ -159,9 +178,7 @@ function proxySupabase(req, res, supaPath) {
         ps.on('end', () => {
           log('PROXY', `→ ${ps.statusCode} ${supaPath.split('?')[0]}`);
           // Trigger cache refresh after writes
-          if (['POST','PATCH','PUT','DELETE'].includes(req.method)) {
-            setTimeout(refreshCache, 500);
-          }
+          if (['POST','PATCH','PUT','DELETE'].includes(req.method)) scheduleRefresh();
           const headers = {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Headers': 'authorization,apikey,content-type,prefer,accept',
@@ -206,7 +223,7 @@ function proxyStorage(req, res, supaPath) {
       headers,
     }, (ps) => {
       log('STORAGE', `→ ${ps.statusCode} ${supaPath.split('?')[0]}`);
-      if (['POST', 'PUT', 'DELETE'].includes(req.method)) setTimeout(refreshCache, 500);
+      // Файлы в кэш не входят; ссылку на файл всё равно пишет следующий запрос к /rest.
 
       const isMedia = req.method === 'GET' && (ps.statusCode === 200 || ps.statusCode === 206);
       const out = {
@@ -544,7 +561,7 @@ server.listen(PORT, '0.0.0.0', () => {
   // Плановое обновление раз в час. После любой правки через админку кэш и так
   // обновляется сразу (см. proxySupabase), поэтому частый опрос только жёг
   // трафик Supabase: настройки весят ~1,5 МБ, при 15 минутах это ~4 ГБ в месяц.
-  setInterval(refreshCache, 60 * 60 * 1000);
+  setInterval(() => refreshCache(), 60 * 60 * 1000);
 });
 
 server.on('error', e => { console.error('SERVER ERROR:', e); process.exit(1); });
