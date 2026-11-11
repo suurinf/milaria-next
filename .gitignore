@@ -5,6 +5,3 @@ milaria-backup-*.json
 
 # локальные настройки Claude Code
 .claude/
-
-# бэкапы базы живут в ветке backups (см. .github/workflows/backup.yml)
-backups/

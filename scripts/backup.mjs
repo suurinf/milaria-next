@@ -6,21 +6,19 @@
 //  портфолио, очередь, прайс, T.O.S. — живёт только там. Одна ошибка в SQL или
 //  инцидент у провайдера, и восстанавливать нечего.
 //
-//  Файлы коммитятся в отдельную ветку `backups` (не в main — иначе Amvera
-//  пересобирала бы сайт после каждого бэкапа). Бесплатно, лежит вне Supabase,
-//  и вся история версий доступна через git.
+//  Файлы кладутся в backups/ и коммитятся в репозиторий: бесплатно, лежит вне
+//  Supabase, и вся история версий доступна через git.
 //
-//  Запуск вручную:  node scripts/backup.mjs            → ./backups/
-//                   BACKUP_DIR=путь node scripts/backup.mjs
+//  Запуск вручную:  node scripts/backup.mjs
 //  Автоматически:   .github/workflows/backup.yml (раз в сутки)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT_DIR = process.env.BACKUP_DIR ? resolve(process.env.BACKUP_DIR) : join(ROOT, 'backups');
+const OUT_DIR = join(ROOT, 'backups');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://vgwdudjgvkmlnnfgonbk.supabase.co';
 
