@@ -1,5 +1,9 @@
 # Ежедневная выгрузка базы Supabase в репозиторий.
 # У бесплатного Supabase нет своих бэкапов — этот файл и есть страховка.
+#
+# Бэкапы коммитятся в отдельную ветку `backups`, а не в main: Amvera
+# пересобирает сайт после каждого изменения main, и ежедневный бэкап
+# перезапускал бы сайт без причины.
 name: Backup Supabase
 
 on:
@@ -14,7 +18,14 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
+      # Код (скрипт выгрузки и anon-ключ из index.html) — из main
       - uses: actions/checkout@v4
+
+      # Сами бэкапы — в отдельной папке из ветки backups
+      - uses: actions/checkout@v4
+        with:
+          ref: backups
+          path: bk
 
       - uses: actions/setup-node@v4
         with:
@@ -25,9 +36,11 @@ jobs:
           # Необязательно: скрипт возьмёт публичный anon-ключ из index.html,
           # если секрет не задан.
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BACKUP_DIR: bk/backups
         run: node scripts/backup.mjs
 
-      - name: Закоммитить, если что-то изменилось
+      - name: Закоммитить в ветку backups, если что-то изменилось
+        working-directory: bk
         run: |
           git config user.name  "backup-bot"
           git config user.email "backup-bot@users.noreply.github.com"
@@ -36,5 +49,5 @@ jobs:
             echo "Изменений нет — коммит не нужен."
           else
             git commit -m "backup: $(date -u '+%Y-%m-%d %H:%M UTC')"
-            git push
+            git push origin HEAD:backups
           fi
