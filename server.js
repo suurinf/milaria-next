@@ -200,6 +200,9 @@ function proxySupabase(req, res, supaPath) {
 // Раньше и загрузка, и отдача делали Buffer.concat — то есть 40-мегабайтное
 // видео целиком лежало в оперативке контейнера, дважды. На маленьком тарифе
 // это упирается в память и рвёт соединение на больших файлах.
+// Сколько ответов из хранилища сейчас в пути — видно на /debug.
+let _openStreams = 0;
+
 function proxyStorage(req, res, supaPath) {
   try {
     const target = new URL(SUPABASE_URL + supaPath);
@@ -238,13 +241,31 @@ function proxyStorage(req, res, supaPath) {
       if (isMedia) out['Cache-Control'] = 'public, max-age=31536000, immutable';
 
       res.writeHead(ps.statusCode, out);
+      _openStreams++;
+      let counted = true;
+      const done = () => { if (counted) { counted = false; _openStreams--; } };
+      ps.on('end', done);
+      ps.on('close', done);
       ps.pipe(res);                       // отдаём по мере поступления
       ps.on('error', () => res.destroy());
     });
 
+    // Браузер оборвал запрос (перемотал видео, прокрутил страницу, ушёл с неё —
+    // для видео это происходит постоянно). Закрываем и запрос к Supabase:
+    // раньше он оставался открытым вместе с буферами, такие соединения копились
+    // и съедали память контейнера.
+    let clientGone = false;
+    res.on('close', () => {
+      if (!res.writableFinished) { clientGone = true; pr.destroy(); }
+    });
+    // Supabase молчит минуту — не держим соединение вечно.
+    pr.setTimeout(60000, () => pr.destroy(new Error('storage timeout 60s')));
+
     pr.on('error', e => {
+      if (clientGone) return;              // сами оборвали — это не ошибка
       log('STORAGE_ERR', e.message);
       if (!res.headersSent) { res.writeHead(502); res.end(''); }
+      else res.destroy();
     });
 
     req.pipe(pr);                          // принимаем по мере поступления
@@ -468,6 +489,7 @@ body{background:#111;color:#ddd;font-family:monospace;padding:20px;font-size:13p
 <h2 style="color:#e8a93b">Milaria Debug</h2>
 <p>Cache: ${cache.updatedAt ? 'OK @ ' + cache.updatedAt.slice(11,19) : 'NOT LOADED'} | Port: ${PORT}</p>
 <p style="color:#e8a93b">Сборка: <b>${buildFingerprint()}</b></p>
+<p style="color:#888">Память: ${Math.round(process.memoryUsage().rss / 1048576)} МБ · видеопотоков открыто: ${_openStreams} · работает ${Math.floor(process.uptime() / 3600)} ч ${Math.floor(process.uptime() % 3600 / 60)} мин</p>
 <p style="color:#888">JSX: ${_baseHtml && _baseHtml.indexOf('text/babel') === -1 ? 'скомпилирован на сервере ✓' : 'компилируется в браузере (медленно)'}</p>
 <p><a href="/debug" style="color:#7cf">Refresh</a></p>
 <div>${logs.map(l=>`<div class="row ${l.type}">[${l.t}] <b>${l.type}</b> ${l.msg}</div>`).join('')}</div>
