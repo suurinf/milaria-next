@@ -1,5 +1,5 @@
 {
-  "takenAt": "2026-11-12T09:29:35.880Z",
+  "takenAt": "2026-11-13T09:15:30.074Z",
   "source": "https://vgwdudjgvkmlnnfgonbk.supabase.co",
   "tables": [
     {
@@ -24,7 +24,7 @@
     },
     {
       "table": "debts",
-      "rows": 35
+      "rows": 36
     },
     {
       "table": "links",
