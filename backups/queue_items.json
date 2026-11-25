@@ -287,7 +287,7 @@
   {
     "completed_date": null,
     "created_at": "2026-07-03T10:03:26.281975+00:00",
-    "deadline_end": "2026-12-05",
+    "deadline_end": "2026-12-31",
     "deadline_start": "2026-09-05",
     "id": "7aec15c2-3fa9-45c0-8a4b-17207ec2ada8",
     "image": null,
@@ -297,7 +297,7 @@
     "sort_order": 3,
     "tag": "paid",
     "title": "lsahtoxa maskot rig",
-    "updated_at": "2026-11-03T12:53:16.738135+00:00"
+    "updated_at": "2026-11-25T06:31:47.454052+00:00"
   },
   {
     "completed_date": "2026-07-16",
